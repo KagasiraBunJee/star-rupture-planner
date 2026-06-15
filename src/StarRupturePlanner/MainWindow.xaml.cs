@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     private AppSettings _settings = new();
     private ProductionAnalysisResult _productionAnalysis = ProductionAnalysisResult.Empty;
     private IReadOnlyList<RecipeInfo> _inspectorRecipes = [];
+    private string _activeInspectorTab = "Details";
     private SchemeNode? _selectedNode;
     private SchemeEdge? _selectedEdge;
     private SchemeComment? _selectedComment;
@@ -160,6 +161,47 @@ public partial class MainWindow : Window
 
     private void NewScheme_Click(object sender, RoutedEventArgs e) => NewScheme();
 
+    private void TopSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (TopSearchPlaceholder is not null)
+        {
+            TopSearchPlaceholder.Visibility = string.IsNullOrEmpty(TopSearchBox.Text)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+    }
+
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void MaxRestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+        var maximized = WindowState == WindowState.Maximized;
+        MaxRestoreButton.Content = maximized ? "\uE923" : "\uE922";
+        MaxRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
+
+        // A borderless (WindowStyle=None) window overhangs the work area by the
+        // resize-border + padded-border thickness on every side when maximized;
+        // inset the content uniformly (horizontal metric) to compensate.
+        if (maximized)
+        {
+            var pad = SystemParameters.WindowResizeBorderThickness.Left
+                + SystemParameters.WindowNonClientFrameThickness.Left;
+            RootGrid.Margin = new Thickness(pad);
+        }
+        else
+        {
+            RootGrid.Margin = new Thickness(0);
+        }
+    }
+
     private void NewScheme()
     {
         _viewModel.NewScheme();
@@ -169,6 +211,7 @@ public partial class MainWindow : Window
         CanvasScale.ScaleY = 1;
         CanvasTranslate.X = 0;
         CanvasTranslate.Y = 0;
+        UpdateZoomText();
         RenderCanvas();
         UpdateInspector();
     }
@@ -207,46 +250,32 @@ public partial class MainWindow : Window
 
     private void ApplySettings()
     {
+        // Per-user font overrides shadow the theme defaults for the window scope.
         Resources["LeftListFontFamily"] = new FontFamily(SafeFontFamily(_settings.LeftBarListFont.Family));
         Resources["LeftListFontSize"] = _settings.LeftBarListFont.Size;
         Resources["LeftListForegroundBrush"] = BrushFromString(_settings.LeftBarListFont.Color, "#F4F0E8");
 
-        var effectiveTheme = ResolveTheme(_settings.Theme);
-        var dark = effectiveTheme == AppTheme.Dark;
-        var appBackground = BrushFromString(dark ? "#070B0F" : "#F4F7FA", "#070B0F");
-        var panelBackground = BrushFromString(dark ? "#101820" : "#FFFFFF", "#101820");
-        var centerBackground = BrushFromString(dark ? "#070B0F" : "#E9EEF3", "#070B0F");
-        var canvasBackground = BrushFromString(dark ? "#071016" : "#F8FAFB", "#071016");
-        var borderBrush = BrushFromString(dark ? "#26343D" : "#C7D1D8", "#26343D");
-        Resources["AppBackgroundBrush"] = appBackground;
-        Resources["PanelBrush"] = panelBackground;
-        Resources["PanelBrushSoft"] = BrushFromString(dark ? "#0D141B" : "#F3F6F8", "#0D141B");
-        Resources["CanvasBrush"] = canvasBackground;
-        Resources["ControlBrush"] = BrushFromString(dark ? "#121C24" : "#F6F8FA", "#121C24");
-        Resources["ControlHoverBrush"] = BrushFromString(dark ? "#172633" : "#EAF2FA", "#172633");
-        Resources["GraphiteLineBrush"] = borderBrush;
-        Resources["StarBlueBrush"] = BrushFromString("#0A84FF", "#0A84FF");
-        Resources["ReactorOrangeBrush"] = BrushFromString("#FF8A00", "#FF8A00");
-        Resources["SignalGreenBrush"] = BrushFromString("#63D64D", "#63D64D");
-        Resources["ThemeForegroundBrush"] = BrushFromString(dark ? "#F3F7FA" : "#14202A", "#F3F7FA");
-        Resources["ThemeSecondaryForegroundBrush"] = BrushFromString(dark ? "#9CAAB5" : "#54636E", "#9CAAB5");
+        ApplyTheme(ResolveTheme(_settings.Theme));
+    }
 
-        Background = appBackground;
-        LeftPanel.Background = panelBackground;
-        LeftPanel.BorderBrush = borderBrush;
-        RightPanel.Background = panelBackground;
-        RightPanel.BorderBrush = borderBrush;
-        CenterPanel.Background = centerBackground;
-        CanvasFrame.Background = canvasBackground;
-        CanvasFrame.BorderBrush = borderBrush;
-        PlannerCanvas.Background = canvasBackground;
-        PlannerCanvas.DotBrush = BrushFromString(dark ? "#123044" : "#D6DDE1", "#123044");
-        PlannerCanvas.MajorDotBrush = BrushFromString(dark ? "#1B4E70" : "#B9C4CA", "#1B4E70");
-        ToolboxTabs.Background = panelBackground;
-        SchemesList.Background = canvasBackground;
-        ResourcesList.Background = canvasBackground;
-        MachinesList.Background = canvasBackground;
-        StatusText.Foreground = BrushFromString(dark ? "#AEB8BD" : "#45535B", "#AEB8BD");
+    private static void ApplyTheme(AppTheme theme)
+    {
+        var dark = theme != AppTheme.Light;
+        var themeUri = new Uri($"Themes/{(dark ? "DarkTheme" : "LightTheme")}.xaml", UriKind.Relative);
+        var merged = Application.Current.Resources.MergedDictionaries;
+
+        for (var i = merged.Count - 1; i >= 0; i--)
+        {
+            var source = merged[i].Source?.OriginalString ?? string.Empty;
+            if (source.Contains("DarkTheme.xaml", StringComparison.OrdinalIgnoreCase)
+                || source.Contains("LightTheme.xaml", StringComparison.OrdinalIgnoreCase))
+            {
+                merged.RemoveAt(i);
+            }
+        }
+
+        // Insert the theme ahead of ControlStyles so styles can layer over the tokens.
+        merged.Insert(0, new ResourceDictionary { Source = themeUri });
     }
 
     private async void SchemesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -263,6 +292,7 @@ public partial class MainWindow : Window
         CanvasScale.ScaleY = CanvasScale.ScaleX;
         CanvasTranslate.X = _scheme.Canvas.OffsetX;
         CanvasTranslate.Y = _scheme.Canvas.OffsetY;
+        UpdateZoomText();
         RenderCanvas();
         UpdateInspector();
     }
@@ -553,8 +583,11 @@ public partial class MainWindow : Window
         root.MouseLeftButtonUp += Node_MouseLeftButtonUp;
 
         var grid = new Grid();
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // category accent
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // header
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // body
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // footer
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // issues
         root.Child = grid;
         root.SizeChanged += (_, e) =>
         {
@@ -566,17 +599,22 @@ public partial class MainWindow : Window
             grid.Clip = new RectangleGeometry(new Rect(e.NewSize), 8, 8);
         };
 
+        var accentColor = AccentColorForCategory(building?.Category ?? recipe?.BuildingCategory);
+        var accent = new Border { Height = 5, Background = new SolidColorBrush(accentColor) };
+        Grid.SetRow(accent, 0);
+        grid.Children.Add(accent);
+
         var header = new DockPanel
         {
             LastChildFill = true,
             Margin = new Thickness(0),
             Background = new LinearGradientBrush(
-                Color.FromArgb(118, 16, 71, 103),
+                Color.FromArgb(118, accentColor.R, accentColor.G, accentColor.B),
                 Color.FromArgb(20, 16, 24, 32),
                 new Point(0, 0),
                 new Point(1, 0)),
         };
-        header.SetValue(Grid.RowProperty, 0);
+        header.SetValue(Grid.RowProperty, 1);
         var imageFrame = new Border
         {
             Width = 58,
@@ -648,7 +686,7 @@ public partial class MainWindow : Window
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(16, 18, 16, 18),
             };
-            Grid.SetRow(hint, 1);
+            Grid.SetRow(hint, 2);
             grid.Children.Add(hint);
         }
         else
@@ -682,8 +720,19 @@ public partial class MainWindow : Window
             body.Children.Add(inputs);
             body.Children.Add(divider);
             body.Children.Add(output);
-            Grid.SetRow(body, 1);
+            Grid.SetRow(body, 2);
             grid.Children.Add(body);
+
+            var footer = CreateCardFooter(node);
+            Grid.SetRow(footer, 3);
+            grid.Children.Add(footer);
+
+            var issues = CreateCardIssues(node);
+            if (issues is not null)
+            {
+                Grid.SetRow(issues, 4);
+                grid.Children.Add(issues);
+            }
         }
 
         Canvas.SetLeft(root, node.X);
@@ -773,6 +822,133 @@ public partial class MainWindow : Window
             FontWeight = FontWeights.SemiBold,
             Margin = new Thickness(0, 0, 0, 6),
         };
+    }
+
+    private static Color AccentColorForCategory(string? category)
+    {
+        return (category ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "extraction" => Color.FromRgb(0xC8, 0x89, 0x3B),
+            "processing" => Color.FromRgb(0x3F, 0xB6, 0xA8),
+            "temperature" => Color.FromRgb(0xFF, 0x7A, 0x3C),
+            "crafting" => Color.FromRgb(0x9B, 0x6B, 0xE0),
+            _ => Color.FromRgb(0x5A, 0x7B, 0x8C),
+        };
+    }
+
+    // Stub: power has no backing data yet, so the footer shows "—" per design decision.
+    private FrameworkElement CreateCardFooter(SchemeNode node)
+    {
+        var footer = new Border
+        {
+            BorderBrush = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(14, 7, 14, 8),
+        };
+
+        var dock = new DockPanel { LastChildFill = false };
+
+        var power = new TextBlock
+        {
+            Text = "⚡ Power  —",
+            Foreground = CardTextBrush(0.6),
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-1),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        DockPanel.SetDock(power, Dock.Left);
+        dock.Children.Add(power);
+
+        var (ratio, isShort) = NodeFeedRatio(node);
+        var util = new TextBlock
+        {
+            Text = $"{ratio * 100:0}%",
+            Foreground = isShort ? new SolidColorBrush(ShortageColor) : new SolidColorBrush(SignalGreenColor),
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-1),
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        DockPanel.SetDock(util, Dock.Right);
+        dock.Children.Add(util);
+
+        footer.Child = dock;
+        return footer;
+    }
+
+    // Per-machine issue list shown under the card; null when the node has no shortages.
+    private FrameworkElement? CreateCardIssues(SchemeNode node)
+    {
+        var shortInputs = _productionAnalysis.Inputs.Values
+            .Where(input => string.Equals(input.NodeId, node.Id, StringComparison.Ordinal)
+                && _productionAnalysis.ShortInputs.Contains(ProductionInputKey.For(node.Id, input.ItemId)))
+            .OrderByDescending(input => input.RequiredPerMinute - input.DeliveredPerMinute)
+            .ToList();
+        if (shortInputs.Count == 0)
+        {
+            return null;
+        }
+
+        var container = new StackPanel { Margin = new Thickness(14, 8, 14, 10) };
+        container.Children.Add(new TextBlock
+        {
+            Text = $"ISSUES ({shortInputs.Count})",
+            Foreground = new SolidColorBrush(ShortageColor),
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-2),
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 5),
+        });
+
+        foreach (var input in shortInputs)
+        {
+            var deficit = Math.Max(0, input.RequiredPerMinute - input.DeliveredPerMinute);
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2) };
+            row.Children.Add(new TextBlock
+            {
+                Text = "⚠",
+                Foreground = new SolidColorBrush(ShortageColor),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-1),
+                Margin = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            row.Children.Add(new TextBlock
+            {
+                Text = $"{input.ItemName}: {input.DeliveredPerMinute:g}/{input.RequiredPerMinute:g}/min ({deficit:g} short)",
+                Foreground = CardTextBrush(0.85),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-1),
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            container.Children.Add(row);
+        }
+
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(28, ShortageColor.R, ShortageColor.G, ShortageColor.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(110, ShortageColor.R, ShortageColor.G, ShortageColor.B)),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Child = container,
+        };
+    }
+
+    // Derived "fed" ratio: how much of the node's input demand is delivered (1.0 if no inputs).
+    private (double Ratio, bool IsShort) NodeFeedRatio(SchemeNode node)
+    {
+        var inputs = _productionAnalysis.Inputs.Values
+            .Where(i => string.Equals(i.NodeId, node.Id, StringComparison.Ordinal) && i.RequiredPerMinute > 0)
+            .ToList();
+        if (inputs.Count == 0)
+        {
+            return (1.0, false);
+        }
+
+        var ratio = inputs.Min(i => Math.Min(1.0, i.DeliveredPerMinute / i.RequiredPerMinute));
+        var isShort = inputs.Any(i => _productionAnalysis.ShortInputs.Contains(
+            ProductionInputKey.For(node.Id, i.ItemId)));
+        return (ratio, isShort);
     }
 
     private double NodeOutputRate(SchemeNode node, RecipeInfo recipe)
@@ -990,30 +1166,84 @@ public partial class MainWindow : Window
 
     private void UpdateProductionAlerts()
     {
-        if (AlertsText is null)
+        if (AlertsChips is null)
         {
             return;
         }
 
+        if (MetricMachines is not null)
+        {
+            var total = _scheme.Nodes.Count(node => RecipeForNode(node) is not null);
+            var starved = _scheme.Nodes.Count(node => RecipeForNode(node) is not null && NodeFeedRatio(node).IsShort);
+            MetricMachines.Text = total == 0 ? "0" : $"{total - starved}/{total}";
+        }
+
+        AlertsChips.Children.Clear();
         if (_productionAnalysis.Alerts.Count == 0)
         {
-            AlertsText.Text = "No production shortages";
-            AlertsText.Foreground = (Brush)Resources["ThemeSecondaryForegroundBrush"];
+            AlertsChips.Children.Add(BuildAlertChip("No production shortages", SignalGreenColor, "✓"));
             return;
         }
 
-        AlertsText.Text = string.Join("    ", _productionAnalysis.Alerts.Select(alert => alert.Message).Take(3));
-        if (_productionAnalysis.Alerts.Count > 3)
+        // Show every alert; the row scrolls horizontally to reveal the rest.
+        foreach (var alert in _productionAnalysis.Alerts)
         {
-            AlertsText.Text += $"    +{_productionAnalysis.Alerts.Count - 3} more";
+            AlertsChips.Children.Add(BuildAlertChip(alert.Message, ShortageColor, "⚠"));
         }
 
-        AlertsText.Foreground = new SolidColorBrush(ShortageColor);
+        AlertsScroller?.ScrollToHorizontalOffset(0);
+    }
+
+    private void AlertsScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer scroller)
+        {
+            scroller.ScrollToHorizontalOffset(scroller.HorizontalOffset - e.Delta);
+            e.Handled = true;
+        }
+    }
+
+    private FrameworkElement BuildAlertChip(string message, Color accent, string glyph)
+    {
+        var border = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(30, accent.R, accent.G, accent.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, accent.R, accent.G, accent.B)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(10, 5, 10, 5),
+            Margin = new Thickness(0, 0, 8, 0),
+            ToolTip = message,
+        };
+
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.Children.Add(new TextBlock
+        {
+            Text = glyph,
+            Foreground = new SolidColorBrush(accent),
+            Margin = new Thickness(0, 0, 7, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = message,
+            Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+            MaxWidth = 240,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        border.Child = panel;
+        return border;
     }
 
     private string EdgeLabel(SchemeEdge edge)
     {
         return PlannerEdgeService.EdgeLabel(_scheme, _catalog, _settings, _calculator, edge, _productionAnalysis);
+    }
+
+    private string EdgeDetail(SchemeEdge edge)
+    {
+        return PlannerEdgeService.EdgeDetail(_scheme, _catalog, _settings, _calculator, edge, _productionAnalysis);
     }
 
     private bool IsEdgeShort(SchemeEdge edge)
@@ -1034,11 +1264,6 @@ public partial class MainWindow : Window
     private TransportTierInfo? CurrentRailTier()
     {
         return PlannerEdgeService.CurrentRailTier(_catalog, _settings);
-    }
-
-    private string RecommendedTierText(double requiredRate)
-    {
-        return PlannerEdgeService.RecommendedTierText(_catalog, _calculator, requiredRate);
     }
 
     private bool IsEdgeValid(SchemeEdge edge)
@@ -1964,6 +2189,15 @@ public partial class MainWindow : Window
         var zoom = Math.Clamp(CanvasScale.ScaleX * delta, 0.35, 2.4);
         CanvasScale.ScaleX = zoom;
         CanvasScale.ScaleY = zoom;
+        UpdateZoomText();
+    }
+
+    private void UpdateZoomText()
+    {
+        if (ZoomText is not null)
+        {
+            ZoomText.Text = $"{CanvasScale.ScaleX * 100:0}%";
+        }
     }
 
     private bool TryCreateEdge(PortReference first, PortReference second)
@@ -2305,6 +2539,7 @@ public partial class MainWindow : Window
             InspectorRecipeList.ItemsSource = null;
             InspectorInputs.ItemsSource = null;
             InspectorUnlocks.ItemsSource = null;
+            InspectorMetricsStack.Children.Clear();
             ConnectionReadOnly.Text = "";
             InspectorStatusPanel.Visibility = Visibility.Collapsed;
             PriorityBox.SelectedItem = null;
@@ -2317,6 +2552,7 @@ public partial class MainWindow : Window
                 _inspectorRecipes = RecipesForNode(_selectedNode);
                 NodeInspectorPanel.Visibility = Visibility.Visible;
                 InspectorStatusPanel.Visibility = Visibility.Visible;
+                ShowInspectorTab(_activeInspectorTab);
                 InspectorTitle.Text = recipe?.BuildingName ?? building?.Name ?? "Unselected machine";
                 InspectorRecipeList.ItemsSource = _inspectorRecipes;
                 InspectorRecipeList.SelectedItem = recipe;
@@ -2338,13 +2574,8 @@ public partial class MainWindow : Window
 
                 var machines = ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
                 var outputPerMinute = _calculator.OutputPerMinute(recipe, machines);
-                InspectorReadOnly.Text =
-                    $"Building: {recipe.BuildingName}\n" +
-                    $"Machines: {machines}\n" +
-                    $"Priority: {_selectedNode.Priority}\n" +
-                    $"Output: {recipe.Output.Name} {outputPerMinute:g}/min\n" +
-                    $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText})\n" +
-                    $"Inputs scale with machine count.";
+                BuildInspectorMetrics(_selectedNode, recipe, machines, outputPerMinute);
+                InspectorReadOnly.Text = $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs scale with machine count.";
                 InspectorInputs.ItemsSource = recipe.Inputs
                     .Select(input =>
                     {
@@ -2375,13 +2606,129 @@ public partial class MainWindow : Window
             {
                 InspectorTitle.Text = "Connection";
                 ConnectionInspectorPanel.Visibility = Visibility.Visible;
-                ConnectionReadOnly.Text = EdgeLabel(_selectedEdge);
+                ConnectionReadOnly.Text = EdgeDetail(_selectedEdge);
             }
         }
         finally
         {
             _updatingInspector = false;
         }
+    }
+
+    private void InspectorTab_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.Tag is string tab)
+        {
+            _activeInspectorTab = tab;
+            ShowInspectorTab(tab);
+        }
+    }
+
+    private void ShowInspectorTab(string tab)
+    {
+        InspectorDetailsPanel.Visibility = tab == "Details" ? Visibility.Visible : Visibility.Collapsed;
+        InspectorStatisticsPanel.Visibility = tab == "Statistics" ? Visibility.Visible : Visibility.Collapsed;
+        InspectorModificationsPanel.Visibility = tab == "Modifications" ? Visibility.Visible : Visibility.Collapsed;
+
+        var active = (Brush)Application.Current.FindResource("StarBlueBrush");
+        var inactive = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush");
+        var transparent = (Brush)Brushes.Transparent;
+
+        InspectorTabDetails.BorderBrush = tab == "Details" ? active : transparent;
+        InspectorTabStatistics.BorderBrush = tab == "Statistics" ? active : transparent;
+        InspectorTabModifications.BorderBrush = tab == "Modifications" ? active : transparent;
+        InspectorTabDetailsText.Foreground = tab == "Details" ? active : inactive;
+        InspectorTabStatisticsText.Foreground = tab == "Statistics" ? active : inactive;
+        InspectorTabModificationsText.Foreground = tab == "Modifications" ? active : inactive;
+        InspectorTabDetailsText.FontWeight = tab == "Details" ? FontWeights.SemiBold : FontWeights.Normal;
+        InspectorTabStatisticsText.FontWeight = tab == "Statistics" ? FontWeights.SemiBold : FontWeights.Normal;
+        InspectorTabModificationsText.FontWeight = tab == "Modifications" ? FontWeights.SemiBold : FontWeights.Normal;
+    }
+
+    private void OutputStepUp_Click(object sender, RoutedEventArgs e) => StepMachineCount(1);
+
+    private void OutputStepDown_Click(object sender, RoutedEventArgs e) => StepMachineCount(-1);
+
+    private void StepMachineCount(int delta)
+    {
+        if (_selectedNode is null)
+        {
+            return;
+        }
+
+        var current = int.TryParse(TargetOutputBox.Text, NumberStyles.Integer, CultureInfo.CurrentCulture, out var value)
+            ? value
+            : ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
+        TargetOutputBox.Text = Math.Max(1, current + delta).ToString(CultureInfo.CurrentCulture);
+        TargetOutputBox.CaretIndex = TargetOutputBox.Text.Length;
+    }
+
+    private void BuildInspectorMetrics(SchemeNode node, RecipeInfo recipe, int machines, double outputPerMinute)
+    {
+        InspectorMetricsStack.Children.Clear();
+
+        foreach (var input in recipe.Inputs)
+        {
+            var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
+            InspectorMetricsStack.Children.Add(BuildMetricRow(
+                "Input",
+                $"{input.Name}  {input.QuantityPerMinute:g}/min",
+                sub: $"Total {required:g}/min"));
+        }
+
+        InspectorMetricsStack.Children.Add(BuildMetricRow(
+            "Output",
+            $"{recipe.Output.Name}  {recipe.Output.QuantityPerMinute:g}/min",
+            sub: $"Total {outputPerMinute:g}/min"));
+
+        // Power has no backing data yet — stubbed per design decision.
+        InspectorMetricsStack.Children.Add(BuildMetricRow("Power", "—"));
+        InspectorMetricsStack.Children.Add(BuildMetricRow("Efficiency", "—"));
+
+        var (ratio, isShort) = NodeFeedRatio(node);
+        InspectorMetricsStack.Children.Add(BuildMetricRow(
+            "Utilization",
+            $"{ratio * 100:0}%",
+            valueBrush: new SolidColorBrush(isShort ? ShortageColor : SignalGreenColor)));
+        InspectorMetricsStack.Children.Add(BuildMetricRow(
+            "Status",
+            isShort ? "Starved" : "Running",
+            valueBrush: new SolidColorBrush(isShort ? ShortageColor : SignalGreenColor)));
+    }
+
+    private FrameworkElement BuildMetricRow(string label, string value, Brush? valueBrush = null, string? sub = null)
+    {
+        var dock = new DockPanel { Margin = new Thickness(0, 0, 0, 9) };
+        var labelText = new TextBlock
+        {
+            Text = label,
+            Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        DockPanel.SetDock(labelText, Dock.Left);
+        dock.Children.Add(labelText);
+
+        var right = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right };
+        right.Children.Add(new TextBlock
+        {
+            Text = value,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = valueBrush ?? (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        });
+        if (!string.IsNullOrEmpty(sub))
+        {
+            right.Children.Add(new TextBlock
+            {
+                Text = sub,
+                FontSize = 11,
+                Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
+                HorizontalAlignment = HorizontalAlignment.Right,
+            });
+        }
+
+        dock.Children.Add(right);
+        return dock;
     }
 
     private void SelectPriorityBoxItem(ProductionPriority priority)
@@ -2490,6 +2837,14 @@ public partial class MainWindow : Window
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.S)
         {
             _ = SaveCurrentSchemeAsync();
+            e.Handled = true;
+            return;
+        }
+
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
+        {
+            TopSearchBox.Focus();
+            TopSearchBox.SelectAll();
             e.Handled = true;
             return;
         }
