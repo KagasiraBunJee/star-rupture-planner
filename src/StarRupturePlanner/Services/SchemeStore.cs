@@ -69,6 +69,35 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         return document.FilePath;
     }
 
+    public void Delete(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("Scheme file path is required.", nameof(filePath));
+        }
+
+        var folderPath = Path.GetFullPath(FolderPath);
+        var folderRoot = folderPath.EndsWith(Path.DirectorySeparatorChar)
+            ? folderPath
+            : folderPath + Path.DirectorySeparatorChar;
+        var targetPath = Path.GetFullPath(filePath);
+
+        if (!targetPath.StartsWith(folderRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Scheme file is outside the active scheme folder.");
+        }
+
+        if (!string.Equals(Path.GetExtension(targetPath), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only saved scheme JSON files can be deleted.");
+        }
+
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+    }
+
     public static string SafeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();

@@ -390,9 +390,65 @@
         </Setter>
     </Style>
 
+    <Style x:Key="SchemeDeleteButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="MinHeight" Value="28"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="8,0,0,0"/>
+        <Setter Property="Foreground" Value="#FF4848"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="ToolTip" Value="Delete scheme"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6">
+                        <TextBlock Text="{TemplateBinding Content}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   FontFamily="{TemplateBinding FontFamily}"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="#2A1014"/>
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="#FF6B6B"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <DataTemplate x:Key="SchemeItemTemplate">
-        <Border x:Name="Card" Padding="10,8" Margin="0,0,4,4" Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="6" HorizontalAlignment="Stretch">
-            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource LeftListForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" FontWeight="SemiBold"/>
+        <Border x:Name="Card" Padding="10,8" Margin="0,0,0,4" Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="6" HorizontalAlignment="Stretch">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Name}"
+                           Foreground="{DynamicResource LeftListForegroundBrush}"
+                           FontFamily="{DynamicResource LeftListFontFamily}"
+                           FontSize="{DynamicResource LeftListFontSize}"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Style="{StaticResource SchemeDeleteButtonStyle}"
+                        Tag="DeleteScheme"
+                        Content="&#xE74D;"/>
+            </Grid>
         </Border>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">

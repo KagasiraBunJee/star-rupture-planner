@@ -300,6 +300,47 @@ public partial class MainWindow : Window
         UpdateInspector();
     }
 
+    private async void SchemesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var button = FindAncestor<Button>(e.OriginalSource as DependencyObject);
+        if (button?.Tag as string != "DeleteScheme" || button.DataContext is not SchemeListItem item)
+        {
+            return;
+        }
+
+        e.Handled = true;
+
+        var result = MessageBox.Show(
+            this,
+            $"Delete saved scheme \"{item.Name}\"? This cannot be undone.",
+            "Delete scheme",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var deletedCurrentScheme = SamePath(_scheme.FilePath, item.FilePath);
+        var deleted = await _viewModel.DeleteSchemeAsync(item);
+        if (!deleted || !deletedCurrentScheme)
+        {
+            return;
+        }
+
+        _viewModel.NewScheme();
+        SyncFromViewModel();
+        ClearSelection();
+        CanvasScale.ScaleX = 1;
+        CanvasScale.ScaleY = 1;
+        CanvasTranslate.X = 0;
+        CanvasTranslate.Y = 0;
+        UpdateZoomText();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus($"Deleted {item.Name}.");
+    }
+
     private async void SaveScheme_Click(object sender, RoutedEventArgs e) => await SaveCurrentSchemeAsync();
 
     private async Task SaveCurrentSchemeAsync()
@@ -3317,6 +3358,25 @@ public partial class MainWindow : Window
         panel.Children.Add(buttons);
         dialog.Content = panel;
         return dialog.ShowDialog() == true ? textBox.Text : null;
+    }
+
+    private static bool SamePath(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+        {
+            return false;
+        }
+
+        try
+        {
+            left = System.IO.Path.GetFullPath(left);
+            right = System.IO.Path.GetFullPath(right);
+        }
+        catch
+        {
+        }
+
+        return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
     }
 
     private static T? FindAncestor<T>(DependencyObject? current)
