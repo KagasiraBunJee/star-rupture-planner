@@ -857,6 +857,8 @@ public partial class MainWindow : Window
         };
 
         var dock = new DockPanel { LastChildFill = false };
+        var building = BuildingForNode(node);
+        var machines = ProductionAnalysisService.EffectiveMachineCount(node);
 
         var power = new TextBlock
         {
@@ -867,7 +869,20 @@ public partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
         };
         DockPanel.SetDock(power, Dock.Left);
+        power.Text = $"Power  {PlannerMetricService.FormatNodePower(building, machines)}";
         dock.Children.Add(power);
+
+        var temperature = new TextBlock
+        {
+            Text = $"Temp  {PlannerMetricService.FormatNodeTemperature(building, machines)}",
+            Foreground = CardTextBrush(0.6),
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-1),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(14, 0, 0, 0),
+        };
+        DockPanel.SetDock(temperature, Dock.Left);
+        dock.Children.Add(temperature);
 
         var (ratio, isShort) = NodeFeedRatio(node);
         var util = new TextBlock
@@ -1244,6 +1259,21 @@ public partial class MainWindow : Window
             var total = _scheme.Nodes.Count(node => RecipeForNode(node) is not null);
             var starved = _scheme.Nodes.Count(node => RecipeForNode(node) is not null && NodeFeedRatio(node).IsShort);
             MetricMachines.Text = total == 0 ? "0" : $"{total - starved}/{total}";
+        }
+
+        var totals = PlannerMetricService.CalculateTotals(_scheme, _catalog);
+        if (MetricPower is not null)
+        {
+            MetricPower.Text = totals.PowerGeneration > 0
+                ? $"{totals.PowerConsumption:g} kW / +{totals.PowerGeneration:g} kW"
+                : $"{totals.PowerConsumption:g} kW";
+        }
+
+        if (MetricTemperature is not null)
+        {
+            MetricTemperature.Text = totals.Temperature > 0
+                ? $"+{totals.Temperature:g} temp"
+                : $"{totals.Temperature:g} temp";
         }
 
         AlertsChips.Children.Clear();
@@ -2948,8 +2978,16 @@ public partial class MainWindow : Window
             $"{recipe.Output.Name}  {recipe.Output.QuantityPerMinute:g}/min",
             sub: $"Total {outputPerMinute:g}/min"));
 
-        // Power has no backing data yet — stubbed per design decision.
-        InspectorMetricsStack.Children.Add(BuildMetricRow("Power", "—"));
+        var building = BuildingForNode(node);
+        InspectorMetricsStack.Children.Add(BuildMetricRow(
+            "Power",
+            building?.Power is null ? "-" : PlannerMetricService.FormatNodePower(building, 1),
+            sub: building?.Power is null ? null : $"Total {PlannerMetricService.FormatNodePower(building, machines)}"));
+        InspectorMetricsStack.Children.Add(BuildMetricRow(
+            "Temperature",
+            building?.Temperature is null ? "-" : PlannerMetricService.FormatNodeTemperature(building, 1),
+            sub: building?.Temperature is null ? null : $"Total {PlannerMetricService.FormatNodeTemperature(building, machines)}"));
+
         InspectorMetricsStack.Children.Add(BuildMetricRow("Efficiency", "—"));
 
         var (ratio, isShort) = NodeFeedRatio(node);

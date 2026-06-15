@@ -198,8 +198,18 @@ class StarRuptureScraper:
         normalized["family_name"], normalized["tier"] = self._building_family_and_tier(
             building.get("name", "")
         )
+        normalized["power"] = self._optional_float(building.get("power"))
+        normalized["temperature"] = self._optional_float(building.get("temperature"))
         normalized.setdefault("description", "")
         return normalized
+
+    def _optional_float(self, value: Any) -> float | None:
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
     def _building_family_and_tier(self, name: str) -> tuple[str, int | None]:
         match = re.search(r"\s+v\.(\d+)\s*$", name)

@@ -27,6 +27,10 @@ var tests = new (string Name, Action Body)[]
     ("Corporation defaults unlock training rail availability", CorporationDefaultsUnlockTrainingRailAvailability),
     ("Locked building is hidden until corporation level allows it", LockedBuildingRequiresCorporationLevel),
     ("Rail recommendation uses available tiers", RailRecommendationUsesAvailableTiers),
+    ("Building metrics deserialize", BuildingMetricsDeserialize),
+    ("Scheme metrics scale by machine count", SchemeMetricsScaleByMachineCount),
+    ("Temperature counts for placed machine without recipe", TemperatureCountsForPlacedMachineWithoutRecipe),
+    ("Missing building metrics are ignored", MissingBuildingMetricsAreIgnored),
     ("API root discovery finds repo", ApiRootDiscoveryFindsRepo),
 };
 
@@ -739,6 +743,127 @@ static PlannerCatalog UnlockCatalog()
             ],
         },
     };
+}
+
+static void BuildingMetricsDeserialize()
+{
+    var building = System.Text.Json.JsonSerializer.Deserialize<BuildingInfo>(
+        "{\"building_id\":\"smelter\",\"name\":\"Smelter\",\"category\":\"crafting\",\"power\":-5,\"temperature\":3}",
+        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+    AssertEqual(-5d, building?.Power ?? 0);
+    AssertEqual(3d, building?.Temperature ?? 0);
+}
+
+static void SchemeMetricsScaleByMachineCount()
+{
+    var recipe = TitaniumRodRecipe();
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "fabricator",
+                BuildingId = "crafter",
+                SelectedRecipeKey = recipe.RecipeKey,
+                MachineCount = 2,
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog
+    {
+        Recipes = [recipe],
+        Buildings =
+        [
+            new BuildingInfo
+            {
+                BuildingId = "crafter",
+                Name = "Fabricator",
+                Category = "crafting",
+                Power = -10,
+                Temperature = 5,
+            },
+        ],
+    };
+
+    var totals = PlannerMetricService.CalculateTotals(scheme, catalog);
+    AssertEqual(20d, totals.PowerConsumption);
+    AssertEqual(0d, totals.PowerGeneration);
+    AssertEqual(10d, totals.Temperature);
+    AssertEqual("20 kW", PlannerMetricService.FormatNodePower(catalog.Buildings[0], 2));
+    AssertEqual("+10 temp", PlannerMetricService.FormatNodeTemperature(catalog.Buildings[0], 2));
+}
+
+static void MissingBuildingMetricsAreIgnored()
+{
+    var recipe = TitaniumRodRecipe();
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "fabricator",
+                BuildingId = "crafter",
+                SelectedRecipeKey = recipe.RecipeKey,
+                MachineCount = 3,
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog
+    {
+        Recipes = [recipe],
+        Buildings =
+        [
+            new BuildingInfo
+            {
+                BuildingId = "crafter",
+                Name = "Fabricator",
+                Category = "crafting",
+            },
+        ],
+    };
+
+    var totals = PlannerMetricService.CalculateTotals(scheme, catalog);
+    AssertEqual(0d, totals.PowerConsumption);
+    AssertEqual(0d, totals.Temperature);
+    AssertEqual("-", PlannerMetricService.FormatNodePower(catalog.Buildings[0], 3));
+}
+
+static void TemperatureCountsForPlacedMachineWithoutRecipe()
+{
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "fabricator",
+                BuildingId = "crafter",
+                SelectedRecipeKey = null,
+                MachineCount = 3,
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog
+    {
+        Buildings =
+        [
+            new BuildingInfo
+            {
+                BuildingId = "crafter",
+                Name = "Fabricator",
+                Category = "crafting",
+                Power = -10,
+                Temperature = 5,
+            },
+        ],
+    };
+
+    var totals = PlannerMetricService.CalculateTotals(scheme, catalog);
+    AssertEqual(0d, totals.PowerConsumption);
+    AssertEqual(15d, totals.Temperature);
 }
 
 static void ApiRootDiscoveryFindsRepo()

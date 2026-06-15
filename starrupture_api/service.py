@@ -565,6 +565,8 @@ class ResourceService:
             "tier": row["tier"],
             "category": row["category"],
             "description": row["description"],
+            "power": None if row["power"] is None else clean_number(row["power"]),
+            "temperature": None if row["temperature"] is None else clean_number(row["temperature"]),
             "source_url": row["source_url"],
             "image_url": row["image_url"],
             "image_source_url": row["image_source_url"],
