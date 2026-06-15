@@ -107,36 +107,6 @@
                                     <TextBlock Text="Production" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55" ToolTip="Coming soon">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="◈" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Items"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55" ToolTip="Coming soon">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="❏" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Recipes"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55" ToolTip="Coming soon">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚡" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Power Grid"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55" ToolTip="Coming soon">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="▦" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Blueprints"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55" ToolTip="Coming soon">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="◔" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Statistics"/>
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
                         <TextBlock Text="Toolbox" Style="{StaticResource PanelTitle}" Margin="0,12,0,8"/>
                         <TextBox x:Name="ToolboxFilterBox" Text="{Binding Toolbox.FilterText, UpdateSourceTrigger=PropertyChanged}"/>
