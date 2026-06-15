@@ -12,6 +12,8 @@ public sealed class ToolboxViewModel : ViewModelBase
     private IReadOnlyList<SchemeListItem> _allSchemes = [];
     private IReadOnlyList<ResourceToolboxItem> _allResources = [];
     private IReadOnlyList<MachineToolboxItem> _allMachines = [];
+    private PlannerCatalog _catalog = new();
+    private SchemeDocument _scheme = new();
     private CancellationTokenSource? _filterCancellation;
     private string _filterText = "";
 
@@ -49,6 +51,7 @@ public sealed class ToolboxViewModel : ViewModelBase
 
     public async Task SetCatalogAsync(PlannerCatalog catalog, CancellationToken cancellationToken = default)
     {
+        _catalog = catalog;
         var resources = await _backgroundTaskRunner.RunAsync(
             () => catalog.Recipes
                 .OrderBy(recipe => recipe.Output.Name, StringComparer.CurrentCultureIgnoreCase)
@@ -79,6 +82,12 @@ public sealed class ToolboxViewModel : ViewModelBase
         await ApplyFilterAsync(cancellationToken);
     }
 
+    public async Task SetSchemeAsync(SchemeDocument scheme, CancellationToken cancellationToken = default)
+    {
+        _scheme = scheme;
+        await ApplyFilterAsync(cancellationToken);
+    }
+
     public async Task ApplyFilterAsync(CancellationToken cancellationToken = default)
     {
         _filterCancellation?.Cancel();
@@ -89,9 +98,11 @@ public sealed class ToolboxViewModel : ViewModelBase
         var schemes = _allSchemes.ToList();
         var resources = _allResources.ToList();
         var machines = _allMachines.ToList();
+        var catalog = _catalog;
+        var scheme = _scheme;
 
         var result = await _backgroundTaskRunner.RunAsync(
-            () => FilterSnapshot(query, schemes, resources, machines),
+            () => FilterSnapshot(query, schemes, resources, machines, catalog, scheme),
             token);
 
         await _uiDispatcher.InvokeAsync(
@@ -108,8 +119,17 @@ public sealed class ToolboxViewModel : ViewModelBase
         string query,
         IReadOnlyList<SchemeListItem> schemes,
         IReadOnlyList<ResourceToolboxItem> resources,
-        IReadOnlyList<MachineToolboxItem> machines)
+        IReadOnlyList<MachineToolboxItem> machines,
+        PlannerCatalog catalog,
+        SchemeDocument scheme)
     {
+        resources = resources
+            .Where(item => PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, item.Recipe.BuildingId))
+            .ToList();
+        machines = machines
+            .Where(item => PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, item.Building.BuildingId))
+            .ToList();
+
         if (string.IsNullOrWhiteSpace(query))
         {
             return new ToolboxFilterResult(schemes, resources, machines);

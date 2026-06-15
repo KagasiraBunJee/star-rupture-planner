@@ -11,7 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from .config import Settings, settings
-from .models import BuildingRecord, RecipeInput, RecipeRecord, RecipeRequirement
+from .models import BuildingRecord, CorporationRecord, RecipeInput, RecipeRecord, RecipeRequirement
 from .utils import (
     PLACEHOLDER_RESOURCE_IDS,
     RELEVANT_BUILDING_CATEGORIES,
@@ -29,6 +29,7 @@ class ScrapeResult:
     items: dict[str, dict[str, Any]]
     buildings: dict[str, dict[str, Any]]
     recipes: list[RecipeRecord]
+    corporations: list[CorporationRecord] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -90,8 +91,20 @@ class StarRuptureScraper:
             recipes.extend(resource_recipes)
             time.sleep(0.05)
 
+        try:
+            corporations = self._fetch_corporations()
+        except Exception as exc:
+            warnings.append(f"Failed to fetch corporations: {exc}")
+            corporations = []
+
         self._ensure_recipe_side_items(items, recipes, download_images)
-        return ScrapeResult(items=items, buildings=buildings, recipes=recipes, warnings=warnings)
+        return ScrapeResult(
+            items=items,
+            buildings=buildings,
+            recipes=recipes,
+            corporations=corporations,
+            warnings=warnings,
+        )
 
     def _clean_resource_items(self, search_index: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         return {
@@ -130,6 +143,14 @@ class StarRuptureScraper:
             if recipe.get("output") and recipe.get("duration")
         ]
         return BuildingRecord(building=building, recipes=recipes)
+
+    def _fetch_corporations(self) -> list[CorporationRecord]:
+        html = self._get_text("/corporations")
+        decoded = self._decode_next_flight(html)
+        corporations = self._extract_array_after(decoded, '"corporations":')
+        root = {"corporations": corporations}
+        resolved = self._resolve_shared_refs(corporations, root)
+        return [CorporationRecord(corporation=corp) for corp in resolved]
 
     def _normalize_recipe(self, building: dict[str, Any], raw: dict[str, Any]) -> RecipeRecord:
         output_item = self._resolve_building_ref(building, raw["output"]["item"])
@@ -260,6 +281,20 @@ class StarRuptureScraper:
         start = index + len(key)
         return json.loads(self._balanced_json_object(text, start))
 
+    def _extract_array_after(self, text: str, key: str) -> list[Any]:
+        search_from = 0
+        while True:
+            index = text.find(key, search_from)
+            if index < 0:
+                raise ValueError(f"Could not find JSON array for {key}")
+            start = index + len(key)
+            while start < len(text) and text[start].isspace():
+                start += 1
+            if start < len(text) and text[start] == "[":
+                break
+            search_from = start
+        return json.loads(self._balanced_json_array(text, start))
+
     def _balanced_json_object(self, text: str, start: int) -> str:
         if text[start] != "{":
             raise ValueError("Expected JSON object")
@@ -285,6 +320,51 @@ class StarRuptureScraper:
                     if depth == 0:
                         return text[start : index + 1]
         raise ValueError("Unbalanced JSON object")
+
+    def _balanced_json_array(self, text: str, start: int) -> str:
+        if text[start] != "[":
+            raise ValueError("Expected JSON array")
+        depth = 0
+        in_string = False
+        escaped = False
+        for index in range(start, len(text)):
+            char = text[index]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+            else:
+                if char == '"':
+                    in_string = True
+                elif char == "[":
+                    depth += 1
+                elif char == "]":
+                    depth -= 1
+                    if depth == 0:
+                        return text[start : index + 1]
+        raise ValueError("Unbalanced JSON array")
+
+    def _resolve_shared_refs(self, value: Any, root: dict[str, Any]) -> Any:
+        if isinstance(value, str) and value.startswith("$") and ":props:" in value:
+            return self._resolve_shared_refs(self._follow_shared_ref(value, root), root)
+        if isinstance(value, list):
+            return [self._resolve_shared_refs(entry, root) for entry in value]
+        if isinstance(value, dict):
+            return {
+                key: self._resolve_shared_refs(entry, root)
+                for key, entry in value.items()
+            }
+        return value
+
+    def _follow_shared_ref(self, reference: str, root: dict[str, Any]) -> Any:
+        path = reference.split(":props:", 1)[1].split(":")
+        current: Any = root
+        for part in path:
+            current = current[int(part)] if part.isdigit() else current[part]
+        return current
 
     def _resolve_building_ref(self, building: dict[str, Any], value: Any) -> Any:
         if not (isinstance(value, str) and "building:" in value):

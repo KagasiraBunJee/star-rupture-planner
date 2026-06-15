@@ -39,12 +39,11 @@ public static class PlannerEdgeService
             return "Invalid input";
         }
 
-        var metrics = ComputeFlow(catalog, settings, calculator, source, target, sourceRecipe, input, edge, analysis);
-
-        // Compact, natural-language label for the connection line.
+        var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceRecipe, input, edge, analysis);
         var core = metrics.IsShort
             ? $"{metrics.Delivered:g} of {metrics.Required:g}/min ({metrics.Deficit:g} short)"
             : $"{metrics.Delivered:g}/min, meets demand";
+
         if (metrics.OverCapacity)
         {
             core = metrics.IsShort
@@ -52,10 +51,12 @@ public static class PlannerEdgeService
                 : $"{metrics.Delivered:g}/min, rail over capacity";
         }
 
-        return $"{input.Name} — {core}";
+        var tierText = metrics.RecommendedTier is null
+            ? "transport tier missing"
+            : $"{metrics.RecommendedTier.Name} {metrics.RecommendedTier.ItemsPerMinute:g}/min";
+        return $"{input.Name} - {core} - {tierText}";
     }
 
-    // Multi-line breakdown shown in the connection inspector.
     public static string EdgeDetail(
         SchemeDocument scheme,
         PlannerCatalog catalog,
@@ -79,35 +80,34 @@ public static class PlannerEdgeService
             return "Invalid input";
         }
 
-        var metrics = ComputeFlow(catalog, settings, calculator, source, target, sourceRecipe, input, edge, analysis);
-
+        var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceRecipe, input, edge, analysis);
         var throughputStatus = metrics.IsShort ? $"{metrics.Deficit:g}/min short" : "meets demand";
         var lines = new List<string>
         {
             $"Item: {input.Name}",
-            $"From: {sourceRecipe.BuildingName}  →  {targetRecipe.BuildingName}",
-            $"Throughput: {metrics.Delivered:g} / {metrics.Required:g} /min — {throughputStatus}",
+            $"From: {sourceRecipe.BuildingName} -> {targetRecipe.BuildingName}",
+            $"Throughput: {metrics.Delivered:g} / {metrics.Required:g} /min - {throughputStatus}",
         };
 
-        if (metrics.CurrentTier is not null)
+        if (metrics.RecommendedTier is not null)
         {
             var capStatus = metrics.OverCapacity ? "over capacity" : "OK";
-            lines.Add($"Transport: {metrics.CurrentTier.Name} — {metrics.CurrentTier.ItemsPerMinute:g}/min capacity ({capStatus})");
+            lines.Add($"Transport: {metrics.RecommendedTier.Name} - {metrics.RecommendedTier.ItemsPerMinute:g}/min capacity ({capStatus})");
         }
         else
         {
-            var recommended = calculator.RecommendTransportTier(catalog.TransportTiers.Tiers, metrics.Required);
-            lines.Add(recommended is null
-                ? "Transport: tiers not configured"
-                : $"Transport: no rail tier selected — recommended {recommended.Name} ({recommended.ItemsPerMinute:g}/min)");
+            var maxAvailable = PlannerUnlockService.MaxAvailableRailTier(catalog, scheme);
+            lines.Add(maxAvailable is null
+                ? "Transport: no rail tier available"
+                : $"Transport: exceeds available rails - max {maxAvailable.Name} ({maxAvailable.ItemsPerMinute:g}/min)");
         }
 
         return string.Join("\n", lines);
     }
 
     private static FlowMetrics ComputeFlow(
+        SchemeDocument scheme,
         PlannerCatalog catalog,
-        AppSettings settings,
         IPlannerCalculator calculator,
         SchemeNode source,
         SchemeNode target,
@@ -122,10 +122,11 @@ public static class PlannerEdgeService
         var required = calculator.RequiredInputPerMinute(targetRecipe, input, targetMachineCount);
         var delivered = analysis?.EdgeDeliveries.GetValueOrDefault(edge.Id)
             ?? calculator.OutputPerMinute(sourceRecipe, ProductionAnalysisService.EffectiveMachineCount(source));
-        var currentTier = CurrentRailTier(catalog, settings);
+        var availableTiers = PlannerUnlockService.AvailableRailTiers(catalog, scheme).ToList();
+        var recommendedTier = calculator.RecommendTransportTier(availableTiers, required);
         var isShort = delivered + epsilon < required;
-        var overCapacity = currentTier is not null && currentTier.ItemsPerMinute + epsilon < required;
-        return new FlowMetrics(required, delivered, Math.Max(0, required - delivered), isShort, overCapacity, currentTier);
+        var overCapacity = recommendedTier is null && availableTiers.Count > 0;
+        return new FlowMetrics(required, delivered, Math.Max(0, required - delivered), isShort, overCapacity, recommendedTier);
     }
 
     private readonly record struct FlowMetrics(
@@ -134,7 +135,7 @@ public static class PlannerEdgeService
         double Deficit,
         bool IsShort,
         bool OverCapacity,
-        TransportTierInfo? CurrentTier);
+        TransportTierInfo? RecommendedTier);
 
     public static RecipeInfo? RecipeForNode(PlannerCatalog catalog, SchemeNode? node)
     {
@@ -165,22 +166,15 @@ public static class PlannerEdgeService
         return recipes.Count > 0 ? recipes : catalog.Recipes;
     }
 
-    public static TransportTierInfo? CurrentRailTier(PlannerCatalog catalog, AppSettings settings)
-    {
-        if (string.IsNullOrWhiteSpace(settings.CurrentRailTierId))
-        {
-            return null;
-        }
-
-        return catalog.TransportTiers.Tiers.FirstOrDefault(tier => tier.Id == settings.CurrentRailTierId);
-    }
-
     public static string RecommendedTierText(
         PlannerCatalog catalog,
+        SchemeDocument scheme,
         IPlannerCalculator calculator,
         double requiredRate)
     {
-        var tier = calculator.RecommendTransportTier(catalog.TransportTiers.Tiers, requiredRate);
+        var tier = calculator.RecommendTransportTier(
+            PlannerUnlockService.AvailableRailTiers(catalog, scheme),
+            requiredRate);
         return tier is null ? "transport tier missing" : $"{tier.Name} {tier.ItemsPerMinute:g}/min";
     }
 }

@@ -39,6 +39,11 @@ class BuildingRecord:
 
 
 @dataclass
+class CorporationRecord:
+    corporation: ItemDict
+
+
+@dataclass
 class RefreshSummary:
     run_id: int | None
     status: str
@@ -48,4 +53,3 @@ class RefreshSummary:
     building_count: int = 0
     recipe_count: int = 0
     warnings: list[str] = field(default_factory=list)
-

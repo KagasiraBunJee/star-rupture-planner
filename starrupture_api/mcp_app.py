@@ -40,4 +40,17 @@ def create_mcp_app(service: ResourceService):
         """Return dataset counts and latest refresh status."""
         return service.get_meta()
 
+    @mcp.tool()
+    def list_corporations():
+        """Return StarRupture corporation levels and unlock rewards."""
+        return service.get_corporations()
+
+    @mcp.tool()
+    def get_corporation_detail(corporation_id: str):
+        """Return one StarRupture corporation with all level rewards."""
+        try:
+            return service.get_corporation_detail(corporation_id)
+        except DataNotFoundError:
+            return {"error": "corporation_not_found", "corporation_id": corporation_id}
+
     return mcp.sse_app(mount_path="")

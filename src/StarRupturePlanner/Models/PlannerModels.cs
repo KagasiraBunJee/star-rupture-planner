@@ -12,6 +12,12 @@ public sealed class PlannerCatalog
 
     [JsonPropertyName("transport_tiers")]
     public TransportTierPayload TransportTiers { get; set; } = new();
+
+    [JsonPropertyName("corporations")]
+    public List<CorporationInfo> Corporations { get; set; } = [];
+
+    [JsonPropertyName("building_unlocks")]
+    public Dictionary<string, List<BuildingUnlockInfo>> BuildingUnlocks { get; set; } = [];
 }
 
 public sealed class BuildingInfo
@@ -136,6 +142,102 @@ public sealed class TransportTierInfo
 
     [JsonPropertyName("items_per_minute")]
     public double ItemsPerMinute { get; set; }
+
+    [JsonPropertyName("unlock_requirements")]
+    public List<CorporationUnlockRequirementInfo> UnlockRequirements { get; set; } = [];
+
+    [JsonPropertyName("unlock_building_ids")]
+    public List<string> UnlockBuildingIds { get; set; } = [];
+}
+
+public sealed class CorporationInfo
+{
+    [JsonPropertyName("corporation_id")]
+    public string CorporationId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("icon_url")]
+    public string? IconUrl { get; set; }
+
+    [JsonPropertyName("colour")]
+    public string? Colour { get; set; }
+
+    [JsonPropertyName("max_level")]
+    public int MaxLevel { get; set; }
+
+    [JsonPropertyName("levels")]
+    public List<CorporationLevelInfo> Levels { get; set; } = [];
+}
+
+public sealed class CorporationLevelInfo
+{
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
+
+    [JsonPropertyName("reputation")]
+    public int? Reputation { get; set; }
+
+    [JsonPropertyName("building_rewards")]
+    public List<CorporationBuildingRewardInfo> BuildingRewards { get; set; } = [];
+
+    [JsonPropertyName("item_rewards")]
+    public List<CorporationItemRewardInfo> ItemRewards { get; set; } = [];
+}
+
+public sealed class CorporationBuildingRewardInfo
+{
+    [JsonPropertyName("building_id")]
+    public string BuildingId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("category")]
+    public string? Category { get; set; }
+
+    [JsonPropertyName("icon_url")]
+    public string? IconUrl { get; set; }
+}
+
+public sealed class CorporationItemRewardInfo
+{
+    [JsonPropertyName("item_id")]
+    public string ItemId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("category")]
+    public string? Category { get; set; }
+
+    [JsonPropertyName("icon_url")]
+    public string? IconUrl { get; set; }
+}
+
+public sealed class BuildingUnlockInfo
+{
+    [JsonPropertyName("corporation_id")]
+    public string CorporationId { get; set; } = "";
+
+    [JsonPropertyName("corporation_name")]
+    public string CorporationName { get; set; } = "";
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
+}
+
+public sealed class CorporationUnlockRequirementInfo
+{
+    [JsonPropertyName("corporation_id")]
+    public string CorporationId { get; set; } = "";
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
 }
 
 public sealed class SuggestionResponse

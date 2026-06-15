@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private static readonly Color OutputPortColor = Color.FromRgb(24, 160, 255);
     private static readonly Color SignalGreenColor = Color.FromRgb(99, 214, 77);
     private static readonly Color ShortageColor = Color.FromRgb(255, 72, 72);
+    private static readonly Color LockedPortColor = Color.FromRgb(255, 72, 72);
     private static readonly Color PanelGlassColor = Color.FromRgb(16, 24, 32);
     private static readonly Color GraphiteLineColor = Color.FromRgb(38, 52, 61);
 
@@ -41,6 +42,7 @@ public partial class MainWindow : Window
     private SchemeDocument _scheme = new();
     private AppSettings _settings = new();
     private ProductionAnalysisResult _productionAnalysis = ProductionAnalysisResult.Empty;
+    private string _lastToolboxUnlockSignature = "";
     private IReadOnlyList<RecipeInfo> _inspectorRecipes = [];
     private string _activeInspectorTab = "Details";
     private SchemeNode? _selectedNode;
@@ -142,6 +144,7 @@ public partial class MainWindow : Window
         await _viewModel.InitializeAsync();
         SyncFromViewModel();
         RenderCanvas();
+        UpdateInspector();
     }
 
     private async Task RefreshSchemeListAsync()
@@ -234,7 +237,7 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        var window = new SettingsWindow(_settings, _catalog.TransportTiers.Tiers)
+        var window = new SettingsWindow(_settings)
         {
             Owner = this,
         };
@@ -577,6 +580,11 @@ public partial class MainWindow : Window
             Tag = node,
         };
         ApplyNodeSelectionVisual(root, _selectedNodeIds.Contains(node.Id));
+        if (IsNodeLocked(node) && !_selectedNodeIds.Contains(node.Id))
+        {
+            root.BorderBrush = new SolidColorBrush(ShortageColor);
+            root.BorderThickness = new Thickness(2);
+        }
 
         root.MouseLeftButtonDown += Node_MouseLeftButtonDown;
         root.MouseMove += Node_MouseMove;
@@ -663,8 +671,10 @@ public partial class MainWindow : Window
             });
             status.Children.Add(new TextBlock
             {
-                Text = $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
-                Foreground = CardTextBrush(0.75),
+                Text = IsNodeLocked(node)
+                    ? "Locked by corporations"
+                    : $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
+                Foreground = IsNodeLocked(node) ? new SolidColorBrush(ShortageColor) : CardTextBrush(0.75),
                 FontSize = CardFontSize(-1),
                 FontFamily = CardFontFamily(),
             });
@@ -970,13 +980,47 @@ public partial class MainWindow : Window
             : _calculator.RequiredInputPerMinute(recipe, port, machineCount);
     }
 
+    private bool IsPortAvailableForConnection(SchemeNode node, RecipePortInfo port, string direction)
+    {
+        if (IsNodeLocked(node))
+        {
+            return false;
+        }
+
+        return direction == "input"
+            ? _catalog.Recipes.Any(recipe =>
+                recipe.Output.ItemId == port.ItemId
+                && PlannerUnlockService.IsBuildingUnlocked(_catalog, _scheme, recipe.BuildingId))
+            : _catalog.Recipes.Any(recipe =>
+                recipe.Inputs.Any(input => input.ItemId == port.ItemId)
+                && PlannerUnlockService.IsBuildingUnlocked(_catalog, _scheme, recipe.BuildingId));
+    }
+
+    private bool IsPortReferenceAvailable(PortReference reference)
+    {
+        var node = _scheme.Nodes.FirstOrDefault(item => item.Id == reference.NodeId);
+        var recipe = RecipeForNode(node);
+        if (node is null || recipe is null)
+        {
+            return false;
+        }
+
+        var port = reference.Direction == "input"
+            ? recipe.Inputs.FirstOrDefault(input => input.ItemId == reference.ItemId)
+            : recipe.Output.ItemId == reference.ItemId ? recipe.Output : null;
+        return port is not null && IsPortAvailableForConnection(node, port, reference.Direction);
+    }
+
     private FrameworkElement CreatePortVisual(SchemeNode node, RecipePortInfo port, string direction)
     {
         var rate = PortRate(node, port, direction);
+        var available = IsPortAvailableForConnection(node, port, direction);
         var row = new Grid
         {
             Margin = new Thickness(0, 4, 0, 4),
-            ToolTip = $"{port.Name} {rate:g}/min",
+            ToolTip = available
+                ? $"{port.Name} {rate:g}/min"
+                : $"{port.Name} is not available for connection with current corporation levels.",
         };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -986,20 +1030,26 @@ public partial class MainWindow : Window
         {
             Width = 15,
             Height = 15,
-            Fill = PortBrush(direction),
+            Fill = available ? PortBrush(direction) : new SolidColorBrush(LockedPortColor),
             Stroke = new SolidColorBrush(Color.FromRgb(5, 12, 17)),
             StrokeThickness = 2,
             VerticalAlignment = VerticalAlignment.Center,
+            Cursor = available ? Cursors.Hand : Cursors.No,
             Tag = new PortReference(node.Id, direction, port.ItemId),
             Effect = new System.Windows.Media.Effects.DropShadowEffect
             {
-                Color = direction == "input" ? InputPortColor : OutputPortColor,
+                Color = available
+                    ? direction == "input" ? InputPortColor : OutputPortColor
+                    : LockedPortColor,
                 BlurRadius = 10,
                 ShadowDepth = 0,
-                Opacity = 0.65,
+                Opacity = available ? 0.65 : 0.75,
             },
         };
-        dot.PreviewMouseLeftButtonDown += Port_MouseLeftButtonDown;
+        if (available)
+        {
+            dot.PreviewMouseLeftButtonDown += Port_MouseLeftButtonDown;
+        }
 
         var info = new StackPanel
         {
@@ -1022,7 +1072,7 @@ public partial class MainWindow : Window
         var label = new TextBlock
         {
             Text = $"{port.Name} {rate:g}/min",
-            Foreground = CardTextBrush(),
+            Foreground = available ? CardTextBrush() : new SolidColorBrush(LockedPortColor),
             VerticalAlignment = VerticalAlignment.Center,
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-1),
@@ -1162,6 +1212,24 @@ public partial class MainWindow : Window
 
         _productionAnalysis = ProductionAnalysisService.Analyze(_scheme, _catalog, _calculator);
         UpdateProductionAlerts();
+        RefreshToolboxUnlocksIfNeeded();
+    }
+
+    private void RefreshToolboxUnlocksIfNeeded()
+    {
+        var signature = string.Join(
+            "|",
+            _scheme.CorporationLevels
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .Select(entry => $"{entry.Key}:{entry.Value}"));
+        signature = $"{_catalog.Corporations.Count}:{signature}";
+        if (string.Equals(signature, _lastToolboxUnlockSignature, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _lastToolboxUnlockSignature = signature;
+        _ = _viewModel.Toolbox.SetSchemeAsync(_scheme);
     }
 
     private void UpdateProductionAlerts()
@@ -1179,7 +1247,8 @@ public partial class MainWindow : Window
         }
 
         AlertsChips.Children.Clear();
-        if (_productionAnalysis.Alerts.Count == 0)
+        var lockedAlerts = PlannerUnlockService.LockedNodeAlerts(_catalog, _scheme);
+        if (_productionAnalysis.Alerts.Count == 0 && lockedAlerts.Count == 0)
         {
             AlertsChips.Children.Add(BuildAlertChip("No production shortages", SignalGreenColor, "✓"));
             return;
@@ -1189,6 +1258,11 @@ public partial class MainWindow : Window
         foreach (var alert in _productionAnalysis.Alerts)
         {
             AlertsChips.Children.Add(BuildAlertChip(alert.Message, ShortageColor, "⚠"));
+        }
+
+        foreach (var alert in lockedAlerts)
+        {
+            AlertsChips.Children.Add(BuildAlertChip(alert, ShortageColor, "вљ "));
         }
 
         AlertsScroller?.ScrollToHorizontalOffset(0);
@@ -1261,9 +1335,10 @@ public partial class MainWindow : Window
         return EdgeStrokeBrush();
     }
 
-    private TransportTierInfo? CurrentRailTier()
+    private bool IsNodeLocked(SchemeNode node)
     {
-        return PlannerEdgeService.CurrentRailTier(_catalog, _settings);
+        return !string.IsNullOrWhiteSpace(node.BuildingId)
+            && !PlannerUnlockService.IsBuildingUnlocked(_catalog, _scheme, node.BuildingId);
     }
 
     private bool IsEdgeValid(SchemeEdge edge)
@@ -1990,6 +2065,13 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!IsPortReferenceAvailable(port))
+        {
+            SetStatus("This resource is not available for connection with current corporation levels.");
+            e.Handled = true;
+            return;
+        }
+
         var start = GetPortPoint(port.NodeId, port.Direction, port.ItemId) ?? e.GetPosition(PlannerCanvas);
         var path = new Path
         {
@@ -2209,6 +2291,12 @@ public partial class MainWindow : Window
 
         var source = first.Direction == "output" ? first : second;
         var target = first.Direction == "input" ? first : second;
+        if (!IsPortReferenceAvailable(source) || !IsPortReferenceAvailable(target))
+        {
+            SetStatus("This resource is not available for connection with current corporation levels.");
+            return false;
+        }
+
         var sourceRecipe = RecipeForNode(_scheme.Nodes.FirstOrDefault(node => node.Id == source.NodeId));
         var targetRecipe = RecipeForNode(_scheme.Nodes.FirstOrDefault(node => node.Id == target.NodeId));
         if (!_calculator.CanConnectOutputToInput(sourceRecipe, targetRecipe, source.ItemId))
@@ -2249,6 +2337,9 @@ public partial class MainWindow : Window
             var response = await _apiClient.GetSuggestionsAsync(sourcePort.Direction, sourcePort.ItemId, token);
             token.ThrowIfCancellationRequested();
             NormalizeSuggestionAssets(response.Suggestions);
+            response.Suggestions = response.Suggestions
+                .Where(recipe => PlannerUnlockService.IsBuildingUnlocked(_catalog, _scheme, recipe.BuildingId))
+                .ToList();
             SuggestionList.ItemsSource = response.Suggestions;
             SuggestionList.Tag = sourcePort;
             SuggestionPopup.IsOpen = response.Suggestions.Count > 0;
@@ -2536,10 +2627,13 @@ public partial class MainWindow : Window
         {
             NodeInspectorPanel.Visibility = Visibility.Collapsed;
             ConnectionInspectorPanel.Visibility = Visibility.Collapsed;
+            SchemeSettingsPanel.Visibility = Visibility.Collapsed;
             InspectorRecipeList.ItemsSource = null;
             InspectorInputs.ItemsSource = null;
             InspectorUnlocks.ItemsSource = null;
             InspectorMetricsStack.Children.Clear();
+            CorporationSettingsStack.Children.Clear();
+            RailTierSettingsStack.Children.Clear();
             ConnectionReadOnly.Text = "";
             InspectorStatusPanel.Visibility = Visibility.Collapsed;
             PriorityBox.SelectedItem = null;
@@ -2607,12 +2701,185 @@ public partial class MainWindow : Window
                 InspectorTitle.Text = "Connection";
                 ConnectionInspectorPanel.Visibility = Visibility.Visible;
                 ConnectionReadOnly.Text = EdgeDetail(_selectedEdge);
+                return;
+            }
+
+            if (HasNoCanvasSelection())
+            {
+                InspectorTitle.Text = "Scheme";
+                InspectorStatusPanel.Visibility = Visibility.Collapsed;
+                SchemeSettingsPanel.Visibility = Visibility.Visible;
+                BuildSchemeSettingsInspector();
             }
         }
         finally
         {
             _updatingInspector = false;
         }
+    }
+
+    private bool HasNoCanvasSelection()
+    {
+        return _selectedNode is null
+            && _selectedEdge is null
+            && _selectedComment is null
+            && _selectedRoutePoint is null
+            && _selectedNodeIds.Count == 0
+            && _selectedCommentIds.Count == 0
+            && _selectedRoutePoints.Count == 0;
+    }
+
+    private void BuildSchemeSettingsInspector()
+    {
+        PlannerUnlockService.EnsureSchemeDefaults(_scheme, _catalog);
+        BuildCorporationSettings();
+        BuildRailTierSettings();
+    }
+
+    private void BuildCorporationSettings()
+    {
+        CorporationSettingsStack.Children.Clear();
+        if (_catalog.Corporations.Count == 0)
+        {
+            CorporationSettingsStack.Children.Add(new TextBlock
+            {
+                Text = "Corporation data is not available yet.",
+                Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
+                TextWrapping = TextWrapping.Wrap,
+            });
+            return;
+        }
+
+        foreach (var corporation in _catalog.Corporations.OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(86) });
+
+            var textPanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textPanel.Children.Add(new TextBlock
+            {
+                Text = corporation.Name,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+            textPanel.Children.Add(new TextBlock
+            {
+                Text = $"Max level {Math.Max(0, corporation.MaxLevel)}",
+                Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
+                FontSize = 11,
+                Margin = new Thickness(0, 2, 0, 0),
+            });
+            row.Children.Add(textPanel);
+
+            var maxLevel = Math.Max(0, corporation.MaxLevel);
+            var currentLevel = _scheme.CorporationLevels.TryGetValue(corporation.CorporationId, out var value)
+                ? Math.Clamp(value, 0, maxLevel)
+                : 0;
+            var picker = new ComboBox
+            {
+                ItemsSource = Enumerable.Range(0, maxLevel + 1).ToList(),
+                SelectedItem = currentLevel,
+                Tag = corporation.CorporationId,
+                MinWidth = 72,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+            };
+            picker.SelectionChanged += CorporationLevelPicker_SelectionChanged;
+            Grid.SetColumn(picker, 1);
+            row.Children.Add(picker);
+
+            CorporationSettingsStack.Children.Add(row);
+        }
+    }
+
+    private void BuildRailTierSettings()
+    {
+        RailTierSettingsStack.Children.Clear();
+        if (_catalog.TransportTiers.Tiers.Count == 0)
+        {
+            RailTierSettingsStack.Children.Add(new TextBlock
+            {
+                Text = "No rail tiers are configured.",
+                Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
+                TextWrapping = TextWrapping.Wrap,
+            });
+            return;
+        }
+
+        var maxAvailable = PlannerUnlockService.MaxAvailableRailTier(_catalog, _scheme);
+        RailTierSettingsStack.Children.Add(new TextBlock
+        {
+            Text = maxAvailable is null
+                ? "No rail tiers are currently unlocked."
+                : $"Max available: {maxAvailable.Name} ({maxAvailable.ItemsPerMinute:g}/min)",
+            Foreground = maxAvailable is null
+                ? new SolidColorBrush(ShortageColor)
+                : (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 8),
+        });
+
+        foreach (var tier in _catalog.TransportTiers.Tiers.OrderBy(item => item.Level))
+        {
+            var unlocked = PlannerUnlockService.IsRailTierUnlocked(tier, _scheme);
+            var border = new Border
+            {
+                Margin = new Thickness(0, 0, 0, 7),
+                Padding = new Thickness(10, 7, 10, 7),
+                CornerRadius = new CornerRadius(8),
+                ToolTip = unlocked ? "Available for any connection that needs this capacity." : PlannerUnlockService.RailUnlockText(_catalog, tier),
+                Background = unlocked
+                    ? (Brush)Application.Current.FindResource("StarBlueBrush")
+                    : (Brush)Application.Current.FindResource("MutedPanelBrush"),
+                BorderBrush = unlocked
+                    ? (Brush)Application.Current.FindResource("StarBlueBrush")
+                    : (Brush)Application.Current.FindResource("MutedBorderBrush"),
+                BorderThickness = new Thickness(1),
+            };
+            border.Child = new TextBlock
+            {
+                Text = unlocked
+                    ? $"{tier.Name}  {tier.ItemsPerMinute:g}/min  available"
+                    : $"{tier.Name}  {tier.ItemsPerMinute:g}/min  locked",
+                Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+                TextWrapping = TextWrapping.Wrap,
+            };
+            RailTierSettingsStack.Children.Add(border);
+
+            if (unlocked)
+            {
+                continue;
+            }
+
+            RailTierSettingsStack.Children.Add(new TextBlock
+            {
+                Text = $"Requires: {PlannerUnlockService.RailUnlockText(_catalog, tier)}",
+                Foreground = new SolidColorBrush(ShortageColor),
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(2, -4, 0, 8),
+            });
+        }
+    }
+
+    private void CorporationLevelPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingInspector
+            || sender is not ComboBox picker
+            || picker.Tag is not string corporationId
+            || picker.SelectedItem is not int level)
+        {
+            return;
+        }
+
+        _scheme.CorporationLevels[corporationId] = level;
+        PlannerUnlockService.EnsureSchemeDefaults(_scheme, _catalog);
+        MigrateAndAnalyzeScheme();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus("Corporation levels updated.");
     }
 
     private void InspectorTab_Click(object sender, MouseButtonEventArgs e)

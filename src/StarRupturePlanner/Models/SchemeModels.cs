@@ -5,7 +5,7 @@ namespace StarRupturePlanner.Models;
 public sealed class SchemeDocument
 {
     [JsonPropertyName("version")]
-    public int Version { get; set; } = 2;
+    public int Version { get; set; } = 3;
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "Untitled";
@@ -21,6 +21,13 @@ public sealed class SchemeDocument
 
     [JsonPropertyName("comments")]
     public List<SchemeComment> Comments { get; set; } = [];
+
+    [JsonPropertyName("corporation_levels")]
+    public Dictionary<string, int> CorporationLevels { get; set; } = [];
+
+    [JsonPropertyName("selected_rail_tier_id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SelectedRailTierId { get; set; }
 
     [JsonIgnore]
     public string? FilePath { get; set; }

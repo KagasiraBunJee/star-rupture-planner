@@ -8,13 +8,10 @@ namespace StarRupturePlanner;
 
 public partial class SettingsWindow : Window
 {
-    private readonly IReadOnlyList<TransportTierInfo> _railTiers;
-
-    public SettingsWindow(AppSettings settings, IReadOnlyList<TransportTierInfo> railTiers)
+    public SettingsWindow(AppSettings settings)
     {
         InitializeComponent();
         Settings = Clone(settings);
-        _railTiers = railTiers;
         PopulateControls();
     }
 
@@ -44,11 +41,6 @@ public partial class SettingsWindow : Window
         };
         ThemePicker.SelectedValue = Settings.Theme;
 
-        RailTierPicker.ItemsSource = _railTiers;
-        RailTierPicker.SelectedValue = Settings.CurrentRailTierId;
-        RailTierHelpText.Text = _railTiers.Count == 0
-            ? "No rail tiers are configured yet. Add tiers to data/transport_tiers.json."
-            : "Connection labels will compare required throughput with this selected in-game rail tier.";
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -62,7 +54,6 @@ public partial class SettingsWindow : Window
         Settings.CanvasCardFont = canvasFont;
         Settings.LeftBarListFont = leftFont;
         Settings.Theme = ThemePicker.SelectedValue is AppTheme theme ? theme : AppTheme.System;
-        Settings.CurrentRailTierId = RailTierPicker.SelectedValue as string;
         DialogResult = true;
     }
 
