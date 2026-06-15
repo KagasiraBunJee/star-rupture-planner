@@ -17,6 +17,8 @@
     <SolidColorBrush x:Key="ControlBrush" Color="#121C24"/>
     <SolidColorBrush x:Key="ControlHoverBrush" Color="#172633"/>
     <SolidColorBrush x:Key="GraphiteLineBrush" Color="#26343D"/>
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#2E3B45"/>
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#3C4A55"/>
 
     <!-- Accents -->
     <SolidColorBrush x:Key="StarBlueBrush" Color="#0A84FF"/>
