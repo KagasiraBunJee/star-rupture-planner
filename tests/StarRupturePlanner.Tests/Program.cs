@@ -15,6 +15,8 @@ var tests = new (string Name, Action Body)[]
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
     ("Scheme serialization round trips", SchemeSerializationRoundTrips),
+    ("Scheme store deletes saved schemes", SchemeStoreDeletesSavedSchemes),
+    ("Scheme store rejects delete outside folder", SchemeStoreRejectsDeleteOutsideFolder),
     ("Machine node can persist without selected recipe", MachineNodeCanPersistWithoutRecipe),
     ("Connection route points persist", ConnectionRoutePointsPersist),
     ("Comment rectangles persist", CommentRectanglesPersist),
@@ -329,6 +331,36 @@ static void SchemeSerializationRoundTrips()
     var loaded = store.Load(path);
     AssertEqual("Test Scheme", loaded.Name);
     AssertEqual("node-a", loaded.Nodes[0].Id);
+    Directory.Delete(temp, recursive: true);
+}
+
+static void SchemeStoreDeletesSavedSchemes()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    ISchemeStore store = new SchemeStore(temp);
+    var path = store.Save(new SchemeDocument { Name = "Delete Me" });
+
+    AssertTrue(File.Exists(path));
+    AssertTrue(store.ListSchemes().Any(item => item.FilePath == path));
+
+    store.Delete(path);
+
+    AssertFalse(File.Exists(path));
+    AssertFalse(store.ListSchemes().Any(item => item.FilePath == path));
+    Directory.Delete(temp, recursive: true);
+}
+
+static void SchemeStoreRejectsDeleteOutsideFolder()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    var schemeFolder = Path.Combine(temp, "schemes");
+    var outsidePath = Path.Combine(temp, "outside.json");
+    Directory.CreateDirectory(temp);
+    File.WriteAllText(outsidePath, "{}");
+    ISchemeStore store = new SchemeStore(schemeFolder);
+
+    AssertThrows<InvalidOperationException>(() => store.Delete(outsidePath));
+    AssertTrue(File.Exists(outsidePath));
     Directory.Delete(temp, recursive: true);
 }
 
@@ -902,4 +934,23 @@ static void AssertEqual<T>(T expected, T actual)
     {
         throw new InvalidOperationException($"Expected {expected}, got {actual}.");
     }
+}
+
+static void AssertThrows<TException>(Action action)
+    where TException : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Expected {typeof(TException).Name}, got {ex.GetType().Name}.");
+    }
+
+    throw new InvalidOperationException($"Expected {typeof(TException).Name}.");
 }

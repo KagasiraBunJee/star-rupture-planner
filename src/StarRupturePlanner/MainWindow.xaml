@@ -144,8 +144,9 @@
                                      Background="{DynamicResource CanvasBrush}"
                                      ItemsSource="{Binding Toolbox.Schemes}"
                                      ItemTemplate="{StaticResource SchemeItemTemplate}"
+                                     PreviewMouseLeftButtonDown="SchemesList_PreviewMouseLeftButtonDown"
                                      SelectionChanged="SchemesList_SelectionChanged"
-                                     ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                         </TabItem>
                         <TabItem Header="Resources">
                             <ListBox x:Name="ResourcesList"

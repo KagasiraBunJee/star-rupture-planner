@@ -25,6 +25,7 @@ public interface ISchemeStore
     IReadOnlyList<SchemeListItem> ListSchemes();
     SchemeDocument Load(string filePath);
     string Save(SchemeDocument document);
+    void Delete(string filePath);
 }
 
 public interface IAppSettingsStore

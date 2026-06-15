@@ -148,6 +148,22 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         SetStatus($"Saved {System.IO.Path.GetFileName(path)}.");
     }
 
+    public async Task<bool> DeleteSchemeAsync(SchemeListItem item, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _backgroundTaskRunner.RunAsync(() => _schemeStore.Delete(item.FilePath), cancellationToken);
+            await RefreshSchemeListAsync(cancellationToken);
+            SetStatus($"Deleted {item.Name}.");
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            SetStatus($"Could not delete scheme: {ex.Message}");
+            return false;
+        }
+    }
+
     private static string FormatLastSaved(string? path)
     {
         DateTime when;
