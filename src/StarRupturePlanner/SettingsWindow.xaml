@@ -7,22 +7,19 @@
         MinWidth="500"
         MinHeight="390"
         WindowStartupLocation="CenterOwner"
-        Background="#1E2225">
+        FontFamily="{DynamicResource AppFontFamily}"
+        Background="{DynamicResource AppBackgroundBrush}">
     <Window.Resources>
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#F4F0E8"/>
-        </Style>
-        <Style TargetType="Label">
-            <Setter Property="Foreground" Value="#D9D2C7"/>
+        <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="Padding" Value="0,8,0,3"/>
         </Style>
-        <Style TargetType="TextBox">
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="MinHeight" Value="28"/>
         </Style>
-        <Style TargetType="ComboBox">
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="MinHeight" Value="28"/>
         </Style>
-        <Style TargetType="Button">
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="MinWidth" Value="86"/>
             <Setter Property="MinHeight" Value="30"/>
             <Setter Property="Margin" Value="6,0,0,0"/>
@@ -91,7 +88,7 @@
                 <StackPanel Margin="12">
                     <TextBlock Text="Current rail tier" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
                     <ComboBox x:Name="RailTierPicker" DisplayMemberPath="Name" SelectedValuePath="Id"/>
-                    <TextBlock x:Name="RailTierHelpText" TextWrapping="Wrap" Foreground="#AEB8BD" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="RailTierHelpText" TextWrapping="Wrap" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,10,0,0"/>
                 </StackPanel>
             </TabItem>
         </TabControl>

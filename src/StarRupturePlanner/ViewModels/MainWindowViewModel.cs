@@ -16,6 +16,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private AppSettings _settings = new();
     private string _status = "";
     private string _schemeFolderPath = "";
+    private string _lastSavedText = "Not saved yet";
     private CancellationTokenSource? _startupCancellation;
     private CancellationTokenSource? _schemeListCancellation;
 
@@ -71,6 +72,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _schemeFolderPath, value);
     }
 
+    public string LastSavedText
+    {
+        get => _lastSavedText;
+        private set => SetProperty(ref _lastSavedText, value);
+    }
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         _startupCancellation?.Cancel();
@@ -110,6 +117,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public void NewScheme()
     {
         Scheme = new SchemeDocument { Name = "Untitled" };
+        LastSavedText = "Not saved yet";
         SetStatus("New empty scheme.");
     }
 
@@ -118,7 +126,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         try
         {
             var loaded = await _backgroundTaskRunner.RunAsync(() => _schemeStore.Load(item.FilePath), cancellationToken);
-            await _uiDispatcher.InvokeAsync(() => Scheme = loaded, cancellationToken);
+            await _uiDispatcher.InvokeAsync(() =>
+            {
+                Scheme = loaded;
+                LastSavedText = FormatLastSaved(item.FilePath);
+            }, cancellationToken);
             SetStatus($"Opened {item.Name}.");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -131,8 +143,29 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     {
         var scheme = Scheme;
         var path = await _backgroundTaskRunner.RunAsync(() => _schemeStore.Save(scheme), cancellationToken);
+        LastSavedText = FormatLastSaved(path);
         await RefreshSchemeListAsync(cancellationToken);
         SetStatus($"Saved {System.IO.Path.GetFileName(path)}.");
+    }
+
+    private static string FormatLastSaved(string? path)
+    {
+        DateTime when;
+        try
+        {
+            when = !string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path)
+                ? System.IO.File.GetLastWriteTime(path)
+                : DateTime.Now;
+        }
+        catch
+        {
+            when = DateTime.Now;
+        }
+
+        var day = when.Date == DateTime.Today
+            ? "Today"
+            : when.Date == DateTime.Today.AddDays(-1) ? "Yesterday" : when.ToString("MMM d");
+        return $"Last saved: {day}, {when:t}";
     }
 
     public void SetSchemeFolder(string folderPath)

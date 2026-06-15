@@ -1,0 +1,31 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#070B0F"/>
+    <SolidColorBrush x:Key="PanelBrush" Color="#101820"/>
+    <SolidColorBrush x:Key="PanelBrushSoft" Color="#0D141B"/>
+    <SolidColorBrush x:Key="CenterBackgroundBrush" Color="#070B0F"/>
+    <SolidColorBrush x:Key="CanvasBrush" Color="#071016"/>
+    <SolidColorBrush x:Key="CanvasDotBrush" Color="#123044"/>
+    <SolidColorBrush x:Key="CanvasMajorDotBrush" Color="#1B4E70"/>
+
+    <!-- Inner cards -->
+    <SolidColorBrush x:Key="MutedPanelBrush" Color="#0B141B"/>
+    <SolidColorBrush x:Key="MutedBorderBrush" Color="#1D2A34"/>
+
+    <!-- Controls -->
+    <SolidColorBrush x:Key="ControlBrush" Color="#121C24"/>
+    <SolidColorBrush x:Key="ControlHoverBrush" Color="#172633"/>
+    <SolidColorBrush x:Key="GraphiteLineBrush" Color="#26343D"/>
+
+    <!-- Accents -->
+    <SolidColorBrush x:Key="StarBlueBrush" Color="#0A84FF"/>
+    <SolidColorBrush x:Key="ReactorOrangeBrush" Color="#FF8A00"/>
+    <SolidColorBrush x:Key="SignalGreenBrush" Color="#63D64D"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="ThemeForegroundBrush" Color="#F3F7FA"/>
+    <SolidColorBrush x:Key="ThemeSecondaryForegroundBrush" Color="#9CAAB5"/>
+    <SolidColorBrush x:Key="LeftListForegroundBrush" Color="#F3F7FA"/>
+    <SolidColorBrush x:Key="StatusForegroundBrush" Color="#AEB8BD"/>
+</ResourceDictionary>
