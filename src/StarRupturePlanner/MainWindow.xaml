@@ -1,0 +1,600 @@
+<Window x:Class="StarRupturePlanner.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:StarRupturePlanner.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="StarRupture Production Planner"
+        Height="900"
+        Width="1500"
+        MinHeight="760"
+        MinWidth="1180"
+        Background="{DynamicResource AppBackgroundBrush}"
+        FontFamily="{DynamicResource AppFontFamily}"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <FontFamily x:Key="AppFontFamily">Segoe UI Variable, Segoe UI</FontFamily>
+        <FontFamily x:Key="LeftListFontFamily">Segoe UI Variable, Segoe UI</FontFamily>
+        <sys:Double x:Key="LeftListFontSize">12</sys:Double>
+
+        <SolidColorBrush x:Key="AppBackgroundBrush" Color="#070B0F"/>
+        <SolidColorBrush x:Key="PanelBrush" Color="#101820"/>
+        <SolidColorBrush x:Key="PanelBrushSoft" Color="#0D141B"/>
+        <SolidColorBrush x:Key="CanvasBrush" Color="#071016"/>
+        <SolidColorBrush x:Key="ControlBrush" Color="#121C24"/>
+        <SolidColorBrush x:Key="ControlHoverBrush" Color="#172633"/>
+        <SolidColorBrush x:Key="GraphiteLineBrush" Color="#26343D"/>
+        <SolidColorBrush x:Key="StarBlueBrush" Color="#0A84FF"/>
+        <SolidColorBrush x:Key="ReactorOrangeBrush" Color="#FF8A00"/>
+        <SolidColorBrush x:Key="SignalGreenBrush" Color="#63D64D"/>
+        <SolidColorBrush x:Key="ThemeForegroundBrush" Color="#F3F7FA"/>
+        <SolidColorBrush x:Key="ThemeSecondaryForegroundBrush" Color="#9CAAB5"/>
+        <SolidColorBrush x:Key="LeftListForegroundBrush" Color="#F3F7FA"/>
+
+        <Style x:Key="PanelTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+        </Style>
+
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+            <Setter Property="Padding" Value="0,10,0,4"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="13,5"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GraphiteLineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource StarBlueBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GraphiteLineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GraphiteLineBrush}"/>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{DynamicResource PanelBrushSoft}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GraphiteLineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemChrome"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="Transparent"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="Transparent"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SuggestionListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="6,0,6,4"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemChrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="#172633"/>
+                                <Setter TargetName="ItemChrome" Property="BorderBrush" Value="#2B5167"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="#10253A"/>
+                                <Setter TargetName="ItemChrome" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ItemChrome" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="SuggestionRecipeTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="44"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="34"
+                        Height="34"
+                        Background="#121E28"
+                        BorderBrush="#263A48"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                    <Image Width="28"
+                           Height="28"
+                           Source="{Binding BuildingImageUrl}"
+                           Stretch="Uniform"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding BuildingName}"
+                               Foreground="{DynamicResource ThemeForegroundBrush}"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
+                               FontSize="11"
+                               TextTrimming="CharacterEllipsis">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}  {1:g}/min">
+                                <Binding Path="Output.Name"/>
+                                <Binding Path="Output.QuantityPerMinute"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="{DynamicResource PanelBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GraphiteLineBrush}"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <DataTemplate x:Key="SchemeItemTemplate">
+            <Border x:Name="Card" Padding="10,8" Margin="0,0,4,4" Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="6" HorizontalAlignment="Stretch">
+                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource LeftListForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" FontWeight="SemiBold"/>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Card" Property="Background" Value="#0F1F2A"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="#2B5167"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Card" Property="Background" Value="#10253A"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
+                    <Setter TargetName="Card" Property="BorderThickness" Value="1.5"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ResourceItemTemplate">
+            <Border x:Name="Card" Padding="9" Margin="0,0,4,6" Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="7" HorizontalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="42"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="34" Height="34" Background="#121E28" BorderBrush="#263A48" BorderThickness="1" CornerRadius="6">
+                        <Image Width="28" Height="28" Source="{Binding ResourceImageUrl}" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="9,0,0,0">
+                        <TextBlock Text="{Binding ResourceName}" Foreground="{DynamicResource LeftListForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <Image Width="18" Height="18" Source="{Binding MachineImageUrl}" Stretch="Uniform" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding MachineName}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding SpeedPerMinute, StringFormat={}{0:g}/min}" Foreground="{DynamicResource StarBlueBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Card" Property="Background" Value="#0F1F2A"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="#2B5167"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Card" Property="Background" Value="#10253A"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
+                    <Setter TargetName="Card" Property="BorderThickness" Value="1.5"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MachineItemTemplate">
+            <Border x:Name="Card" Padding="9" Margin="0,0,4,6" Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="7" HorizontalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="42"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="34" Height="34" Background="#121E28" BorderBrush="#263A48" BorderThickness="1" CornerRadius="6">
+                        <Image Width="28" Height="28" Source="{Binding ImageUrl}" Stretch="Uniform"/>
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{DynamicResource LeftListForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="9,0,0,0"/>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Card" Property="Background" Value="#0F1F2A"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="#2B5167"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Card" Property="Background" Value="#10253A"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
+                    <Setter TargetName="Card" Property="BorderThickness" Value="1.5"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="76"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="78"/>
+        </Grid.RowDefinitions>
+
+        <Border x:Name="TopCommandBar" Grid.Row="0" Margin="12,10,12,6" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12">
+            <Grid Margin="16,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="330"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="✦" Foreground="{DynamicResource StarBlueBrush}" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Rupture Planner" FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Text="StarRupture Production Planning" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="12" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="1" Height="38" MaxWidth="450" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="8" Padding="11,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="⌕" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="21" VerticalAlignment="Center" Margin="0,0,9,1"/>
+                        <TextBlock Grid.Column="1" Text="Search items, recipes, machines..." Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center"/>
+                        <Border Grid.Column="2" BorderBrush="#24313B" BorderThickness="1" CornerRadius="5" Padding="7,2">
+                            <TextBlock Text="Ctrl+K" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Click="NewScheme_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="＋" Margin="0,0,7,0"/><TextBlock Text="New"/></StackPanel>
+                    </Button>
+                    <Button Click="ChooseFolder_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="▱" Margin="0,0,7,0"/><TextBlock Text="Folder"/></StackPanel>
+                    </Button>
+                    <Button Click="SaveScheme_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="▣" Margin="0,0,7,0"/><TextBlock Text="Save"/></StackPanel>
+                    </Button>
+                    <Button IsEnabled="False" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="⇩" Margin="0,0,7,0"/><TextBlock Text="Export"/></StackPanel>
+                    </Button>
+                    <Button Click="Settings_Click">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Margin="0,0,7,0"/><TextBlock Text="Settings"/></StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="12,0,12,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="290"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="380"/>
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="LeftPanel" Grid.Column="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="12">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <TextBlock Text="Navigation" Style="{StaticResource PanelTitle}"/>
+                        <UniformGrid Columns="1">
+                            <Border Background="#122233" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="3,0,0,0" CornerRadius="7" Padding="12,9" Margin="0,0,0,6">
+                                <TextBlock Text="Production" FontWeight="SemiBold"/>
+                            </Border>
+                            <Border Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55">
+                                <TextBlock Text="Items"/>
+                            </Border>
+                            <Border Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,6" Opacity="0.55">
+                                <TextBlock Text="Recipes"/>
+                            </Border>
+                        </UniformGrid>
+                        <TextBlock Text="Toolbox" Style="{StaticResource PanelTitle}" Margin="0,12,0,8"/>
+                        <TextBox x:Name="ToolboxFilterBox" Text="{Binding Toolbox.FilterText, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <Border DockPanel.Dock="Bottom" Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="9" Padding="11" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Current Plan" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                            <TextBlock Text="{Binding Scheme.Name}" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding SchemeFolderPath}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="10" TextTrimming="CharacterEllipsis" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TabControl x:Name="ToolboxTabs">
+                        <TabItem Header="Schemes">
+                            <ListBox x:Name="SchemesList"
+                                     ItemsSource="{Binding Toolbox.Schemes}"
+                                     ItemTemplate="{StaticResource SchemeItemTemplate}"
+                                     SelectionChanged="SchemesList_SelectionChanged"
+                                     ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                        </TabItem>
+                        <TabItem Header="Resources">
+                            <ListBox x:Name="ResourcesList"
+                                     ItemsSource="{Binding Toolbox.Resources}"
+                                     ItemTemplate="{StaticResource ResourceItemTemplate}"
+                                     PreviewMouseLeftButtonDown="ResourcesList_PreviewMouseLeftButtonDown"
+                                     PreviewMouseMove="ResourcesList_PreviewMouseMove"
+                                     PreviewMouseLeftButtonUp="ResourcesList_PreviewMouseLeftButtonUp"
+                                     MouseDoubleClick="ResourcesList_MouseDoubleClick"
+                                     ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                        </TabItem>
+                        <TabItem Header="Machines">
+                            <ListBox x:Name="MachinesList"
+                                     ItemsSource="{Binding Toolbox.Machines}"
+                                     ItemTemplate="{StaticResource MachineItemTemplate}"
+                                     PreviewMouseLeftButtonDown="MachinesList_PreviewMouseLeftButtonDown"
+                                     PreviewMouseMove="MachinesList_PreviewMouseMove"
+                                     PreviewMouseLeftButtonUp="MachinesList_PreviewMouseLeftButtonUp"
+                                     MouseDoubleClick="MachinesList_MouseDoubleClick"
+                                     ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                        </TabItem>
+                    </TabControl>
+                </DockPanel>
+            </Border>
+
+            <Grid x:Name="CenterPanel" Grid.Column="1" Margin="10,0" Background="Transparent">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="58"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="14,8">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Produce:" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button IsEnabled="False" Margin="0,0,18,0" Content="Select output"/>
+                        <TextBlock Text="Rate:" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Width="78" Text="60" IsEnabled="False" Margin="0,0,6,0"/>
+                        <TextBlock Text="/min" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,18,0"/>
+                        <TextBlock Text="Mode:" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button IsEnabled="False" Content="Balanced"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="CanvasFrame" Grid.Row="1" Margin="0,10,0,0" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
+                    <Grid ClipToBounds="True">
+                        <controls:DottedGridCanvas x:Name="PlannerCanvas"
+                                                    Width="5000"
+                                                    Height="3500"
+                                                    GridSize="24"
+                                                    Background="{DynamicResource CanvasBrush}"
+                                                    AllowDrop="True"
+                                                    DragOver="PlannerCanvas_DragOver"
+                                                    Drop="PlannerCanvas_Drop"
+                                                    MouseDown="PlannerCanvas_MouseDown"
+                                                    MouseLeftButtonDown="PlannerCanvas_MouseLeftButtonDown"
+                                                    MouseLeftButtonUp="PlannerCanvas_MouseLeftButtonUp"
+                                                    MouseMove="PlannerCanvas_MouseMove"
+                                                    MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
+                                                    MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
+                                                    MouseUp="PlannerCanvas_MouseUp"
+                                                    MouseWheel="PlannerCanvas_MouseWheel">
+                            <controls:DottedGridCanvas.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform x:Name="CanvasScale" ScaleX="1" ScaleY="1"/>
+                                    <TranslateTransform x:Name="CanvasTranslate" X="0" Y="0"/>
+                                </TransformGroup>
+                            </controls:DottedGridCanvas.RenderTransform>
+                        </controls:DottedGridCanvas>
+                        <Popup x:Name="SuggestionPopup"
+                               AllowsTransparency="True"
+                               Placement="Relative"
+                               PlacementTarget="{Binding ElementName=CanvasFrame}"
+                               PopupAnimation="Fade"
+                               StaysOpen="False">
+                            <Border x:Name="SuggestionPopupChrome"
+                                    Background="{DynamicResource PanelBrush}"
+                                    BorderBrush="{DynamicResource StarBlueBrush}"
+                                    BorderThickness="1"
+                                    Width="330"
+                                    MaxHeight="360"
+                                    CornerRadius="8"
+                                    SnapsToDevicePixels="True"
+                                    SizeChanged="SuggestionPopupChrome_SizeChanged">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="Connect compatible machine" FontWeight="SemiBold" Margin="12" Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                                    <ListBox x:Name="SuggestionList"
+                                             ItemTemplate="{StaticResource SuggestionRecipeTemplate}"
+                                             ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
+                                             SelectionChanged="SuggestionList_SelectionChanged"
+                                             Background="Transparent"
+                                             BorderThickness="0"/>
+                                </DockPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border x:Name="RightPanel" Grid.Column="2" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="76"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="64" Height="64" Background="#121E28" BorderBrush="#2B3A44" BorderThickness="1" CornerRadius="9">
+                                    <Image x:Name="InspectorImage" Width="56" Height="56" Stretch="Uniform"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="InspectorTitle" Text="No selection" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource ThemeForegroundBrush}" TextWrapping="Wrap"/>
+                                    <StackPanel x:Name="InspectorStatusPanel" Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Ellipse Width="10" Height="10" Fill="{DynamicResource SignalGreenBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Operational" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Inspector" Style="{StaticResource PanelTitle}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="0,0,0,2" Padding="10,0,10,7">
+                                <TextBlock Text="Details" Foreground="{DynamicResource StarBlueBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Text="Statistics" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="18,0,0,0" Opacity="0.45"/>
+                            <TextBlock Text="Modifications" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="18,0,0,0" Opacity="0.45"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="NodeInspectorPanel">
+                            <Label Content="Recipe"/>
+                            <Grid>
+                                <TextBox x:Name="InspectorRecipeSearchBox"
+                                         PreviewMouseLeftButtonDown="InspectorRecipeSearchBox_PreviewMouseLeftButtonDown"
+                                         GotKeyboardFocus="InspectorRecipeSearchBox_GotKeyboardFocus"
+                                         LostKeyboardFocus="InspectorRecipePicker_LostKeyboardFocus"
+                                         TextChanged="InspectorRecipeSearchBox_TextChanged"/>
+                                <Popup x:Name="InspectorRecipePopup"
+                                       PlacementTarget="{Binding ElementName=InspectorRecipeSearchBox}"
+                                       Placement="Bottom"
+                                       Width="{Binding ActualWidth, ElementName=InspectorRecipeSearchBox}"
+                                       StaysOpen="True"
+                                       Closed="InspectorRecipePopup_Closed">
+                                    <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="1" MaxHeight="320" CornerRadius="8">
+                                        <ListBox x:Name="InspectorRecipeList"
+                                                 DisplayMemberPath="InspectorDisplayName"
+                                                 SelectionChanged="InspectorRecipeList_SelectionChanged"
+                                                 LostKeyboardFocus="InspectorRecipePicker_LostKeyboardFocus"
+                                                 BorderThickness="0"/>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+
+                            <Label Content="Target output / min"/>
+                            <TextBox x:Name="TargetOutputBox"
+                                     TextChanged="TargetOutputBox_TextChanged"/>
+
+                            <Label Content="Read only values"/>
+                            <TextBlock x:Name="InspectorReadOnly" TextWrapping="Wrap" Foreground="{DynamicResource ThemeForegroundBrush}" Margin="0,2,0,8"/>
+
+                            <Label Content="Inputs"/>
+                            <ItemsControl x:Name="InspectorInputs"/>
+
+                            <Label Content="Unlock requirements"/>
+                            <ItemsControl x:Name="InspectorUnlocks"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="ConnectionInspectorPanel">
+                            <Label Content="Selected connection"/>
+                            <TextBlock x:Name="ConnectionReadOnly" TextWrapping="Wrap" Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Margin="12,8,12,10" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="260"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#1D1410" BorderBrush="#7A3B1B" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,0,8,0">
+                        <TextBlock Text="Alerts hidden until production metrics exist" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                    </Border>
+                    <Border Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="8" Padding="12,9">
+                        <TextBlock x:Name="StatusText" Text="{Binding Status}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="Canvas" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,0,10,0"/>
+                    <TextBlock Text="100%" Foreground="{DynamicResource ThemeForegroundBrush}" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

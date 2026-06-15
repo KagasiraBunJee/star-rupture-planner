@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+import tempfile
+import unittest
+from pathlib import Path
+
+from starrupture_api.config import Settings, settings
+from starrupture_api.service import ResourceService
+
+
+class PlannerServiceTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.service = ResourceService(settings)
+        meta = cls.service.get_meta()
+        if meta["counts"]["items"] == 0:
+            raise unittest.SkipTest("dataset has not been refreshed")
+
+    def test_catalog_contains_graph_ready_recipes(self) -> None:
+        catalog = self.service.get_planner_catalog()
+
+        self.assertGreaterEqual(catalog["meta"]["building_count"], 20)
+        self.assertGreaterEqual(catalog["meta"]["recipe_count"], 100)
+
+        recipe = next(
+            entry
+            for entry in catalog["recipes"]
+            if entry["building_name"] == "Fabricator"
+            and entry["recipe_id"] == "titanium-rod"
+        )
+        self.assertEqual(recipe["output"]["item_id"], "titanium-rod")
+        self.assertEqual(recipe["output"]["quantity_per_minute"], 30)
+        self.assertEqual(recipe["inputs"][0]["item_id"], "titanium-bar")
+        self.assertEqual(recipe["inputs"][0]["quantity_per_minute"], 30)
+        self.assertTrue(recipe["building_image_url"].startswith("/assets/buildings/"))
+
+    def test_extraction_recipes_are_source_nodes(self) -> None:
+        catalog = self.service.get_planner_catalog()
+        extraction = [
+            recipe
+            for recipe in catalog["recipes"]
+            if recipe["building_category"] == "extraction"
+        ]
+
+        self.assertTrue(extraction)
+        self.assertTrue(all(len(recipe["inputs"]) == 0 for recipe in extraction))
+
+    def test_input_drag_suggests_producers(self) -> None:
+        payload = self.service.get_planner_suggestions(
+            direction="input",
+            item_id="titanium-bar",
+        )
+
+        suggestions = payload["suggestions"]
+        self.assertTrue(any(entry["output"]["item_id"] == "titanium-bar" for entry in suggestions))
+        self.assertTrue(any(entry["building_name"] == "Smelter" for entry in suggestions))
+
+    def test_output_drag_suggests_consumers(self) -> None:
+        payload = self.service.get_planner_suggestions(
+            direction="output",
+            item_id="titanium-rod",
+        )
+
+        suggestions = payload["suggestions"]
+        self.assertTrue(suggestions)
+        self.assertTrue(
+            any(
+                any(input_item["item_id"] == "titanium-rod" for input_item in entry["inputs"])
+                for entry in suggestions
+            )
+        )
+
+    def test_missing_transport_tiers_are_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cfg = Settings(
+                data_dir=settings.data_dir,
+                asset_dir=settings.asset_dir,
+                db_path=settings.db_path,
+                transport_tiers_path=Path(temp_dir) / "missing.json",
+            )
+            payload = ResourceService(cfg).get_transport_tiers()
+
+        self.assertEqual(payload["tiers"], [])
+        self.assertTrue(payload["missing"])
+
+
+if __name__ == "__main__":
+    unittest.main()

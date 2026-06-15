@@ -1,0 +1,61 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+artifacts/
+TestResults/
+
+# .NET / WPF generated files
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+
+# Visual Studio / Rider / VS Code local state
+.vs/
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local planner/user data
+appsettings.local.json
+transport_tiers.local.json
+*.local.json
+logs/
+Schemes/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+*.log
