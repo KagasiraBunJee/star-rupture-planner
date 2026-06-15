@@ -4,7 +4,7 @@ namespace StarRupturePlanner.Services;
 
 public static class SchemeMigrationService
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
 
     public static void Migrate(SchemeDocument scheme, PlannerCatalog catalog, IPlannerCalculator calculator)
     {

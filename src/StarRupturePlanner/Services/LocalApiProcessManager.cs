@@ -28,6 +28,10 @@ public sealed class LocalApiProcessManager : IApiProcessManager
 
             StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
         }
+        else
+        {
+            StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
+        }
 
         var repoRoot = FindRepoRoot();
         if (repoRoot is null)
@@ -87,7 +91,7 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
             var titaniumRod = catalog.Recipes.FirstOrDefault(recipe => recipe.RecipeId == "titanium-rod");
             return string.Equals(catalog.Meta.Language, PlannerLanguages.Ukrainian, StringComparison.Ordinal)
-                && string.Equals(titaniumRod?.Output.Name, "Титановий стрижень", StringComparison.Ordinal);
+                && !string.Equals(titaniumRod?.Output.Name, "Titanium Rod", StringComparison.Ordinal);
         }
         finally
         {

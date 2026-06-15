@@ -437,16 +437,36 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Name}"
-                           Foreground="{DynamicResource LeftListForegroundBrush}"
-                           FontFamily="{DynamicResource LeftListFontFamily}"
-                           FontSize="{DynamicResource LeftListFontSize}"
-                           FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis"
-                           VerticalAlignment="Center"/>
+                <StackPanel>
+                    <TextBlock Text="{Binding Name}"
+                               Foreground="{DynamicResource LeftListForegroundBrush}"
+                               FontFamily="{DynamicResource LeftListFontFamily}"
+                               FontSize="{DynamicResource LeftListFontSize}"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding OutputStatusText}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="11" Margin="0,4,0,0"/>
+                    <ItemsControl ItemsSource="{Binding Outputs}" Margin="0,7,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#101E28" BorderBrush="#263A48" BorderThickness="1" CornerRadius="6" Padding="5,3" Margin="0,0,5,5" ToolTip="{Binding DisplayName}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Width="18" Height="18" Source="{Binding ImageUrl}" Stretch="Uniform" Margin="0,0,5,0"/>
+                                        <TextBlock Text="{Binding RateText}" Foreground="{DynamicResource StarBlueBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
                 <Button Grid.Column="1"
                         Style="{StaticResource SchemeDeleteButtonStyle}"
                         Tag="DeleteScheme"
+                        VerticalAlignment="Top"
                         Content="&#xE74D;"/>
             </Grid>
         </Border>

@@ -67,6 +67,8 @@ public partial class MainWindow : Window
     private ConnectionDrag? _connectionDrag;
     private CancellationTokenSource? _suggestionCancellation;
     private Point _suggestionCanvasPoint;
+    private Point? _schemeDragStart;
+    private SchemeListItem? _schemeDragItem;
     private Point? _resourceDragStart;
     private ResourceToolboxItem? _resourceDragItem;
     private Point? _machineDragStart;
@@ -314,11 +316,21 @@ public partial class MainWindow : Window
 
     private async void SchemesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_schemeDragItem is not null)
+        {
+            return;
+        }
+
         if (SchemesList.SelectedItem is not SchemeListItem item)
         {
             return;
         }
 
+        await OpenSchemeListItemAsync(item);
+    }
+
+    private async Task OpenSchemeListItemAsync(SchemeListItem item)
+    {
         await _viewModel.OpenSchemeAsync(item);
         SyncFromViewModel();
         ClearSelection();
@@ -331,11 +343,51 @@ public partial class MainWindow : Window
         UpdateInspector();
     }
 
+    private async void OpenBlueprintSourceButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedNode is null || _selectedNode.NodeType != SchemeNodeType.BlueprintSource)
+        {
+            return;
+        }
+
+        var item = FindBlueprintSourceScheme(_selectedNode);
+        if (item is null)
+        {
+            SetStatus("Source scheme is no longer available.");
+            UpdateInspector();
+            return;
+        }
+
+        await OpenSchemeListItemAsync(item);
+    }
+
+    private bool BlueprintSourceSchemeExists(SchemeNode node)
+    {
+        return FindBlueprintSourceScheme(node) is not null;
+    }
+
+    private SchemeListItem? FindBlueprintSourceScheme(SchemeNode node)
+    {
+        var schemes = _viewModel.Toolbox.Schemes.ToList();
+        if (!string.IsNullOrWhiteSpace(node.SourceSchemePath))
+        {
+            var byPath = schemes.FirstOrDefault(item => SamePath(item.FilePath, node.SourceSchemePath));
+            if (byPath is not null)
+            {
+                return byPath;
+            }
+        }
+
+        return schemes.FirstOrDefault(item =>
+            string.Equals(item.Name, node.SourceSchemeName, StringComparison.CurrentCultureIgnoreCase));
+    }
+
     private async void SchemesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         var button = FindAncestor<Button>(e.OriginalSource as DependencyObject);
         if (button?.Tag as string != "DeleteScheme" || button.DataContext is not SchemeListItem item)
         {
+            BeginToolboxDrag(SchemesList, e, out _schemeDragStart, out _schemeDragItem);
             return;
         }
 
@@ -356,6 +408,11 @@ public partial class MainWindow : Window
         var deleted = await _viewModel.DeleteSchemeAsync(item);
         if (!deleted || !deletedCurrentScheme)
         {
+            if (deleted)
+            {
+                RemoveBlueprintReferencesFromCurrentScheme(item);
+            }
+
             return;
         }
 
@@ -370,6 +427,54 @@ public partial class MainWindow : Window
         RenderCanvas();
         UpdateInspector();
         SetStatus($"Deleted {item.Name}.");
+    }
+
+    private void RemoveBlueprintReferencesFromCurrentScheme(SchemeListItem deletedScheme)
+    {
+        var removedNodeIds = _scheme.Nodes
+            .Where(node => node.NodeType == SchemeNodeType.BlueprintSource
+                && BlueprintReferencesScheme(node, deletedScheme))
+            .Select(node => node.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        if (removedNodeIds.Count == 0)
+        {
+            return;
+        }
+
+        _scheme.Nodes.RemoveAll(node => removedNodeIds.Contains(node.Id));
+        _scheme.Edges.RemoveAll(edge =>
+            removedNodeIds.Contains(edge.SourceNodeId) || removedNodeIds.Contains(edge.TargetNodeId));
+        ClearSelection();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus($"Removed {removedNodeIds.Count} blueprint reference{(removedNodeIds.Count == 1 ? "" : "s")} to {deletedScheme.Name}.");
+    }
+
+    private static bool BlueprintReferencesScheme(SchemeNode node, SchemeListItem scheme)
+    {
+        return (!string.IsNullOrWhiteSpace(node.SourceSchemePath) && SamePath(node.SourceSchemePath, scheme.FilePath))
+            || (string.IsNullOrWhiteSpace(node.SourceSchemePath)
+                && string.Equals(node.SourceSchemeName, scheme.Name, StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    private void SchemesList_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (ShouldStartToolboxDrag(SchemesList, e, _schemeDragStart, _schemeDragItem))
+        {
+            var item = _schemeDragItem;
+            ClearSchemeToolboxDrag();
+            DragDrop.DoDragDrop(SchemesList, new DataObject(typeof(SchemeListItem), item!), DragDropEffects.Copy);
+        }
+    }
+
+    private async void SchemesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        var item = _schemeDragItem;
+        ClearSchemeToolboxDrag();
+        if (item is not null && Equals(SchemesList.SelectedItem, item))
+        {
+            await OpenSchemeListItemAsync(item);
+        }
     }
 
     private async void SaveScheme_Click(object sender, RoutedEventArgs e) => await SaveCurrentSchemeAsync();
@@ -459,7 +564,9 @@ public partial class MainWindow : Window
 
     private void PlannerCanvas_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(typeof(ResourceToolboxItem)) || e.Data.GetDataPresent(typeof(MachineToolboxItem))
+        e.Effects = e.Data.GetDataPresent(typeof(ResourceToolboxItem))
+            || e.Data.GetDataPresent(typeof(MachineToolboxItem))
+            || e.Data.GetDataPresent(typeof(SchemeListItem))
             ? DragDropEffects.Copy
             : DragDropEffects.None;
         e.Handled = true;
@@ -478,6 +585,13 @@ public partial class MainWindow : Window
         if (e.Data.GetData(typeof(MachineToolboxItem)) is MachineToolboxItem machineItem)
         {
             AddMachineNode(machineItem.Building, dropPoint);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Data.GetData(typeof(SchemeListItem)) is SchemeListItem schemeItem)
+        {
+            AddSchemeOutputNodes(schemeItem, dropPoint);
             e.Handled = true;
         }
     }
@@ -498,6 +612,31 @@ public partial class MainWindow : Window
         SelectSingleNode(node);
         RenderCanvas();
         UpdateInspector();
+    }
+
+    private void AddSchemeOutputNodes(SchemeListItem schemeItem, Point position)
+    {
+        var outputs = schemeItem.Outputs
+            .Where(output => !string.IsNullOrWhiteSpace(output.RecipeKey))
+            .ToList();
+        if (outputs.Count == 0)
+        {
+            SetStatus($"Scheme \"{schemeItem.Name}\" has no marked outputs.");
+            return;
+        }
+
+        var node = _canvasViewModel.CreateBlueprintSourceNode(schemeItem, position);
+        if (node is null)
+        {
+            SetStatus($"Scheme \"{schemeItem.Name}\" outputs are not available in the current catalog.");
+            return;
+        }
+
+        _scheme.Nodes.Add(node);
+        SelectSingleNode(node);
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus($"Added blueprint source from {schemeItem.Name} with {node.BlueprintOutputs.Count} output{(node.BlueprintOutputs.Count == 1 ? "" : "s")}.");
     }
 
     private SchemeNode CreateNode(RecipeInfo recipe, double x, double y)
@@ -634,6 +773,12 @@ public partial class MainWindow : Window
 
     private void AddNodeView(SchemeNode node)
     {
+        if (node.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            AddBlueprintSourceNodeView(node);
+            return;
+        }
+
         var recipe = RecipeForNode(node);
         var building = BuildingForNode(node);
         var root = new Border
@@ -730,6 +875,12 @@ public partial class MainWindow : Window
             FontFamily = CardFontFamily(),
             TextWrapping = TextWrapping.Wrap,
         });
+        var badges = CreateNodeBadges(node);
+        if (badges is not null)
+        {
+            titlePanel.Children.Add(badges);
+        }
+
         if (recipe is not null)
         {
             var status = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
@@ -745,7 +896,9 @@ public partial class MainWindow : Window
             {
                 Text = IsNodeLocked(node)
                     ? "Locked by corporations"
-                    : $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
+                    : node.OnlyOutput
+                        ? $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  source"
+                        : $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
                 Foreground = IsNodeLocked(node) ? new SolidColorBrush(ShortageColor) : CardTextBrush(0.75),
                 FontSize = CardFontSize(-1),
                 FontFamily = CardFontFamily(),
@@ -778,29 +931,33 @@ public partial class MainWindow : Window
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
 
-            var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
-            inputs.Children.Add(CreateCardSectionLabel("INPUTS"));
-            foreach (var input in recipe.Inputs)
+            if (!node.OnlyOutput)
             {
-                inputs.Children.Add(CreatePortVisual(node, input, "input"));
-            }
+                var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
+                inputs.Children.Add(CreateCardSectionLabel("INPUTS"));
+                foreach (var input in recipe.Inputs)
+                {
+                    inputs.Children.Add(CreatePortVisual(node, input, "input"));
+                }
 
-            var divider = new Border
-            {
-                Width = 1,
-                Background = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
-                HorizontalAlignment = HorizontalAlignment.Center,
-            };
+                var divider = new Border
+                {
+                    Width = 1,
+                    Background = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                };
+
+                Grid.SetColumn(inputs, 0);
+                Grid.SetColumn(divider, 1);
+                body.Children.Add(inputs);
+                body.Children.Add(divider);
+            }
 
             var output = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 10, 14, 12) };
             output.Children.Add(CreateCardSectionLabel("OUTPUTS"));
             output.Children.Add(CreatePortVisual(node, recipe.Output, "output"));
 
-            Grid.SetColumn(inputs, 0);
-            Grid.SetColumn(divider, 1);
             Grid.SetColumn(output, 2);
-            body.Children.Add(inputs);
-            body.Children.Add(divider);
             body.Children.Add(output);
             Grid.SetRow(body, 2);
             grid.Children.Add(body);
@@ -821,6 +978,144 @@ public partial class MainWindow : Window
         Canvas.SetTop(root, node.Y);
         PlannerCanvas.Children.Add(root);
         _nodeViews[node.Id] = root;
+    }
+
+    private void AddBlueprintSourceNodeView(SchemeNode node)
+    {
+        var root = new Border
+        {
+            Width = 470,
+            MinHeight = 112,
+            Background = new LinearGradientBrush(
+                Color.FromArgb(242, 12, 26, 36),
+                Color.FromArgb(232, 5, 12, 18),
+                new Point(0, 0),
+                new Point(1, 1)),
+            BorderBrush = new SolidColorBrush(GraphiteLineColor),
+            BorderThickness = new Thickness(1.5),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(0),
+            Tag = node,
+        };
+        ApplyNodeSelectionVisual(root, _selectedNodeIds.Contains(node.Id));
+
+        root.MouseLeftButtonDown += Node_MouseLeftButtonDown;
+        root.MouseMove += Node_MouseMove;
+        root.MouseLeftButtonUp += Node_MouseLeftButtonUp;
+
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.Child = grid;
+        root.SizeChanged += (_, e) =>
+        {
+            if (e.NewSize.Width > 0 && e.NewSize.Height > 0)
+            {
+                grid.Clip = new RectangleGeometry(new Rect(e.NewSize), 8, 8);
+            }
+        };
+
+        var accent = new Border { Height = 5, Background = new SolidColorBrush(Color.FromRgb(10, 132, 255)) };
+        Grid.SetRow(accent, 0);
+        grid.Children.Add(accent);
+
+        var header = new DockPanel
+        {
+            LastChildFill = true,
+            Background = new LinearGradientBrush(
+                Color.FromArgb(125, 10, 132, 255),
+                Color.FromArgb(20, 16, 24, 32),
+                new Point(0, 0),
+                new Point(1, 0)),
+        };
+        Grid.SetRow(header, 1);
+
+        var iconFrame = new Border
+        {
+            Width = 58,
+            Height = 58,
+            Margin = new Thickness(12, 10, 12, 10),
+            Background = new SolidColorBrush(Color.FromRgb(13, 24, 32)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(42, 60, 70)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Child = new TextBlock
+            {
+                Text = "▧",
+                Foreground = new SolidColorBrush(OutputPortColor),
+                FontSize = 30,
+                FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+        DockPanel.SetDock(iconFrame, Dock.Left);
+        header.Children.Add(iconFrame);
+
+        var titlePanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
+        titlePanel.Children.Add(new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(node.SourceSchemeName) ? "Blueprint source" : node.SourceSchemeName,
+            Foreground = CardTextBrush(),
+            FontSize = CardFontSize(4),
+            FontFamily = CardFontFamily(),
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+        });
+        titlePanel.Children.Add(new TextBlock
+        {
+            Text = $"{node.BlueprintOutputs.Count} external output{(node.BlueprintOutputs.Count == 1 ? "" : "s")}",
+            Foreground = CardTextBrush(0.72),
+            FontSize = CardFontSize(),
+            FontFamily = CardFontFamily(),
+        });
+        titlePanel.Children.Add(CreateNodeBadge("Blueprint source", OutputPortColor));
+        header.Children.Add(titlePanel);
+        grid.Children.Add(header);
+
+        var body = new Grid { MinHeight = 70 };
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(215) });
+        var note = new TextBlock
+        {
+            Text = "Outputs from an existing saved scheme.",
+            Foreground = CardTextBrush(0.62),
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-1),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(14, 12, 10, 12),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        body.Children.Add(note);
+
+        var outputs = new StackPanel { Margin = new Thickness(8, 10, 14, 12), VerticalAlignment = VerticalAlignment.Center };
+        outputs.Children.Add(CreateCardSectionLabel("OUTPUTS"));
+        foreach (var output in node.BlueprintOutputs)
+        {
+            outputs.Children.Add(CreatePortVisual(node, BlueprintPortToRecipePort(output), "output"));
+        }
+
+        Grid.SetColumn(outputs, 1);
+        body.Children.Add(outputs);
+        Grid.SetRow(body, 2);
+        grid.Children.Add(body);
+
+        Canvas.SetLeft(root, node.X);
+        Canvas.SetTop(root, node.Y);
+        PlannerCanvas.Children.Add(root);
+        _nodeViews[node.Id] = root;
+    }
+
+    private static RecipePortInfo BlueprintPortToRecipePort(BlueprintOutputPort output)
+    {
+        return new RecipePortInfo
+        {
+            ItemId = output.ItemId,
+            Name = output.Name,
+            ImageUrl = output.ImageUrl,
+            QuantityPerMinute = output.RatePerMinute,
+        };
     }
 
     private static void ApplyNodeSelectionVisual(Border border, bool selected)
@@ -903,6 +1198,53 @@ public partial class MainWindow : Window
             FontSize = CardFontSize(-2),
             FontWeight = FontWeights.SemiBold,
             Margin = new Thickness(0, 0, 0, 6),
+        };
+    }
+
+    private FrameworkElement? CreateNodeBadges(SchemeNode node)
+    {
+        if (!node.OnlyOutput && !node.IsSchemeOutput)
+        {
+            return null;
+        }
+
+        var panel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+
+        if (node.OnlyOutput)
+        {
+            panel.Children.Add(CreateNodeBadge("Only output", OutputPortColor));
+        }
+
+        if (node.IsSchemeOutput)
+        {
+            panel.Children.Add(CreateNodeBadge("Scheme output", SignalGreenColor));
+        }
+
+        return panel;
+    }
+
+    private FrameworkElement CreateNodeBadge(string text, Color accent)
+    {
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(36, accent.R, accent.G, accent.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, accent.R, accent.G, accent.B)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(5),
+            Padding = new Thickness(6, 2, 6, 2),
+            Margin = new Thickness(0, 0, 6, 0),
+            Child = new TextBlock
+            {
+                Text = text,
+                Foreground = new SolidColorBrush(accent),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-2),
+                FontWeight = FontWeights.SemiBold,
+            },
         };
     }
 
@@ -1055,6 +1397,11 @@ public partial class MainWindow : Window
 
     private double PortRate(SchemeNode node, RecipePortInfo port, string direction)
     {
+        if (node.NodeType == SchemeNodeType.BlueprintSource && direction == "output")
+        {
+            return node.BlueprintOutputs.FirstOrDefault(output => output.ItemId == port.ItemId)?.RatePerMinute ?? 0;
+        }
+
         var recipe = RecipeForNode(node);
         if (recipe is null)
         {
@@ -1069,6 +1416,19 @@ public partial class MainWindow : Window
 
     private bool IsPortAvailableForConnection(SchemeNode node, RecipePortInfo port, string direction)
     {
+        if (node.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            return direction == "output"
+                && _catalog.Recipes.Any(recipe =>
+                    recipe.Inputs.Any(input => input.ItemId == port.ItemId)
+                    && PlannerUnlockService.IsBuildingUnlocked(_catalog, _scheme, recipe.BuildingId));
+        }
+
+        if (node.OnlyOutput && direction == "input")
+        {
+            return false;
+        }
+
         if (IsNodeLocked(node))
         {
             return false;
@@ -1086,8 +1446,19 @@ public partial class MainWindow : Window
     private bool IsPortReferenceAvailable(PortReference reference)
     {
         var node = _scheme.Nodes.FirstOrDefault(item => item.Id == reference.NodeId);
+        if (node?.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            var blueprintPort = node.BlueprintOutputs.FirstOrDefault(output => output.ItemId == reference.ItemId);
+            return blueprintPort is not null && IsPortAvailableForConnection(node, BlueprintPortToRecipePort(blueprintPort), reference.Direction);
+        }
+
         var recipe = RecipeForNode(node);
         if (node is null || recipe is null)
+        {
+            return false;
+        }
+
+        if (node.OnlyOutput && reference.Direction == "input")
         {
             return false;
         }
@@ -1348,6 +1719,17 @@ public partial class MainWindow : Window
                 : $"{totals.Temperature:g} {UiText.T("Text.Temp")}";
         }
 
+        if (MetricSchemeOutputs is not null)
+        {
+            var outputs = PlannerMetricService.SchemeOutputs(_scheme, _catalog, _calculator);
+            MetricSchemeOutputs.Text = outputs.Count == 0
+                ? "No scheme outputs marked"
+                : string.Join(", ", outputs.Select(output => $"{output.ItemName} {output.RatePerMinute:g}/min"));
+            MetricSchemeOutputs.ToolTip = outputs.Count == 0
+                ? "No scheme outputs marked"
+                : string.Join("\n", outputs.Select(output => $"{output.MachineName}: {output.ItemName} {output.RatePerMinute:g}/min"));
+        }
+
         AlertsChips.Children.Clear();
         var lockedAlerts = PlannerUnlockService.LockedNodeAlerts(_catalog, _scheme);
         if (_productionAnalysis.Alerts.Count == 0 && lockedAlerts.Count == 0)
@@ -1476,6 +1858,13 @@ public partial class MainWindow : Window
                 && reference.ItemId == itemId);
         if (handle is null || !handle.IsVisible)
         {
+            var node = _scheme.Nodes.FirstOrDefault(item => item.Id == nodeId);
+            if (node?.OnlyOutput == true && direction == "input")
+            {
+                return nodeView.TransformToAncestor(PlannerCanvas)
+                    .Transform(new Point(0, Math.Max(0, nodeView.ActualHeight) / 2));
+            }
+
             return null;
         }
 
@@ -2399,9 +2788,12 @@ public partial class MainWindow : Window
             return false;
         }
 
-        var sourceRecipe = RecipeForNode(_scheme.Nodes.FirstOrDefault(node => node.Id == source.NodeId));
+        var sourceNode = _scheme.Nodes.FirstOrDefault(node => node.Id == source.NodeId);
+        var sourceOutput = PlannerEdgeService.OutputForNode(_catalog, sourceNode, source.ItemId);
         var targetRecipe = RecipeForNode(_scheme.Nodes.FirstOrDefault(node => node.Id == target.NodeId));
-        if (!_calculator.CanConnectOutputToInput(sourceRecipe, targetRecipe, source.ItemId))
+        if (sourceOutput is null
+            || targetRecipe is null
+            || !targetRecipe.Inputs.Any(input => input.ItemId == source.ItemId))
         {
             SetStatus("Ports are not compatible.");
             return false;
@@ -2711,6 +3103,34 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnlyOutputCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingInspector || _selectedNode is null)
+        {
+            return;
+        }
+
+        _selectedNode.OnlyOutput = OnlyOutputCheckBox.IsChecked == true && RecipeForNode(_selectedNode) is not null;
+        MigrateAndAnalyzeScheme();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus(_selectedNode.OnlyOutput ? "Node marked as output-only source." : "Node input requirements restored.");
+    }
+
+    private void SchemeOutputCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingInspector || _selectedNode is null)
+        {
+            return;
+        }
+
+        _selectedNode.IsSchemeOutput = SchemeOutputCheckBox.IsChecked == true && RecipeForNode(_selectedNode) is not null;
+        MigrateAndAnalyzeScheme();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus(_selectedNode.IsSchemeOutput ? "Node marked as scheme output." : "Node removed from scheme outputs.");
+    }
+
     private void RemoveInvalidEdgesForNode(string nodeId)
     {
         foreach (var edge in _scheme.Edges.Where(edge => edge.SourceNodeId == nodeId || edge.TargetNodeId == nodeId).ToList())
@@ -2739,9 +3159,42 @@ public partial class MainWindow : Window
             ConnectionReadOnly.Text = "";
             InspectorStatusPanel.Visibility = Visibility.Collapsed;
             PriorityBox.SelectedItem = null;
+            PriorityBox.IsEnabled = true;
+            OpenBlueprintSourceButton.Visibility = Visibility.Collapsed;
+            OpenBlueprintSourceButton.IsEnabled = false;
+            OnlyOutputCheckBox.IsChecked = false;
+            OnlyOutputCheckBox.IsEnabled = false;
+            SchemeOutputCheckBox.IsChecked = false;
+            SchemeOutputCheckBox.IsEnabled = false;
 
             if (_selectedNode is not null)
             {
+                if (_selectedNode.NodeType == SchemeNodeType.BlueprintSource)
+                {
+                    NodeInspectorPanel.Visibility = Visibility.Visible;
+                    InspectorTitle.Text = string.IsNullOrWhiteSpace(_selectedNode.SourceSchemeName) ? "Blueprint source" : _selectedNode.SourceSchemeName;
+                    OpenBlueprintSourceButton.Visibility = Visibility.Visible;
+                    OpenBlueprintSourceButton.IsEnabled = BlueprintSourceSchemeExists(_selectedNode);
+                    InspectorRecipeSearchBox.Text = "";
+                    TargetOutputBox.Text = "";
+                    PriorityBox.IsEnabled = false;
+                    OnlyOutputCheckBox.IsEnabled = false;
+                    SchemeOutputCheckBox.IsEnabled = false;
+                    InspectorStatusPanel.Visibility = Visibility.Visible;
+                    SetImage(InspectorImage, null);
+                    ShowInspectorTab(_activeInspectorTab);
+                    InspectorMetricsStack.Children.Clear();
+                    foreach (var output in _selectedNode.BlueprintOutputs)
+                    {
+                        InspectorMetricsStack.Children.Add(BuildMetricRow("Output", output.Name, sub: $"{output.RatePerMinute:g}/min"));
+                    }
+
+                    InspectorReadOnly.Text = "Blueprint source from a saved scheme. It has outputs only and does not consume inputs.";
+                    InspectorInputs.ItemsSource = _selectedNode.BlueprintOutputs.Select(output => $"{output.Name}: {output.RatePerMinute:g}/min available").ToList();
+                    InspectorUnlocks.ItemsSource = new List<string> { UiText.T("Text.None") };
+                    return;
+                }
+
                 _inspectorViewModel.LoadNode(_catalog, _selectedNode);
                 var recipe = RecipeForNode(_selectedNode);
                 var building = BuildingForNode(_selectedNode);
@@ -2754,6 +3207,10 @@ public partial class MainWindow : Window
                 InspectorRecipeList.SelectedItem = recipe;
                 InspectorRecipeSearchBox.Text = recipe?.InspectorDisplayName ?? "";
                 SetImage(InspectorImage, recipe?.BuildingImageUrl ?? building?.ImageUrl);
+                OnlyOutputCheckBox.IsEnabled = recipe is not null;
+                OnlyOutputCheckBox.IsChecked = _selectedNode.OnlyOutput;
+                SchemeOutputCheckBox.IsEnabled = recipe is not null;
+                SchemeOutputCheckBox.IsChecked = _selectedNode.IsSchemeOutput;
                 if (readTargetBox)
                 {
                     TargetOutputBox.Text = recipe is null
@@ -2761,6 +3218,7 @@ public partial class MainWindow : Window
                         : ProductionAnalysisService.EffectiveMachineCount(_selectedNode).ToString(CultureInfo.CurrentCulture);
                 }
                 SelectPriorityBoxItem(_selectedNode.Priority);
+                PriorityBox.IsEnabled = !_selectedNode.OnlyOutput;
 
                 if (recipe is null)
                 {
@@ -2771,19 +3229,23 @@ public partial class MainWindow : Window
                 var machines = ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
                 var outputPerMinute = _calculator.OutputPerMinute(recipe, machines);
                 BuildInspectorMetrics(_selectedNode, recipe, machines, outputPerMinute);
-                InspectorReadOnly.Text = $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs scale with machine count.";
-                InspectorInputs.ItemsSource = recipe.Inputs
-                    .Select(input =>
-                    {
-                        var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
-                        var key = ProductionInputKey.For(_selectedNode.Id, input.ItemId);
-                        var delivered = _productionAnalysis.Inputs.TryGetValue(key, out var analysis)
-                            ? analysis.DeliveredPerMinute
-                            : 0;
-                        var prefix = delivered + 0.000001 < required ? "SHORT " : "";
-                        return $"{prefix}{input.Name}: {required:g}/min required, {delivered:g}/min delivered";
-                    })
-                    .ToList();
+                InspectorReadOnly.Text = _selectedNode.OnlyOutput
+                    ? $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs are bypassed; output still scales with machine count."
+                    : $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs scale with machine count.";
+                InspectorInputs.ItemsSource = _selectedNode.OnlyOutput
+                    ? new List<string> { "Inputs bypassed by Only output." }
+                    : recipe.Inputs
+                        .Select(input =>
+                        {
+                            var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
+                            var key = ProductionInputKey.For(_selectedNode.Id, input.ItemId);
+                            var delivered = _productionAnalysis.Inputs.TryGetValue(key, out var analysis)
+                                ? analysis.DeliveredPerMinute
+                                : 0;
+                            var prefix = delivered + 0.000001 < required ? "SHORT " : "";
+                            return $"{prefix}{input.Name}: {required:g}/min required, {delivered:g}/min delivered";
+                        })
+                        .ToList();
                 InspectorUnlocks.ItemsSource = recipe.UnlockRequirements.Count == 0
                     ? new List<string> { "None" }
                     : recipe.UnlockRequirements.Select(item => $"{item.Name}: {item.RequiredQuantity:g}").ToList();
@@ -2796,6 +3258,9 @@ public partial class MainWindow : Window
             InspectorRecipeSearchBox.Text = "";
             TargetOutputBox.Text = "";
             PriorityBox.SelectedItem = null;
+            PriorityBox.IsEnabled = true;
+            OpenBlueprintSourceButton.Visibility = Visibility.Collapsed;
+            OpenBlueprintSourceButton.IsEnabled = false;
             InspectorReadOnly.Text = "";
 
             if (_selectedEdge is not null)
@@ -3036,13 +3501,20 @@ public partial class MainWindow : Window
     {
         InspectorMetricsStack.Children.Clear();
 
-        foreach (var input in recipe.Inputs)
+        if (node.OnlyOutput)
         {
-            var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
-            InspectorMetricsStack.Children.Add(BuildMetricRow(
-                "Input",
-                $"{input.Name}  {input.QuantityPerMinute:g}/min",
-                sub: $"Total {required:g}/min"));
+            InspectorMetricsStack.Children.Add(BuildMetricRow("Input", "Bypassed"));
+        }
+        else
+        {
+            foreach (var input in recipe.Inputs)
+            {
+                var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
+                InspectorMetricsStack.Children.Add(BuildMetricRow(
+                    "Input",
+                    $"{input.Name}  {input.QuantityPerMinute:g}/min",
+                    sub: $"Total {required:g}/min"));
+            }
         }
 
         InspectorMetricsStack.Children.Add(BuildMetricRow(
@@ -3069,7 +3541,7 @@ public partial class MainWindow : Window
             valueBrush: new SolidColorBrush(isShort ? ShortageColor : SignalGreenColor)));
         InspectorMetricsStack.Children.Add(BuildMetricRow(
             "Status",
-            isShort ? "Starved" : "Running",
+            node.OnlyOutput ? "External source" : isShort ? "Starved" : "Running",
             valueBrush: new SolidColorBrush(isShort ? ShortageColor : SignalGreenColor)));
     }
 
@@ -3337,6 +3809,12 @@ public partial class MainWindow : Window
     {
         _resourceDragStart = null;
         _resourceDragItem = null;
+    }
+
+    private void ClearSchemeToolboxDrag()
+    {
+        _schemeDragStart = null;
+        _schemeDragItem = null;
     }
 
     private void ClearMachineToolboxDrag()

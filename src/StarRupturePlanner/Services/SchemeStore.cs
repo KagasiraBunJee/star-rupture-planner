@@ -40,6 +40,7 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
             {
                 FilePath = path,
                 Name = Path.GetFileNameWithoutExtension(path),
+                Outputs = ReadSchemeOutputs(path),
             })
             .OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -96,6 +97,8 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         {
             File.Delete(targetPath);
         }
+
+        RemoveReferencesToDeletedScheme(targetPath);
     }
 
     public static string SafeFileName(string name)
@@ -103,5 +106,81 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         var invalid = Path.GetInvalidFileNameChars();
         var cleaned = new string(name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()).Trim();
         return string.IsNullOrWhiteSpace(cleaned) ? "Untitled" : cleaned;
+    }
+
+    private static List<SchemeListOutputItem> ReadSchemeOutputs(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            var document = JsonSerializer.Deserialize<SchemeDocument>(stream, JsonOptions);
+            if (document is null)
+            {
+                return [];
+            }
+
+            return document.Nodes
+                .Where(node => node.IsSchemeOutput && !string.IsNullOrWhiteSpace(node.SelectedRecipeKey))
+                .Select(node => new SchemeListOutputItem
+                {
+                    RecipeKey = node.SelectedRecipeKey!,
+                    MachineCount = ProductionAnalysisService.EffectiveMachineCount(node),
+                })
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private void RemoveReferencesToDeletedScheme(string deletedSchemePath)
+    {
+        var deletedName = Path.GetFileNameWithoutExtension(deletedSchemePath);
+        foreach (var path in Directory.EnumerateFiles(FolderPath, "*.json"))
+        {
+            var fullPath = Path.GetFullPath(path);
+            if (string.Equals(fullPath, deletedSchemePath, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            SchemeDocument document;
+            try
+            {
+                document = Load(fullPath);
+            }
+            catch
+            {
+                continue;
+            }
+
+            var removedNodeIds = document.Nodes
+                .Where(node => node.NodeType == SchemeNodeType.BlueprintSource
+                    && ReferencesDeletedScheme(node, deletedSchemePath, deletedName))
+                .Select(node => node.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            if (removedNodeIds.Count == 0)
+            {
+                continue;
+            }
+
+            document.Nodes.RemoveAll(node => removedNodeIds.Contains(node.Id));
+            document.Edges.RemoveAll(edge =>
+                removedNodeIds.Contains(edge.SourceNodeId) || removedNodeIds.Contains(edge.TargetNodeId));
+            Save(document);
+        }
+    }
+
+    private static bool ReferencesDeletedScheme(SchemeNode node, string deletedSchemePath, string deletedName)
+    {
+        if (!string.IsNullOrWhiteSpace(node.SourceSchemePath)
+            && string.Equals(Path.GetFullPath(node.SourceSchemePath), deletedSchemePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.IsNullOrWhiteSpace(node.SourceSchemePath)
+            && string.Equals(node.SourceSchemeName, deletedName, StringComparison.CurrentCultureIgnoreCase);
     }
 }

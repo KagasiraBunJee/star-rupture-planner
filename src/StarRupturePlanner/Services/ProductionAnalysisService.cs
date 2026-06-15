@@ -30,7 +30,7 @@ public static class ProductionAnalysisService
                      .ThenBy(group => group.Key.SourceItemId, StringComparer.Ordinal))
         {
             var sourceRate = nodeRates.TryGetValue(sourceGroup.Key.SourceNodeId, out var rates)
-                ? rates.OutputPerMinute
+                ? rates.OutputsPerMinute.GetValueOrDefault(sourceGroup.Key.SourceItemId, rates.OutputPerMinute)
                 : 0;
             AllocateSource(sourceGroup.ToList(), sourceRate, demandByKey, result);
         }
@@ -77,6 +77,17 @@ public static class ProductionAnalysisService
         var rates = new Dictionary<string, ProductionNodeRates>();
         foreach (var node in scheme.Nodes)
         {
+            if (node.NodeType == SchemeNodeType.BlueprintSource)
+            {
+                rates[node.Id] = new ProductionNodeRates(
+                    0,
+                    [],
+                    node.BlueprintOutputs
+                        .GroupBy(output => output.ItemId, StringComparer.Ordinal)
+                        .ToDictionary(group => group.Key, group => group.Sum(output => output.RatePerMinute)));
+                continue;
+            }
+
             var recipe = PlannerEdgeService.RecipeForNode(catalog, node);
             if (recipe is null)
             {
@@ -104,7 +115,7 @@ public static class ProductionAnalysisService
         foreach (var node in scheme.Nodes)
         {
             var recipe = PlannerEdgeService.RecipeForNode(catalog, node);
-            if (recipe is null)
+            if (recipe is null || node.OnlyOutput)
             {
                 continue;
             }
@@ -236,7 +247,16 @@ public sealed class ProductionAnalysisResult
     public static ProductionAnalysisResult Empty { get; } = new();
 }
 
-public sealed record ProductionNodeRates(double OutputPerMinute, Dictionary<string, double> InputsPerMinute);
+public sealed record ProductionNodeRates(
+    double OutputPerMinute,
+    Dictionary<string, double> InputsPerMinute,
+    Dictionary<string, double> OutputsPerMinute)
+{
+    public ProductionNodeRates(double outputPerMinute, Dictionary<string, double> inputsPerMinute)
+        : this(outputPerMinute, inputsPerMinute, [])
+    {
+    }
+}
 
 public sealed record ProductionInputAnalysis(
     string NodeId,

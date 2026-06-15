@@ -10,9 +10,18 @@ public static class PlannerEdgeService
         IPlannerCalculator calculator,
         SchemeEdge edge)
     {
-        var sourceRecipe = RecipeForNode(catalog, scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId));
-        var targetRecipe = RecipeForNode(catalog, scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId));
-        return calculator.CanConnectOutputToInput(sourceRecipe, targetRecipe, edge.SourceItemId)
+        var sourceNode = scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId);
+        var sourceOutput = OutputForNode(catalog, sourceNode, edge.SourceItemId);
+        var targetNode = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
+        var targetRecipe = RecipeForNode(catalog, targetNode);
+        if (targetNode?.OnlyOutput == true)
+        {
+            return false;
+        }
+
+        return sourceOutput is not null
+            && targetRecipe is not null
+            && targetRecipe.Inputs.Any(input => input.ItemId == edge.SourceItemId)
             && edge.SourceItemId == edge.TargetItemId;
     }
 
@@ -26,9 +35,14 @@ public static class PlannerEdgeService
     {
         var source = scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId);
         var target = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
-        var sourceRecipe = RecipeForNode(catalog, source);
+        var sourceOutput = OutputForNode(catalog, source, edge.SourceItemId);
         var targetRecipe = RecipeForNode(catalog, target);
-        if (source is null || target is null || sourceRecipe is null || targetRecipe is null)
+        if (target?.OnlyOutput == true)
+        {
+            return "Invalid connection: target is output-only";
+        }
+
+        if (source is null || target is null || sourceOutput is null || targetRecipe is null)
         {
             return UiText.T("Text.InvalidConnection");
         }
@@ -39,7 +53,7 @@ public static class PlannerEdgeService
             return UiText.T("Text.InvalidInput");
         }
 
-        var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceRecipe, input, edge, analysis);
+        var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceOutput, input, edge, analysis);
         var core = metrics.IsShort
             ? $"{metrics.Delivered:g} of {metrics.Required:g}/min ({metrics.Deficit:g} {UiText.T("Text.Short")})"
             : $"{metrics.Delivered:g}/min, {UiText.T("Text.MeetsDemand")}";
@@ -67,9 +81,14 @@ public static class PlannerEdgeService
     {
         var source = scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId);
         var target = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
-        var sourceRecipe = RecipeForNode(catalog, source);
+        var sourceOutput = OutputForNode(catalog, source, edge.SourceItemId);
         var targetRecipe = RecipeForNode(catalog, target);
-        if (source is null || target is null || sourceRecipe is null || targetRecipe is null)
+        if (target?.OnlyOutput == true)
+        {
+            return "Invalid connection\nTarget is marked Only output and cannot consume inputs.";
+        }
+
+        if (source is null || target is null || sourceOutput is null || targetRecipe is null)
         {
             return UiText.T("Text.InvalidConnection");
         }
@@ -80,12 +99,12 @@ public static class PlannerEdgeService
             return UiText.T("Text.InvalidInput");
         }
 
-        var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceRecipe, input, edge, analysis);
+        var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceOutput, input, edge, analysis);
         var throughputStatus = metrics.IsShort ? $"{metrics.Deficit:g}/min {UiText.T("Text.Short")}" : UiText.T("Text.MeetsDemand");
         var lines = new List<string>
         {
             $"{UiText.T("Text.Item")}: {input.Name}",
-            $"{UiText.T("Text.From")}: {sourceRecipe.BuildingName} -> {targetRecipe.BuildingName}",
+            $"{UiText.T("Text.From")}: {SourceNodeName(catalog, source)} -> {targetRecipe.BuildingName}",
             $"{UiText.T("Text.Throughput")}: {metrics.Delivered:g} / {metrics.Required:g} /min - {throughputStatus}",
         };
 
@@ -111,7 +130,7 @@ public static class PlannerEdgeService
         IPlannerCalculator calculator,
         SchemeNode source,
         SchemeNode target,
-        RecipeInfo sourceRecipe,
+        SourceOutputInfo sourceOutput,
         RecipePortInfo input,
         SchemeEdge edge,
         ProductionAnalysisResult? analysis)
@@ -121,7 +140,7 @@ public static class PlannerEdgeService
         var targetMachineCount = ProductionAnalysisService.EffectiveMachineCount(target);
         var required = calculator.RequiredInputPerMinute(targetRecipe, input, targetMachineCount);
         var delivered = analysis?.EdgeDeliveries.GetValueOrDefault(edge.Id)
-            ?? calculator.OutputPerMinute(sourceRecipe, ProductionAnalysisService.EffectiveMachineCount(source));
+            ?? sourceOutput.RatePerMinute;
         var availableTiers = PlannerUnlockService.AvailableRailTiers(catalog, scheme).ToList();
         var recommendedTier = calculator.RecommendTransportTier(availableTiers, required);
         var isShort = delivered + epsilon < required;
@@ -145,6 +164,41 @@ public static class PlannerEdgeService
         }
 
         return catalog.Recipes.FirstOrDefault(recipe => recipe.RecipeKey == node.SelectedRecipeKey);
+    }
+
+    public static SourceOutputInfo? OutputForNode(PlannerCatalog catalog, SchemeNode? node, string itemId)
+    {
+        if (node is null)
+        {
+            return null;
+        }
+
+        if (node.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            var output = node.BlueprintOutputs.FirstOrDefault(item => item.ItemId == itemId);
+            return output is null ? null : new SourceOutputInfo(output.ItemId, output.Name, output.RatePerMinute);
+        }
+
+        var recipe = RecipeForNode(catalog, node);
+        if (recipe?.Output.ItemId != itemId)
+        {
+            return null;
+        }
+
+        var rate = recipe.Output.QuantityPerMinute * ProductionAnalysisService.EffectiveMachineCount(node);
+        return new SourceOutputInfo(recipe.Output.ItemId, recipe.Output.Name, rate);
+    }
+
+    public static string SourceNodeName(PlannerCatalog catalog, SchemeNode source)
+    {
+        if (source.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            return string.IsNullOrWhiteSpace(source.SourceSchemeName) ? "Blueprint source" : source.SourceSchemeName;
+        }
+
+        var recipe = RecipeForNode(catalog, source);
+        var building = BuildingForNode(catalog, source);
+        return recipe?.BuildingName ?? building?.Name ?? source.BuildingId;
     }
 
     public static BuildingInfo? BuildingForNode(PlannerCatalog catalog, SchemeNode? node)
@@ -178,3 +232,8 @@ public static class PlannerEdgeService
         return tier is null ? UiText.T("Text.TransportTierMissing") : $"{tier.Name} {tier.ItemsPerMinute:g}/min";
     }
 }
+
+public sealed record SourceOutputInfo(
+    string ItemId,
+    string Name,
+    double RatePerMinute);

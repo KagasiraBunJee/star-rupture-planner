@@ -145,6 +145,8 @@
                                      ItemsSource="{Binding Toolbox.Schemes}"
                                      ItemTemplate="{StaticResource SchemeItemTemplate}"
                                      PreviewMouseLeftButtonDown="SchemesList_PreviewMouseLeftButtonDown"
+                                     PreviewMouseMove="SchemesList_PreviewMouseMove"
+                                     PreviewMouseLeftButtonUp="SchemesList_PreviewMouseLeftButtonUp"
                                      SelectionChanged="SchemesList_SelectionChanged"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                         </TabItem>
@@ -175,26 +177,7 @@
             </Border>
 
             <Grid x:Name="CenterPanel" Grid.Column="1" Margin="10,0" Background="{DynamicResource CenterBackgroundBrush}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="58"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="14,8">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{DynamicResource Ui.Toolbar.Produce}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <Button IsEnabled="False" Margin="0,0,18,0" Content="{DynamicResource Ui.Toolbar.SelectOutput}"/>
-                        <TextBlock Text="{DynamicResource Ui.Toolbar.Rate}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Width="78" Text="60" IsEnabled="False" Margin="0,0,6,0"/>
-                        <TextBlock Text="/min" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,18,0"/>
-                        <TextBlock Text="{DynamicResource Ui.Toolbar.Mode}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <Button IsEnabled="False" Content="{DynamicResource Ui.Toolbar.Balanced}" Margin="0,0,18,0"/>
-                        <CheckBox Content="{DynamicResource Ui.Toolbar.IncludePower}" IsEnabled="False" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                        <Button IsEnabled="False" Content="{DynamicResource Ui.Toolbar.Buffers}" ToolTip="Coming soon"/>
-                    </StackPanel>
-                </Border>
-
-                <Border x:Name="CanvasFrame" Grid.Row="1" Margin="0,10,0,0" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
+                <Border x:Name="CanvasFrame" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
                     <Grid ClipToBounds="True">
                         <controls:DottedGridCanvas x:Name="PlannerCanvas"
                                                     Width="5000"
@@ -336,6 +319,23 @@
                                     </Popup>
                                 </Grid>
 
+                                <StackPanel Margin="0,12,0,0">
+                                    <Button x:Name="OpenBlueprintSourceButton"
+                                            Content="Open scheme"
+                                            Visibility="Collapsed"
+                                            Click="OpenBlueprintSourceButton_Click"/>
+                                    <CheckBox x:Name="OnlyOutputCheckBox"
+                                              Content="Only output"
+                                              Margin="0,8,0,0"
+                                              Checked="OnlyOutputCheckBox_Changed"
+                                              Unchecked="OnlyOutputCheckBox_Changed"/>
+                                    <CheckBox x:Name="SchemeOutputCheckBox"
+                                              Content="Is Scheme output"
+                                              Margin="0,8,0,0"
+                                              Checked="SchemeOutputCheckBox_Changed"
+                                              Unchecked="SchemeOutputCheckBox_Changed"/>
+                                </StackPanel>
+
                                 <Border Height="1" Background="{DynamicResource MutedBorderBrush}" Margin="0,14,0,4"/>
                                 <StackPanel x:Name="InspectorMetricsStack" Margin="0,4,0,0"/>
 
@@ -404,6 +404,10 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Margin="14,0" MaxWidth="260">
+                        <TextBlock Text="Scheme Outputs" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock x:Name="MetricSchemeOutputs" Text="No scheme outputs marked" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
                     <StackPanel Margin="14,0">
                         <TextBlock Text="{DynamicResource Ui.Metric.TotalPower}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="MetricPower" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
