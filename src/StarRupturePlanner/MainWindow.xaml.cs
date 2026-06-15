@@ -171,6 +171,37 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void MaxRestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+        var maximized = WindowState == WindowState.Maximized;
+        MaxRestoreButton.Content = maximized ? "\uE923" : "\uE922";
+        MaxRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
+
+        // A borderless (WindowStyle=None) window overhangs the work area by the
+        // resize-border + padded-border thickness on every side when maximized;
+        // inset the content uniformly (horizontal metric) to compensate.
+        if (maximized)
+        {
+            var pad = SystemParameters.WindowResizeBorderThickness.Left
+                + SystemParameters.WindowNonClientFrameThickness.Left;
+            RootGrid.Margin = new Thickness(pad);
+        }
+        else
+        {
+            RootGrid.Margin = new Thickness(0);
+        }
+    }
+
     private void NewScheme()
     {
         _viewModel.NewScheme();
