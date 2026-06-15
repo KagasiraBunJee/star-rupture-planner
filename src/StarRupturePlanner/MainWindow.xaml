@@ -6,7 +6,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="StarRupture Production Planner"
+        Title="{DynamicResource Ui.App.Title}"
         Height="900"
         Width="1500"
         MinHeight="760"
@@ -41,8 +41,8 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="✦" Foreground="{DynamicResource StarBlueBrush}" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     <StackPanel>
-                        <TextBlock Text="Rupture Planner" FontSize="18" FontWeight="SemiBold"/>
-                        <TextBlock Text="StarRupture Production Planning" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="12" Margin="0,3,0,0"/>
+                        <TextBlock Text="{DynamicResource Ui.App.Name}" FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Text="{DynamicResource Ui.App.Subtitle}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="12" Margin="0,3,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -64,7 +64,7 @@
                                      TextChanged="TopSearchBox_TextChanged"
                                      Text="{Binding Toolbox.FilterText, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock x:Name="TopSearchPlaceholder"
-                                       Text="Search items, recipes, machines..."
+                                       Text="{DynamicResource Ui.Search.Placeholder}"
                                        Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False">
@@ -78,22 +78,22 @@
 
                 <StackPanel Grid.Column="2" shell:WindowChrome.IsHitTestVisibleInChrome="True" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Click="NewScheme_Click" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="＋" Margin="0,0,7,0"/><TextBlock Text="New"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="＋" Margin="0,0,7,0"/><TextBlock Text="{DynamicResource Ui.Command.New}"/></StackPanel>
                     </Button>
                     <Button Click="ChooseFolder_Click" Margin="0,0,8,0" ToolTip="Choose scheme folder">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="▱" Margin="0,0,7,0"/><TextBlock Text="Open"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="▱" Margin="0,0,7,0"/><TextBlock Text="{DynamicResource Ui.Command.Open}"/></StackPanel>
                     </Button>
                     <Button Click="SaveScheme_Click" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="▣" Margin="0,0,7,0"/><TextBlock Text="Save"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="▣" Margin="0,0,7,0"/><TextBlock Text="{DynamicResource Ui.Command.Save}"/></StackPanel>
                     </Button>
                     <Button IsEnabled="False" Margin="0,0,8,0" ToolTip="Export (coming soon)">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="⇩" Margin="0,0,7,0"/><TextBlock Text="Export"/><TextBlock Text="▾" Margin="6,0,0,0"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="⇩" Margin="0,0,7,0"/><TextBlock Text="{DynamicResource Ui.Command.Export}"/><TextBlock Text="▾" Margin="6,0,0,0"/></StackPanel>
                     </Button>
                     <Button IsEnabled="False" Margin="0,0,8,0" ToolTip="Share (coming soon)">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="↗" Margin="0,0,7,0"/><TextBlock Text="Share"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="↗" Margin="0,0,7,0"/><TextBlock Text="{DynamicResource Ui.Command.Share}"/></StackPanel>
                     </Button>
                     <Button Click="Settings_Click">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Margin="0,0,7,0"/><TextBlock Text="Settings"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Margin="0,0,7,0"/><TextBlock Text="{DynamicResource Ui.Command.Settings}"/></StackPanel>
                     </Button>
                     <Border Width="1" Background="{DynamicResource GraphiteLineBrush}" Margin="12,6"/>
                     <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Click="MinimizeButton_Click" Content="&#xE921;" ToolTip="Minimize"/>
@@ -113,22 +113,22 @@
             <Border x:Name="LeftPanel" Grid.Column="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="12">
                 <DockPanel LastChildFill="True">
                     <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-                        <TextBlock Text="Navigation" Style="{StaticResource PanelTitle}"/>
+                        <TextBlock Text="{DynamicResource Ui.Nav.Navigation}" Style="{StaticResource PanelTitle}"/>
                         <StackPanel>
                             <Border Background="#122233" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="3,0,0,0" CornerRadius="7" Padding="12,9" Margin="0,0,0,6">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="▤" Foreground="{DynamicResource StarBlueBrush}" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Production" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{DynamicResource Ui.Nav.Production}" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Toolbox" Style="{StaticResource PanelTitle}" Margin="0,12,0,8"/>
+                        <TextBlock Text="{DynamicResource Ui.Nav.Toolbox}" Style="{StaticResource PanelTitle}" Margin="0,12,0,8"/>
                         <TextBox x:Name="ToolboxFilterBox" Text="{Binding Toolbox.FilterText, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
                     <Border DockPanel.Dock="Bottom" Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="9" Padding="11" Margin="0,12,0,0">
                         <StackPanel>
-                            <TextBlock Text="Current Plan" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                            <TextBlock Text="{DynamicResource Ui.Plan.Current}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                             <TextBlock Text="{Binding Scheme.Name}" FontWeight="SemiBold" FontSize="14" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
                             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                 <Ellipse Width="7" Height="7" Fill="{DynamicResource SignalGreenBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -139,7 +139,7 @@
                     </Border>
 
                     <TabControl x:Name="ToolboxTabs">
-                        <TabItem Header="Schemes">
+                        <TabItem Header="{DynamicResource Ui.Tab.Schemes}">
                             <ListBox x:Name="SchemesList"
                                      Background="{DynamicResource CanvasBrush}"
                                      ItemsSource="{Binding Toolbox.Schemes}"
@@ -147,7 +147,7 @@
                                      SelectionChanged="SchemesList_SelectionChanged"
                                      ScrollViewer.VerticalScrollBarVisibility="Visible"/>
                         </TabItem>
-                        <TabItem Header="Resources">
+                        <TabItem Header="{DynamicResource Ui.Tab.Resources}">
                             <ListBox x:Name="ResourcesList"
                                      Background="{DynamicResource CanvasBrush}"
                                      ItemsSource="{Binding Toolbox.Resources}"
@@ -158,7 +158,7 @@
                                      MouseDoubleClick="ResourcesList_MouseDoubleClick"
                                      ScrollViewer.VerticalScrollBarVisibility="Visible"/>
                         </TabItem>
-                        <TabItem Header="Machines">
+                        <TabItem Header="{DynamicResource Ui.Tab.Machines}">
                             <ListBox x:Name="MachinesList"
                                      Background="{DynamicResource CanvasBrush}"
                                      ItemsSource="{Binding Toolbox.Machines}"
@@ -181,15 +181,15 @@
 
                 <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="14,8">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Produce:" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <Button IsEnabled="False" Margin="0,0,18,0" Content="Select output"/>
-                        <TextBlock Text="Rate:" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource Ui.Toolbar.Produce}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button IsEnabled="False" Margin="0,0,18,0" Content="{DynamicResource Ui.Toolbar.SelectOutput}"/>
+                        <TextBlock Text="{DynamicResource Ui.Toolbar.Rate}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox Width="78" Text="60" IsEnabled="False" Margin="0,0,6,0"/>
                         <TextBlock Text="/min" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,18,0"/>
-                        <TextBlock Text="Mode:" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <Button IsEnabled="False" Content="Balanced" Margin="0,0,18,0"/>
-                        <CheckBox Content="Include Power" IsEnabled="False" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                        <Button IsEnabled="False" Content="Buffers" ToolTip="Coming soon"/>
+                        <TextBlock Text="{DynamicResource Ui.Toolbar.Mode}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button IsEnabled="False" Content="{DynamicResource Ui.Toolbar.Balanced}" Margin="0,0,18,0"/>
+                        <CheckBox Content="{DynamicResource Ui.Toolbar.IncludePower}" IsEnabled="False" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                        <Button IsEnabled="False" Content="{DynamicResource Ui.Toolbar.Buffers}" ToolTip="Coming soon"/>
                     </StackPanel>
                 </Border>
 
@@ -236,7 +236,7 @@
                                     SnapsToDevicePixels="True"
                                     SizeChanged="SuggestionPopupChrome_SizeChanged">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="Connect compatible machine" FontWeight="SemiBold" Margin="12" Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                                    <TextBlock DockPanel.Dock="Top" Text="{DynamicResource Ui.Popup.ConnectCompatible}" FontWeight="SemiBold" Margin="12" Foreground="{DynamicResource ThemeForegroundBrush}"/>
                                     <ListBox x:Name="SuggestionList"
                                              ItemTemplate="{StaticResource SuggestionRecipeTemplate}"
                                              ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
@@ -263,41 +263,41 @@
                                     <Image x:Name="InspectorImage" Width="56" Height="56" Stretch="Uniform"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="InspectorTitle" Text="No selection" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource ThemeForegroundBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="InspectorTitle" Text="{DynamicResource Ui.Inspector.NoSelection}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource ThemeForegroundBrush}" TextWrapping="Wrap"/>
                                     <StackPanel x:Name="InspectorStatusPanel" Orientation="Horizontal" Margin="0,6,0,0">
                                         <Ellipse Width="10" Height="10" Fill="{DynamicResource SignalGreenBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                                        <TextBlock Text="Operational" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                                        <TextBlock Text="{DynamicResource Ui.Inspector.Operational}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="Inspector" Style="{StaticResource PanelTitle}"/>
+                        <TextBlock Text="{DynamicResource Ui.Inspector.Title}" Style="{StaticResource PanelTitle}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Border x:Name="InspectorTabDetails" Tag="Details" Background="Transparent" Cursor="Hand" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="0,0,0,2" Padding="10,0,10,7" MouseLeftButtonUp="InspectorTab_Click">
-                                <TextBlock x:Name="InspectorTabDetailsText" Text="Details" Foreground="{DynamicResource StarBlueBrush}" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="InspectorTabDetailsText" Text="{DynamicResource Ui.Inspector.Details}" Foreground="{DynamicResource StarBlueBrush}" FontWeight="SemiBold"/>
                             </Border>
                             <Border x:Name="InspectorTabStatistics" Tag="Statistics" Background="Transparent" Cursor="Hand" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="10,0,10,7" Margin="8,0,0,0" MouseLeftButtonUp="InspectorTab_Click">
-                                <TextBlock x:Name="InspectorTabStatisticsText" Text="Statistics" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                                <TextBlock x:Name="InspectorTabStatisticsText" Text="{DynamicResource Ui.Inspector.Statistics}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
                             </Border>
                             <Border x:Name="InspectorTabModifications" Tag="Modifications" Background="Transparent" Cursor="Hand" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="10,0,10,7" Margin="8,0,0,0" MouseLeftButtonUp="InspectorTab_Click">
-                                <TextBlock x:Name="InspectorTabModificationsText" Text="Modifications" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                                <TextBlock x:Name="InspectorTabModificationsText" Text="{DynamicResource Ui.Inspector.Modifications}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
                             </Border>
                         </StackPanel>
 
                         <StackPanel x:Name="SchemeSettingsPanel" Visibility="Collapsed">
-                            <TextBlock Text="Scheme settings" Style="{StaticResource PanelTitle}" Margin="0,0,0,8"/>
-                            <TextBlock Text="Corporations" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="{DynamicResource Ui.Inspector.SchemeSettings}" Style="{StaticResource PanelTitle}" Margin="0,0,0,8"/>
+                            <TextBlock Text="{DynamicResource Ui.Inspector.Corporations}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <StackPanel x:Name="CorporationSettingsStack"/>
 
                             <Border Height="1" Background="{DynamicResource MutedBorderBrush}" Margin="0,14,0,12"/>
-                            <TextBlock Text="Rail tier" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="{DynamicResource Ui.Inspector.RailTier}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <StackPanel x:Name="RailTierSettingsStack"/>
                         </StackPanel>
 
                         <StackPanel x:Name="NodeInspectorPanel">
                             <StackPanel x:Name="InspectorDetailsPanel">
-                                <Label Content="Output"/>
+                                <Label Content="{DynamicResource Ui.Inspector.Output}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -312,7 +312,7 @@
                                     <Button Grid.Column="2" Content="🔒" IsEnabled="False" Margin="6,0,0,0" ToolTip="Lock count (coming soon)"/>
                                 </Grid>
 
-                                <Label Content="Recipe"/>
+                                <Label Content="{DynamicResource Ui.Inspector.Recipe}"/>
                                 <Grid>
                                     <TextBox x:Name="InspectorRecipeSearchBox"
                                              PreviewMouseLeftButtonDown="InspectorRecipeSearchBox_PreviewMouseLeftButtonDown"
@@ -338,12 +338,12 @@
                                 <Border Height="1" Background="{DynamicResource MutedBorderBrush}" Margin="0,14,0,4"/>
                                 <StackPanel x:Name="InspectorMetricsStack" Margin="0,4,0,0"/>
 
-                                <Label Content="Priority"/>
+                                <Label Content="{DynamicResource Ui.Inspector.Priority}"/>
                                 <ComboBox x:Name="PriorityBox"
                                           SelectionChanged="PriorityBox_SelectionChanged">
-                                    <ComboBoxItem Content="High" Tag="High"/>
-                                    <ComboBoxItem Content="Mid" Tag="Mid"/>
-                                    <ComboBoxItem Content="Low" Tag="Low"/>
+                                    <ComboBoxItem Content="{DynamicResource Ui.Priority.High}" Tag="High"/>
+                                    <ComboBoxItem Content="{DynamicResource Ui.Priority.Mid}" Tag="Mid"/>
+                                    <ComboBoxItem Content="{DynamicResource Ui.Priority.Low}" Tag="Low"/>
                                 </ComboBox>
 
                                 <Grid Margin="0,14,0,0">
@@ -352,10 +352,10 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Button Grid.Column="0" IsEnabled="False" Margin="0,0,4,0" ToolTip="Lock count (coming soon)">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Text="🔒" Margin="0,0,6,0"/><TextBlock Text="Lock Count"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><TextBlock Text="🔒" Margin="0,0,6,0"/><TextBlock Text="{DynamicResource Ui.Inspector.LockCount}"/></StackPanel>
                                     </Button>
                                     <Button Grid.Column="1" IsEnabled="False" Margin="4,0,0,0" Background="{DynamicResource StarBlueBrush}" ToolTip="Auto-optimize (coming soon)">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Text="▦" Margin="0,0,6,0"/><TextBlock Text="Optimize"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><TextBlock Text="▦" Margin="0,0,6,0"/><TextBlock Text="{DynamicResource Ui.Inspector.Optimize}"/></StackPanel>
                                     </Button>
                                 </Grid>
 
@@ -363,18 +363,18 @@
                             </StackPanel>
 
                             <StackPanel x:Name="InspectorStatisticsPanel" Visibility="Collapsed">
-                                <Label Content="Input requirements"/>
+                                <Label Content="{DynamicResource Ui.Inspector.InputRequirements}"/>
                                 <ItemsControl x:Name="InspectorInputs"/>
                             </StackPanel>
 
                             <StackPanel x:Name="InspectorModificationsPanel" Visibility="Collapsed">
-                                <Label Content="Unlock requirements"/>
+                                <Label Content="{DynamicResource Ui.Inspector.UnlockRequirements}"/>
                                 <ItemsControl x:Name="InspectorUnlocks"/>
                             </StackPanel>
                         </StackPanel>
 
                         <StackPanel x:Name="ConnectionInspectorPanel">
-                            <Label Content="Selected connection"/>
+                            <Label Content="{DynamicResource Ui.Inspector.SelectedConnection}"/>
                             <TextBlock x:Name="ConnectionReadOnly" TextWrapping="Wrap" Foreground="{DynamicResource ThemeForegroundBrush}"/>
                         </StackPanel>
                     </StackPanel>
@@ -390,7 +390,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Bottlenecks &amp; Alerts" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                        <TextBlock Text="{DynamicResource Ui.Alerts.Title}" FontWeight="SemiBold" Margin="0,0,10,0"/>
                         <TextBlock x:Name="StatusText" Text="{Binding Status}" Foreground="{DynamicResource StatusForegroundBrush}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="620"/>
                     </StackPanel>
                     <ScrollViewer x:Name="AlertsScroller"
@@ -404,24 +404,24 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="14,0">
-                        <TextBlock Text="Total Power" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock Text="{DynamicResource Ui.Metric.TotalPower}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="MetricPower" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                     <StackPanel Margin="14,0">
-                        <TextBlock Text="Temperature" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock Text="{DynamicResource Ui.Metric.Temperature}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="MetricTemperature" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                     <StackPanel Margin="14,0">
-                        <TextBlock Text="Efficiency" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock Text="{DynamicResource Ui.Metric.Efficiency}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock Text="—" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                     <StackPanel Margin="14,0">
-                        <TextBlock Text="Machines" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock Text="{DynamicResource Ui.Metric.Machines}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="MetricMachines" Text="0" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                     <Border Width="1" Background="{DynamicResource MutedBorderBrush}" Margin="8,4" VerticalAlignment="Stretch"/>
                     <StackPanel Margin="14,0,4,0">
-                        <TextBlock Text="Canvas" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock Text="{DynamicResource Ui.Metric.Canvas}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="ZoomText" Text="100%" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>

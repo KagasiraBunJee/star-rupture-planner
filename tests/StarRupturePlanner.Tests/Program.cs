@@ -28,6 +28,7 @@ var tests = new (string Name, Action Body)[]
     ("Locked building is hidden until corporation level allows it", LockedBuildingRequiresCorporationLevel),
     ("Rail recommendation uses available tiers", RailRecommendationUsesAvailableTiers),
     ("Building metrics deserialize", BuildingMetricsDeserialize),
+    ("Catalog metadata deserializes language", CatalogMetadataDeserializesLanguage),
     ("Scheme metrics scale by machine count", SchemeMetricsScaleByMachineCount),
     ("Temperature counts for placed machine without recipe", TemperatureCountsForPlacedMachineWithoutRecipe),
     ("Missing building metrics are ignored", MissingBuildingMetricsAreIgnored),
@@ -430,6 +431,7 @@ static void AppSettingsSerializationRoundTrips()
     store.Save(new AppSettings
     {
         Theme = AppTheme.Light,
+        PlannerLanguage = PlannerLanguages.Ukrainian,
         CurrentRailTierId = "rail-2",
         CanvasCardFont = new FontSettings { Family = "Segoe UI", Size = 14, Color = "#112233" },
         LeftBarListFont = new FontSettings { Family = "Consolas", Size = 11, Color = "#445566" },
@@ -437,6 +439,7 @@ static void AppSettingsSerializationRoundTrips()
 
     var loaded = store.Load();
     AssertEqual(AppTheme.Light, loaded.Theme);
+    AssertEqual(PlannerLanguages.Ukrainian, loaded.PlannerLanguage);
     AssertEqual("rail-2", loaded.CurrentRailTierId);
     AssertEqual("Segoe UI", loaded.CanvasCardFont.Family);
     AssertEqual(14d, loaded.CanvasCardFont.Size);
@@ -753,6 +756,16 @@ static void BuildingMetricsDeserialize()
 
     AssertEqual(-5d, building?.Power ?? 0);
     AssertEqual(3d, building?.Temperature ?? 0);
+}
+
+static void CatalogMetadataDeserializesLanguage()
+{
+    var catalog = System.Text.Json.JsonSerializer.Deserialize<PlannerCatalog>(
+        "{\"meta\":{\"building_count\":21,\"recipe_count\":132,\"language\":\"uk\"}}",
+        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+    AssertEqual("uk", catalog?.Meta.Language);
+    AssertEqual(132, catalog?.Meta.RecipeCount ?? 0);
 }
 
 static void SchemeMetricsScaleByMachineCount()

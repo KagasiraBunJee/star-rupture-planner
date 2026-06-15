@@ -15,6 +15,8 @@ public sealed class PlannerApiClient : IPlannerApiClient
 
     public Uri BaseUri { get; }
 
+    public string PlannerLanguage { get; set; } = PlannerLanguages.English;
+
     public PlannerApiClient(string baseUrl = "http://127.0.0.1:8010")
     {
         BaseUri = new Uri(baseUrl.TrimEnd('/') + "/");
@@ -36,7 +38,7 @@ public sealed class PlannerApiClient : IPlannerApiClient
 
     public async Task<PlannerCatalog> GetCatalogAsync(CancellationToken cancellationToken = default)
     {
-        return await GetJsonAsync<PlannerCatalog>("api/planner/catalog", cancellationToken)
+        return await GetJsonAsync<PlannerCatalog>($"api/planner/catalog?lang={Uri.EscapeDataString(CurrentLanguage())}", cancellationToken)
             ?? new PlannerCatalog();
     }
 
@@ -45,10 +47,12 @@ public sealed class PlannerApiClient : IPlannerApiClient
         string itemId,
         CancellationToken cancellationToken = default)
     {
-        var url = $"api/planner/suggestions?direction={Uri.EscapeDataString(direction)}&item_id={Uri.EscapeDataString(itemId)}";
+        var url = $"api/planner/suggestions?direction={Uri.EscapeDataString(direction)}&item_id={Uri.EscapeDataString(itemId)}&lang={Uri.EscapeDataString(CurrentLanguage())}";
         return await GetJsonAsync<SuggestionResponse>(url, cancellationToken)
             ?? new SuggestionResponse();
     }
+
+    private string CurrentLanguage() => PlannerLanguages.Normalize(PlannerLanguage);
 
     private async Task<T?> GetJsonAsync<T>(string url, CancellationToken cancellationToken)
     {

@@ -41,6 +41,15 @@ public partial class SettingsWindow : Window
         };
         ThemePicker.SelectedValue = Settings.Theme;
 
+        LanguagePicker.ItemsSource = new[]
+        {
+            new LanguageOption("English", PlannerLanguages.English),
+            new LanguageOption("Russian", PlannerLanguages.Russian),
+            new LanguageOption("German", PlannerLanguages.German),
+            new LanguageOption("Ukrainian", PlannerLanguages.Ukrainian),
+        };
+        LanguagePicker.SelectedValue = PlannerLanguages.Normalize(Settings.PlannerLanguage);
+
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -54,6 +63,7 @@ public partial class SettingsWindow : Window
         Settings.CanvasCardFont = canvasFont;
         Settings.LeftBarListFont = leftFont;
         Settings.Theme = ThemePicker.SelectedValue is AppTheme theme ? theme : AppTheme.System;
+        Settings.PlannerLanguage = LanguagePicker.SelectedValue as string ?? PlannerLanguages.English;
         DialogResult = true;
     }
 
@@ -104,6 +114,7 @@ public partial class SettingsWindow : Window
         return new AppSettings
         {
             Theme = settings.Theme,
+            PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage),
             CurrentRailTierId = settings.CurrentRailTierId,
             CanvasCardFont = new FontSettings
             {
@@ -121,4 +132,6 @@ public partial class SettingsWindow : Window
     }
 
     private sealed record ThemeOption(string Label, AppTheme Value);
+
+    private sealed record LanguageOption(string Label, string Value);
 }

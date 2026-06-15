@@ -1,0 +1,3245 @@
+{
+  "note": "Generated translations should be reviewed against official client strings when available.",
+  "entries": [
+    {
+      "section": "items",
+      "id": "accumulator",
+      "source": "Accumulator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "aerogel",
+      "source": "Aerogel",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "airlock",
+      "source": "Airlock",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "anti-radiation-covers",
+      "source": "Anti-Radiation Covers",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "anti-radiation-covers-blueprint",
+      "source": "Anti-Radiation Covers - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "antimatter-generator",
+      "source": "Antimatter Generator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "arc-reactor",
+      "source": "Arc Reactor",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "basic-building-material",
+      "source": "Basic Building Material",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "basic-fuel",
+      "source": "Basic Fuel",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "battery",
+      "source": "Battery",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "biofilament",
+      "source": "Biofilament",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "biomass",
+      "source": "Biomass",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "bioprinter",
+      "source": "Bioprinter",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "calcite-sheets",
+      "source": "Calcite Sheets",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "calcium-block",
+      "source": "Calcium Block",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "calcium-ore",
+      "source": "Calcium Ore",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "calcium-powder",
+      "source": "Calcium Powder",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "carbon-sonar",
+      "source": "Carbon Sonar",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "ceramics",
+      "source": "Ceramics",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "coal-ore",
+      "source": "CoalOre",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "coil",
+      "source": "Inductor",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "condenser",
+      "source": "Condenser",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "condenser-blueprint",
+      "source": "Condenser - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "containment-vessel",
+      "source": "Containment Vessel",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "control-systems",
+      "source": "Control Systems",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "converter",
+      "source": "Converter",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "copper-bar",
+      "source": "CopperBar",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "copper-ore",
+      "source": "CopperOre",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "cyclotrone",
+      "source": "Cyclotrone",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "data-point",
+      "source": "Data Point",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "dome",
+      "source": "Dome",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "electromagnet",
+      "source": "Electromagnet",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "electromagnetic-coil",
+      "source": "Electromagnetic Coil",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "electromagnetic-coil-blueprint",
+      "source": "Electromagnetic Coil - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "electronics",
+      "source": "Electronics",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "electronics-blueprint",
+      "source": "Electronics - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "elementary-building-material",
+      "source": "Elementary Building Material",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "epoxy",
+      "source": "Epoxy",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "explosive",
+      "source": "Chemicals",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "explosive-blueprint",
+      "source": "Chemicals - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "generator",
+      "source": "Generator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "genome-alternator",
+      "source": "Genome Alternator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "glass",
+      "source": "Glass",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "goethite-ingot",
+      "source": "Goethite Ingot",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "goethite-lattice",
+      "source": "Goethite Lattice",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "goethite-lattice-blueprint",
+      "source": "Goethite Lattice - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "goethite-ore",
+      "source": "Goethite Ore",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "goethite-powder",
+      "source": "Goethite Powder",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "gold-ore",
+      "source": "GoldOre",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "grenade",
+      "source": "Explosive Charge",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "grenade-blueprint",
+      "source": "Explosive Charge - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "gyroscope",
+      "source": "Stabilizer",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "gyroscope-blueprint",
+      "source": "Stabilizer - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "hardening-agent",
+      "source": "Hardening Agent",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "hardening-agent-blueprint",
+      "source": "Hardening Agent - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "heat-resistant-sheet",
+      "source": "Heat Resistant Sheet",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "heat-shield",
+      "source": "Heat Shield",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "heat-shield-blueprint",
+      "source": "Heat Shield - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "helium-cell",
+      "source": "Helium Cell",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "helium-ore",
+      "source": "Helium-3",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "impeller",
+      "source": "Impeller",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "intermediate-building-material",
+      "source": "Intermediate Building Material",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "ion-bomb",
+      "source": "Ion Bomb",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "ion-injector",
+      "source": "Ion Injector",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "ion-stabilizer",
+      "source": "Ion Stabilizer",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "ion-thrusters",
+      "source": "Ion Thrusters",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "laser-emitter",
+      "source": "Laser Emitter",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "lens",
+      "source": "Lens",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "liquid-helium",
+      "source": "Liquid Helium",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "mars-habitat-base",
+      "source": "Mars Habitat Base",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "meteor-core",
+      "source": "Meteor Heart",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "micro-satellite",
+      "source": "Micro Satellite",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "missile-housing",
+      "source": "Missile Housing",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "molecular-scalpel",
+      "source": "Molecular Scalpel",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "nanofibre",
+      "source": "Nanofibre",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "nanosyringe",
+      "source": "Nanosyringe",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "nanosyringe-blueprint",
+      "source": "Nanosyringe - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "neutrino-bomb",
+      "source": "Neutrino Bomb",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "neutrino-missile",
+      "source": "Neutrino Missile",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "nozzle",
+      "source": "Nozzle",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "onboard-instruments",
+      "source": "Onboard Instruments",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "organ-producer",
+      "source": "Organ Producer",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "organic-compound",
+      "source": "Organic Compound",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "payload-stage",
+      "source": "Payload Stage",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "plasma-generator",
+      "source": "Plasma Generator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "plasma-oxygen-converter",
+      "source": "Plasma Oxygen Converter",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "plastic-dust",
+      "source": "Plastic Dust",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "plastic-dust-blueprint",
+      "source": "Plastic Dust - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "pressure-tank",
+      "source": "Pressure Tank",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "pressurized-helium",
+      "source": "Pressurized Helium",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "propulsion-stage",
+      "source": "Propulsion Stage",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "pseudorubber-insulator",
+      "source": "Pseudorubber Insulator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "pump",
+      "source": "Pump",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "pyrite-ore",
+      "source": "Pyrite",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "quantum-tranqualizer",
+      "source": "Quantum Tranqualizer",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "quartz-building-material",
+      "source": "Quartz Building Material",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rare-ore1",
+      "source": "RareOre",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "refined-oil",
+      "source": "Refined Oil",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "reinforced-frame",
+      "source": "Reinforced Frame",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "reinforced-housing",
+      "source": "Reinforced Housing",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "resonator",
+      "source": "Resonator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rna-stabilizer",
+      "source": "RNA Stabilizer",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rocket-engine",
+      "source": "Rocket Engine",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rocket-fuel",
+      "source": "Rocket Fuel",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rotor",
+      "source": "Rotor",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rotor-blueprint",
+      "source": "Rotor - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rtsc",
+      "source": "RTSC",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "rtsc-generator",
+      "source": "RTSC Generator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "sand-stone-brick",
+      "source": "SandStoneBrick",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "sand-stone-raw",
+      "source": "SandStoneRaw",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "satellite-assembly",
+      "source": "Satellite Assembly",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "satellite-body",
+      "source": "Satellite Body",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "scafolding",
+      "source": "Scafolding",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "scanner",
+      "source": "Scanner",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "self-sustained-habitat",
+      "source": "Self-sustained Habitat",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "silica-sand",
+      "source": "Synthetic Silicon",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "silica-sand-blueprint",
+      "source": "Synthetic Silicon - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "stator",
+      "source": "Stator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "stator-blueprint",
+      "source": "Stator - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "substance-fhs-135-493",
+      "source": "Substance #FHS-135-493",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "sulphur-ore",
+      "source": "Sulphur Ore",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "sulphuric-acid",
+      "source": "Sulphuric Acid",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "superconductor",
+      "source": "Superconductor",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "supermagnet",
+      "source": "Supermagnet",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-dna",
+      "source": "Synthetic DNA",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-fertilizer",
+      "source": "Synthetic Fertilizer",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-protein",
+      "source": "Synthetic Protein",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-resin",
+      "source": "Synthetic Resin",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "syringe",
+      "source": "Applicator",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "titanium-bar",
+      "source": "Titanium Bar",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "titanium-beam",
+      "source": "Titanium Beam",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "titanium-housing",
+      "source": "Titanium Housing",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "titanium-ore",
+      "source": "Titanium Ore",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "titanium-rod",
+      "source": "Titanium Rod",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "titanium-sheet",
+      "source": "Titanium Sheet",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "tracking-device",
+      "source": "Tracking Device",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "tube",
+      "source": "Tube",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "tube-blueprint",
+      "source": "Tube - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "turbine",
+      "source": "Turbine",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "turbine-blueprint",
+      "source": "Turbine - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "uber-oil",
+      "source": "Plastic",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "uber-titanium",
+      "source": "Titanoferrite Ingot",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "uber-wolfram",
+      "source": "Wolfram Steel Ingot",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "uberfilament",
+      "source": "Uberfilament",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "uberfilament-blueprint",
+      "source": "Uberfilament - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "universal-space-soil",
+      "source": "Universal Space Soil",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "valve",
+      "source": "Valve",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "valve-blueprint",
+      "source": "Valve - Blueprint",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-bar",
+      "source": "Wolfram Bar",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-ore",
+      "source": "Wolfram Ore",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-plate",
+      "source": "Wolfram Plate",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-powder",
+      "source": "Wolfram Powder",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-wire",
+      "source": "Wolfram Wire",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "acid-extractor",
+      "source": "Sulfur Extractor",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "assembler",
+      "source": "Assembler",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "crafter",
+      "source": "Fabricator",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "crafter-tier2",
+      "source": "Fabricator v.2",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "factory",
+      "source": "Constructorizer",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "factory-tier2",
+      "source": "Constructorizer v.2",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "forge",
+      "source": "Pyro Forge",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "furnace",
+      "source": "Furnace",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "furnace-tier2",
+      "source": "Furnace v.2",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "gas-extractor",
+      "source": "Helium-3 Extractor",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "hammer",
+      "source": "Mega Press",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "laser-drill",
+      "source": "Laser Drill",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "liquid-extractor",
+      "source": "Oil Extractor",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "mechanical-drill",
+      "source": "Ore Excavator",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "mechanical-drill-tier2",
+      "source": "Ore Excavator v.2",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "military-assembler",
+      "source": "Facturer",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "pressurizer",
+      "source": "Refinery",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "refinery",
+      "source": "Pressurizer",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "smelter",
+      "source": "Smelter",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "synthetizer",
+      "source": "Compounder",
+      "language": "ru"
+    },
+    {
+      "section": "buildings",
+      "id": "synthetizer-tier2",
+      "source": "Compounder v.2",
+      "language": "ru"
+    },
+    {
+      "section": "corporations",
+      "id": "clever",
+      "source": "Clever Robotics",
+      "language": "ru"
+    },
+    {
+      "section": "corporations",
+      "id": "future",
+      "source": "Future Health Solutions",
+      "language": "ru"
+    },
+    {
+      "section": "corporations",
+      "id": "griffiths",
+      "source": "Griffith Blue Corporation",
+      "language": "ru"
+    },
+    {
+      "section": "corporations",
+      "id": "moon",
+      "source": "Moon Energy Corporation",
+      "language": "ru"
+    },
+    {
+      "section": "corporations",
+      "id": "selenian",
+      "source": "Selenian Corporation",
+      "language": "ru"
+    },
+    {
+      "section": "corporations",
+      "id": "starting",
+      "source": "Training Corporation",
+      "language": "ru"
+    },
+    {
+      "section": "items",
+      "id": "accumulator",
+      "source": "Accumulator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "aerogel",
+      "source": "Aerogel",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "airlock",
+      "source": "Airlock",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "anti-radiation-covers",
+      "source": "Anti-Radiation Covers",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "anti-radiation-covers-blueprint",
+      "source": "Anti-Radiation Covers - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "antimatter-generator",
+      "source": "Antimatter Generator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "arc-reactor",
+      "source": "Arc Reactor",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "basic-building-material",
+      "source": "Basic Building Material",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "basic-fuel",
+      "source": "Basic Fuel",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "battery",
+      "source": "Battery",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "biofilament",
+      "source": "Biofilament",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "biomass",
+      "source": "Biomass",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "bioprinter",
+      "source": "Bioprinter",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "calcite-sheets",
+      "source": "Calcite Sheets",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "calcium-block",
+      "source": "Calcium Block",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "calcium-ore",
+      "source": "Calcium Ore",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "calcium-powder",
+      "source": "Calcium Powder",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "carbon-sonar",
+      "source": "Carbon Sonar",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "ceramics",
+      "source": "Ceramics",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "coal-ore",
+      "source": "CoalOre",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "coil",
+      "source": "Inductor",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "condenser",
+      "source": "Condenser",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "condenser-blueprint",
+      "source": "Condenser - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "containment-vessel",
+      "source": "Containment Vessel",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "control-systems",
+      "source": "Control Systems",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "converter",
+      "source": "Converter",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "copper-bar",
+      "source": "CopperBar",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "copper-ore",
+      "source": "CopperOre",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "cyclotrone",
+      "source": "Cyclotrone",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "data-point",
+      "source": "Data Point",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "dome",
+      "source": "Dome",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "electromagnet",
+      "source": "Electromagnet",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "electromagnetic-coil",
+      "source": "Electromagnetic Coil",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "electromagnetic-coil-blueprint",
+      "source": "Electromagnetic Coil - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "electronics",
+      "source": "Electronics",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "electronics-blueprint",
+      "source": "Electronics - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "elementary-building-material",
+      "source": "Elementary Building Material",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "epoxy",
+      "source": "Epoxy",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "explosive",
+      "source": "Chemicals",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "explosive-blueprint",
+      "source": "Chemicals - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "generator",
+      "source": "Generator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "genome-alternator",
+      "source": "Genome Alternator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "glass",
+      "source": "Glass",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "goethite-ingot",
+      "source": "Goethite Ingot",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "goethite-lattice",
+      "source": "Goethite Lattice",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "goethite-lattice-blueprint",
+      "source": "Goethite Lattice - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "goethite-ore",
+      "source": "Goethite Ore",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "goethite-powder",
+      "source": "Goethite Powder",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "gold-ore",
+      "source": "GoldOre",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "grenade",
+      "source": "Explosive Charge",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "grenade-blueprint",
+      "source": "Explosive Charge - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "gyroscope",
+      "source": "Stabilizer",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "gyroscope-blueprint",
+      "source": "Stabilizer - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "hardening-agent",
+      "source": "Hardening Agent",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "hardening-agent-blueprint",
+      "source": "Hardening Agent - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "heat-resistant-sheet",
+      "source": "Heat Resistant Sheet",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "heat-shield",
+      "source": "Heat Shield",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "heat-shield-blueprint",
+      "source": "Heat Shield - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "helium-cell",
+      "source": "Helium Cell",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "helium-ore",
+      "source": "Helium-3",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "impeller",
+      "source": "Impeller",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "intermediate-building-material",
+      "source": "Intermediate Building Material",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "ion-bomb",
+      "source": "Ion Bomb",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "ion-injector",
+      "source": "Ion Injector",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "ion-stabilizer",
+      "source": "Ion Stabilizer",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "ion-thrusters",
+      "source": "Ion Thrusters",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "laser-emitter",
+      "source": "Laser Emitter",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "lens",
+      "source": "Lens",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "liquid-helium",
+      "source": "Liquid Helium",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "mars-habitat-base",
+      "source": "Mars Habitat Base",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "meteor-core",
+      "source": "Meteor Heart",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "micro-satellite",
+      "source": "Micro Satellite",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "missile-housing",
+      "source": "Missile Housing",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "molecular-scalpel",
+      "source": "Molecular Scalpel",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "nanofibre",
+      "source": "Nanofibre",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "nanosyringe",
+      "source": "Nanosyringe",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "nanosyringe-blueprint",
+      "source": "Nanosyringe - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "neutrino-bomb",
+      "source": "Neutrino Bomb",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "neutrino-missile",
+      "source": "Neutrino Missile",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "nozzle",
+      "source": "Nozzle",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "onboard-instruments",
+      "source": "Onboard Instruments",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "organ-producer",
+      "source": "Organ Producer",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "organic-compound",
+      "source": "Organic Compound",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "payload-stage",
+      "source": "Payload Stage",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "plasma-generator",
+      "source": "Plasma Generator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "plasma-oxygen-converter",
+      "source": "Plasma Oxygen Converter",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "plastic-dust",
+      "source": "Plastic Dust",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "plastic-dust-blueprint",
+      "source": "Plastic Dust - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "pressure-tank",
+      "source": "Pressure Tank",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "pressurized-helium",
+      "source": "Pressurized Helium",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "propulsion-stage",
+      "source": "Propulsion Stage",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "pseudorubber-insulator",
+      "source": "Pseudorubber Insulator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "pump",
+      "source": "Pump",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "pyrite-ore",
+      "source": "Pyrite",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "quantum-tranqualizer",
+      "source": "Quantum Tranqualizer",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "quartz-building-material",
+      "source": "Quartz Building Material",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rare-ore1",
+      "source": "RareOre",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "refined-oil",
+      "source": "Refined Oil",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "reinforced-frame",
+      "source": "Reinforced Frame",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "reinforced-housing",
+      "source": "Reinforced Housing",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "resonator",
+      "source": "Resonator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rna-stabilizer",
+      "source": "RNA Stabilizer",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rocket-engine",
+      "source": "Rocket Engine",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rocket-fuel",
+      "source": "Rocket Fuel",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rotor",
+      "source": "Rotor",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rotor-blueprint",
+      "source": "Rotor - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rtsc",
+      "source": "RTSC",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "rtsc-generator",
+      "source": "RTSC Generator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "sand-stone-brick",
+      "source": "SandStoneBrick",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "sand-stone-raw",
+      "source": "SandStoneRaw",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "satellite-assembly",
+      "source": "Satellite Assembly",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "satellite-body",
+      "source": "Satellite Body",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "scafolding",
+      "source": "Scafolding",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "scanner",
+      "source": "Scanner",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "self-sustained-habitat",
+      "source": "Self-sustained Habitat",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "silica-sand",
+      "source": "Synthetic Silicon",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "silica-sand-blueprint",
+      "source": "Synthetic Silicon - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "stator",
+      "source": "Stator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "stator-blueprint",
+      "source": "Stator - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "substance-fhs-135-493",
+      "source": "Substance #FHS-135-493",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "sulphur-ore",
+      "source": "Sulphur Ore",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "sulphuric-acid",
+      "source": "Sulphuric Acid",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "superconductor",
+      "source": "Superconductor",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "supermagnet",
+      "source": "Supermagnet",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-dna",
+      "source": "Synthetic DNA",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-fertilizer",
+      "source": "Synthetic Fertilizer",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-protein",
+      "source": "Synthetic Protein",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-resin",
+      "source": "Synthetic Resin",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "syringe",
+      "source": "Applicator",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "titanium-bar",
+      "source": "Titanium Bar",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "titanium-beam",
+      "source": "Titanium Beam",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "titanium-housing",
+      "source": "Titanium Housing",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "titanium-ore",
+      "source": "Titanium Ore",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "titanium-rod",
+      "source": "Titanium Rod",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "titanium-sheet",
+      "source": "Titanium Sheet",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "tracking-device",
+      "source": "Tracking Device",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "tube",
+      "source": "Tube",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "tube-blueprint",
+      "source": "Tube - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "turbine",
+      "source": "Turbine",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "turbine-blueprint",
+      "source": "Turbine - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "uber-oil",
+      "source": "Plastic",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "uber-titanium",
+      "source": "Titanoferrite Ingot",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "uber-wolfram",
+      "source": "Wolfram Steel Ingot",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "uberfilament",
+      "source": "Uberfilament",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "uberfilament-blueprint",
+      "source": "Uberfilament - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "universal-space-soil",
+      "source": "Universal Space Soil",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "valve",
+      "source": "Valve",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "valve-blueprint",
+      "source": "Valve - Blueprint",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-bar",
+      "source": "Wolfram Bar",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-ore",
+      "source": "Wolfram Ore",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-plate",
+      "source": "Wolfram Plate",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-powder",
+      "source": "Wolfram Powder",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-wire",
+      "source": "Wolfram Wire",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "acid-extractor",
+      "source": "Sulfur Extractor",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "assembler",
+      "source": "Assembler",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "crafter",
+      "source": "Fabricator",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "crafter-tier2",
+      "source": "Fabricator v.2",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "factory",
+      "source": "Constructorizer",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "factory-tier2",
+      "source": "Constructorizer v.2",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "forge",
+      "source": "Pyro Forge",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "furnace",
+      "source": "Furnace",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "furnace-tier2",
+      "source": "Furnace v.2",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "gas-extractor",
+      "source": "Helium-3 Extractor",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "hammer",
+      "source": "Mega Press",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "laser-drill",
+      "source": "Laser Drill",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "liquid-extractor",
+      "source": "Oil Extractor",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "mechanical-drill",
+      "source": "Ore Excavator",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "mechanical-drill-tier2",
+      "source": "Ore Excavator v.2",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "military-assembler",
+      "source": "Facturer",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "pressurizer",
+      "source": "Refinery",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "refinery",
+      "source": "Pressurizer",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "smelter",
+      "source": "Smelter",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "synthetizer",
+      "source": "Compounder",
+      "language": "de"
+    },
+    {
+      "section": "buildings",
+      "id": "synthetizer-tier2",
+      "source": "Compounder v.2",
+      "language": "de"
+    },
+    {
+      "section": "corporations",
+      "id": "clever",
+      "source": "Clever Robotics",
+      "language": "de"
+    },
+    {
+      "section": "corporations",
+      "id": "future",
+      "source": "Future Health Solutions",
+      "language": "de"
+    },
+    {
+      "section": "corporations",
+      "id": "griffiths",
+      "source": "Griffith Blue Corporation",
+      "language": "de"
+    },
+    {
+      "section": "corporations",
+      "id": "moon",
+      "source": "Moon Energy Corporation",
+      "language": "de"
+    },
+    {
+      "section": "corporations",
+      "id": "selenian",
+      "source": "Selenian Corporation",
+      "language": "de"
+    },
+    {
+      "section": "corporations",
+      "id": "starting",
+      "source": "Training Corporation",
+      "language": "de"
+    },
+    {
+      "section": "items",
+      "id": "accumulator",
+      "source": "Accumulator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "aerogel",
+      "source": "Aerogel",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "airlock",
+      "source": "Airlock",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "anti-radiation-covers",
+      "source": "Anti-Radiation Covers",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "anti-radiation-covers-blueprint",
+      "source": "Anti-Radiation Covers - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "antimatter-generator",
+      "source": "Antimatter Generator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "arc-reactor",
+      "source": "Arc Reactor",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "basic-building-material",
+      "source": "Basic Building Material",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "basic-fuel",
+      "source": "Basic Fuel",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "battery",
+      "source": "Battery",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "biofilament",
+      "source": "Biofilament",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "biomass",
+      "source": "Biomass",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "bioprinter",
+      "source": "Bioprinter",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "calcite-sheets",
+      "source": "Calcite Sheets",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "calcium-block",
+      "source": "Calcium Block",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "calcium-ore",
+      "source": "Calcium Ore",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "calcium-powder",
+      "source": "Calcium Powder",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "carbon-sonar",
+      "source": "Carbon Sonar",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "ceramics",
+      "source": "Ceramics",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "coal-ore",
+      "source": "CoalOre",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "coil",
+      "source": "Inductor",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "condenser",
+      "source": "Condenser",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "condenser-blueprint",
+      "source": "Condenser - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "containment-vessel",
+      "source": "Containment Vessel",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "control-systems",
+      "source": "Control Systems",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "converter",
+      "source": "Converter",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "copper-bar",
+      "source": "CopperBar",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "copper-ore",
+      "source": "CopperOre",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "cyclotrone",
+      "source": "Cyclotrone",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "data-point",
+      "source": "Data Point",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "dome",
+      "source": "Dome",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "electromagnet",
+      "source": "Electromagnet",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "electromagnetic-coil",
+      "source": "Electromagnetic Coil",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "electromagnetic-coil-blueprint",
+      "source": "Electromagnetic Coil - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "electronics",
+      "source": "Electronics",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "electronics-blueprint",
+      "source": "Electronics - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "elementary-building-material",
+      "source": "Elementary Building Material",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "epoxy",
+      "source": "Epoxy",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "explosive",
+      "source": "Chemicals",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "explosive-blueprint",
+      "source": "Chemicals - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "generator",
+      "source": "Generator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "genome-alternator",
+      "source": "Genome Alternator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "glass",
+      "source": "Glass",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "goethite-ingot",
+      "source": "Goethite Ingot",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "goethite-lattice",
+      "source": "Goethite Lattice",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "goethite-lattice-blueprint",
+      "source": "Goethite Lattice - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "goethite-ore",
+      "source": "Goethite Ore",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "goethite-powder",
+      "source": "Goethite Powder",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "gold-ore",
+      "source": "GoldOre",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "grenade",
+      "source": "Explosive Charge",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "grenade-blueprint",
+      "source": "Explosive Charge - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "gyroscope",
+      "source": "Stabilizer",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "gyroscope-blueprint",
+      "source": "Stabilizer - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "hardening-agent",
+      "source": "Hardening Agent",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "hardening-agent-blueprint",
+      "source": "Hardening Agent - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "heat-resistant-sheet",
+      "source": "Heat Resistant Sheet",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "heat-shield",
+      "source": "Heat Shield",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "heat-shield-blueprint",
+      "source": "Heat Shield - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "helium-cell",
+      "source": "Helium Cell",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "helium-ore",
+      "source": "Helium-3",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "impeller",
+      "source": "Impeller",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "intermediate-building-material",
+      "source": "Intermediate Building Material",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "ion-bomb",
+      "source": "Ion Bomb",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "ion-injector",
+      "source": "Ion Injector",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "ion-stabilizer",
+      "source": "Ion Stabilizer",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "ion-thrusters",
+      "source": "Ion Thrusters",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "laser-emitter",
+      "source": "Laser Emitter",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "lens",
+      "source": "Lens",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "liquid-helium",
+      "source": "Liquid Helium",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "mars-habitat-base",
+      "source": "Mars Habitat Base",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "meteor-core",
+      "source": "Meteor Heart",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "micro-satellite",
+      "source": "Micro Satellite",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "missile-housing",
+      "source": "Missile Housing",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "molecular-scalpel",
+      "source": "Molecular Scalpel",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "nanofibre",
+      "source": "Nanofibre",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "nanosyringe",
+      "source": "Nanosyringe",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "nanosyringe-blueprint",
+      "source": "Nanosyringe - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "neutrino-bomb",
+      "source": "Neutrino Bomb",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "neutrino-missile",
+      "source": "Neutrino Missile",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "nozzle",
+      "source": "Nozzle",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "onboard-instruments",
+      "source": "Onboard Instruments",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "organ-producer",
+      "source": "Organ Producer",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "organic-compound",
+      "source": "Organic Compound",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "payload-stage",
+      "source": "Payload Stage",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "plasma-generator",
+      "source": "Plasma Generator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "plasma-oxygen-converter",
+      "source": "Plasma Oxygen Converter",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "plastic-dust",
+      "source": "Plastic Dust",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "plastic-dust-blueprint",
+      "source": "Plastic Dust - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "pressure-tank",
+      "source": "Pressure Tank",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "pressurized-helium",
+      "source": "Pressurized Helium",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "propulsion-stage",
+      "source": "Propulsion Stage",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "pseudorubber-insulator",
+      "source": "Pseudorubber Insulator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "pump",
+      "source": "Pump",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "pyrite-ore",
+      "source": "Pyrite",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "quantum-tranqualizer",
+      "source": "Quantum Tranqualizer",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "quartz-building-material",
+      "source": "Quartz Building Material",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rare-ore1",
+      "source": "RareOre",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "refined-oil",
+      "source": "Refined Oil",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "reinforced-frame",
+      "source": "Reinforced Frame",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "reinforced-housing",
+      "source": "Reinforced Housing",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "resonator",
+      "source": "Resonator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rna-stabilizer",
+      "source": "RNA Stabilizer",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rocket-engine",
+      "source": "Rocket Engine",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rocket-fuel",
+      "source": "Rocket Fuel",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rotor",
+      "source": "Rotor",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rotor-blueprint",
+      "source": "Rotor - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rtsc",
+      "source": "RTSC",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "rtsc-generator",
+      "source": "RTSC Generator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "sand-stone-brick",
+      "source": "SandStoneBrick",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "sand-stone-raw",
+      "source": "SandStoneRaw",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "satellite-assembly",
+      "source": "Satellite Assembly",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "satellite-body",
+      "source": "Satellite Body",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "scafolding",
+      "source": "Scafolding",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "scanner",
+      "source": "Scanner",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "self-sustained-habitat",
+      "source": "Self-sustained Habitat",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "silica-sand",
+      "source": "Synthetic Silicon",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "silica-sand-blueprint",
+      "source": "Synthetic Silicon - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "stator",
+      "source": "Stator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "stator-blueprint",
+      "source": "Stator - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "substance-fhs-135-493",
+      "source": "Substance #FHS-135-493",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "sulphur-ore",
+      "source": "Sulphur Ore",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "sulphuric-acid",
+      "source": "Sulphuric Acid",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "superconductor",
+      "source": "Superconductor",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "supermagnet",
+      "source": "Supermagnet",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-dna",
+      "source": "Synthetic DNA",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-fertilizer",
+      "source": "Synthetic Fertilizer",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-protein",
+      "source": "Synthetic Protein",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "synthetic-resin",
+      "source": "Synthetic Resin",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "syringe",
+      "source": "Applicator",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "titanium-bar",
+      "source": "Titanium Bar",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "titanium-beam",
+      "source": "Titanium Beam",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "titanium-housing",
+      "source": "Titanium Housing",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "titanium-ore",
+      "source": "Titanium Ore",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "titanium-rod",
+      "source": "Titanium Rod",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "titanium-sheet",
+      "source": "Titanium Sheet",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "tracking-device",
+      "source": "Tracking Device",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "tube",
+      "source": "Tube",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "tube-blueprint",
+      "source": "Tube - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "turbine",
+      "source": "Turbine",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "turbine-blueprint",
+      "source": "Turbine - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "uber-oil",
+      "source": "Plastic",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "uber-titanium",
+      "source": "Titanoferrite Ingot",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "uber-wolfram",
+      "source": "Wolfram Steel Ingot",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "uberfilament",
+      "source": "Uberfilament",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "uberfilament-blueprint",
+      "source": "Uberfilament - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "universal-space-soil",
+      "source": "Universal Space Soil",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "valve",
+      "source": "Valve",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "valve-blueprint",
+      "source": "Valve - Blueprint",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-bar",
+      "source": "Wolfram Bar",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-ore",
+      "source": "Wolfram Ore",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-plate",
+      "source": "Wolfram Plate",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-powder",
+      "source": "Wolfram Powder",
+      "language": "uk"
+    },
+    {
+      "section": "items",
+      "id": "wolfram-wire",
+      "source": "Wolfram Wire",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "acid-extractor",
+      "source": "Sulfur Extractor",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "assembler",
+      "source": "Assembler",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "crafter",
+      "source": "Fabricator",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "crafter-tier2",
+      "source": "Fabricator v.2",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "factory",
+      "source": "Constructorizer",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "factory-tier2",
+      "source": "Constructorizer v.2",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "forge",
+      "source": "Pyro Forge",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "furnace",
+      "source": "Furnace",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "furnace-tier2",
+      "source": "Furnace v.2",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "gas-extractor",
+      "source": "Helium-3 Extractor",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "hammer",
+      "source": "Mega Press",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "laser-drill",
+      "source": "Laser Drill",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "liquid-extractor",
+      "source": "Oil Extractor",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "mechanical-drill",
+      "source": "Ore Excavator",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "mechanical-drill-tier2",
+      "source": "Ore Excavator v.2",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "military-assembler",
+      "source": "Facturer",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "pressurizer",
+      "source": "Refinery",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "refinery",
+      "source": "Pressurizer",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "smelter",
+      "source": "Smelter",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "synthetizer",
+      "source": "Compounder",
+      "language": "uk"
+    },
+    {
+      "section": "buildings",
+      "id": "synthetizer-tier2",
+      "source": "Compounder v.2",
+      "language": "uk"
+    },
+    {
+      "section": "corporations",
+      "id": "clever",
+      "source": "Clever Robotics",
+      "language": "uk"
+    },
+    {
+      "section": "corporations",
+      "id": "future",
+      "source": "Future Health Solutions",
+      "language": "uk"
+    },
+    {
+      "section": "corporations",
+      "id": "griffiths",
+      "source": "Griffith Blue Corporation",
+      "language": "uk"
+    },
+    {
+      "section": "corporations",
+      "id": "moon",
+      "source": "Moon Energy Corporation",
+      "language": "uk"
+    },
+    {
+      "section": "corporations",
+      "id": "selenian",
+      "source": "Selenian Corporation",
+      "language": "uk"
+    },
+    {
+      "section": "corporations",
+      "id": "starting",
+      "source": "Training Corporation",
+      "language": "uk"
+    }
+  ]
+}

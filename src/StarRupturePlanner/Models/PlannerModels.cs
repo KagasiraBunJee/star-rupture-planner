@@ -18,6 +18,21 @@ public sealed class PlannerCatalog
 
     [JsonPropertyName("building_unlocks")]
     public Dictionary<string, List<BuildingUnlockInfo>> BuildingUnlocks { get; set; } = [];
+
+    [JsonPropertyName("meta")]
+    public PlannerCatalogMeta Meta { get; set; } = new();
+}
+
+public sealed class PlannerCatalogMeta
+{
+    [JsonPropertyName("building_count")]
+    public int BuildingCount { get; set; }
+
+    [JsonPropertyName("recipe_count")]
+    public int RecipeCount { get; set; }
+
+    [JsonPropertyName("language")]
+    public string Language { get; set; } = PlannerLanguages.English;
 }
 
 public sealed class BuildingInfo

@@ -64,7 +64,8 @@ public static class PlannerMetricService
         }
 
         var total = temperature * EffectivePlacedMachineCount(machineCount);
-        return total > 0 ? $"+{total:g} temp" : $"{total:g} temp";
+        var tempText = UiText.T("Text.Temp");
+        return total > 0 ? $"+{total:g} {tempText}" : $"{total:g} {tempText}";
     }
 
     private static int EffectivePlacedMachineCount(int machineCount)

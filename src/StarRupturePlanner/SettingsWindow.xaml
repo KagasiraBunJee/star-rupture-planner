@@ -1,7 +1,7 @@
 <Window x:Class="StarRupturePlanner.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Settings"
+        Title="{DynamicResource Ui.Command.Settings}"
         Width="520"
         Height="430"
         MinWidth="500"
@@ -28,18 +28,21 @@
 
     <DockPanel Margin="14">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="Save" IsDefault="True" Click="Save_Click"/>
-            <Button Content="Cancel" IsCancel="True"/>
+            <Button Content="{DynamicResource Ui.Command.Save}" IsDefault="True" Click="Save_Click"/>
+            <Button Content="{DynamicResource Ui.Command.Cancel}" IsCancel="True"/>
         </StackPanel>
 
         <TabControl>
-            <TabItem Header="General">
+            <TabItem Header="{DynamicResource Ui.Settings.General}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">
-                        <TextBlock Text="Theme" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Text="{DynamicResource Ui.Settings.Theme}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <ComboBox x:Name="ThemePicker" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,12"/>
 
-                        <TextBlock Text="Canvas card font" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,6"/>
+                        <TextBlock Text="{DynamicResource Ui.Settings.Language}" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,6"/>
+                        <ComboBox x:Name="LanguagePicker" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="{DynamicResource Ui.Settings.CanvasFont}" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,6"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -47,20 +50,20 @@
                                 <ColumnDefinition Width="120"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                <Label Content="Family"/>
+                                <Label Content="{DynamicResource Ui.Settings.Family}"/>
                                 <ComboBox x:Name="CanvasFontFamilyPicker"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                                <Label Content="Size"/>
+                                <Label Content="{DynamicResource Ui.Settings.Size}"/>
                                 <TextBox x:Name="CanvasFontSizeBox"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <Label Content="Color"/>
+                                <Label Content="{DynamicResource Ui.Settings.Color}"/>
                                 <TextBox x:Name="CanvasFontColorBox"/>
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="Left bar list font" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,6"/>
+                        <TextBlock Text="{DynamicResource Ui.Settings.LeftFont}" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,6"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -68,15 +71,15 @@
                                 <ColumnDefinition Width="120"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                <Label Content="Family"/>
+                                <Label Content="{DynamicResource Ui.Settings.Family}"/>
                                 <ComboBox x:Name="LeftFontFamilyPicker"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                                <Label Content="Size"/>
+                                <Label Content="{DynamicResource Ui.Settings.Size}"/>
                                 <TextBox x:Name="LeftFontSizeBox"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <Label Content="Color"/>
+                                <Label Content="{DynamicResource Ui.Settings.Color}"/>
                                 <TextBox x:Name="LeftFontColorBox"/>
                             </StackPanel>
                         </Grid>
@@ -84,9 +87,9 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="In game">
+            <TabItem Header="{DynamicResource Ui.Settings.InGame}">
                 <StackPanel Margin="12">
-                    <TextBlock Text="Rail tier availability is derived from scheme corporation levels in the inspector."
+                    <TextBlock Text="{DynamicResource Ui.Settings.RailNote}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
                 </StackPanel>
