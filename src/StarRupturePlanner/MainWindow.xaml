@@ -27,7 +27,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="76"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="92"/>
+            <RowDefinition Height="104"/>
         </Grid.RowDefinitions>
 
         <Border x:Name="TopCommandBar" Grid.Row="0" Margin="12,10,12,6" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12">
@@ -383,7 +383,13 @@
                         <TextBlock Text="Bottlenecks &amp; Alerts" FontWeight="SemiBold" Margin="0,0,10,0"/>
                         <TextBlock x:Name="StatusText" Text="{Binding Status}" Foreground="{DynamicResource StatusForegroundBrush}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="620"/>
                     </StackPanel>
-                    <StackPanel x:Name="AlertsChips" Orientation="Horizontal" Margin="0,7,0,0"/>
+                    <ScrollViewer x:Name="AlertsScroller"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  Margin="0,7,0,0"
+                                  PreviewMouseWheel="AlertsScroller_PreviewMouseWheel">
+                        <StackPanel x:Name="AlertsChips" Orientation="Horizontal"/>
+                    </ScrollViewer>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">

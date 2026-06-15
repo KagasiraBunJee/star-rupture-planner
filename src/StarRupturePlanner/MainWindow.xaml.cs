@@ -587,6 +587,7 @@ public partial class MainWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // header
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // body
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // footer
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // issues
         root.Child = grid;
         root.SizeChanged += (_, e) =>
         {
@@ -725,6 +726,13 @@ public partial class MainWindow : Window
             var footer = CreateCardFooter(node);
             Grid.SetRow(footer, 3);
             grid.Children.Add(footer);
+
+            var issues = CreateCardIssues(node);
+            if (issues is not null)
+            {
+                Grid.SetRow(issues, 4);
+                grid.Children.Add(issues);
+            }
         }
 
         Canvas.SetLeft(root, node.X);
@@ -866,6 +874,64 @@ public partial class MainWindow : Window
 
         footer.Child = dock;
         return footer;
+    }
+
+    // Per-machine issue list shown under the card; null when the node has no shortages.
+    private FrameworkElement? CreateCardIssues(SchemeNode node)
+    {
+        var shortInputs = _productionAnalysis.Inputs.Values
+            .Where(input => string.Equals(input.NodeId, node.Id, StringComparison.Ordinal)
+                && _productionAnalysis.ShortInputs.Contains(ProductionInputKey.For(node.Id, input.ItemId)))
+            .OrderByDescending(input => input.RequiredPerMinute - input.DeliveredPerMinute)
+            .ToList();
+        if (shortInputs.Count == 0)
+        {
+            return null;
+        }
+
+        var container = new StackPanel { Margin = new Thickness(14, 8, 14, 10) };
+        container.Children.Add(new TextBlock
+        {
+            Text = $"ISSUES ({shortInputs.Count})",
+            Foreground = new SolidColorBrush(ShortageColor),
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-2),
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 5),
+        });
+
+        foreach (var input in shortInputs)
+        {
+            var deficit = Math.Max(0, input.RequiredPerMinute - input.DeliveredPerMinute);
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2) };
+            row.Children.Add(new TextBlock
+            {
+                Text = "⚠",
+                Foreground = new SolidColorBrush(ShortageColor),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-1),
+                Margin = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            row.Children.Add(new TextBlock
+            {
+                Text = $"{input.ItemName}: {input.DeliveredPerMinute:g}/{input.RequiredPerMinute:g}/min ({deficit:g} short)",
+                Foreground = CardTextBrush(0.85),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-1),
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            container.Children.Add(row);
+        }
+
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(28, ShortageColor.R, ShortageColor.G, ShortageColor.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(110, ShortageColor.R, ShortageColor.G, ShortageColor.B)),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Child = container,
+        };
     }
 
     // Derived "fed" ratio: how much of the node's input demand is delivered (1.0 if no inputs).
@@ -1119,17 +1185,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        foreach (var alert in _productionAnalysis.Alerts.Take(4))
+        // Show every alert; the row scrolls horizontally to reveal the rest.
+        foreach (var alert in _productionAnalysis.Alerts)
         {
             AlertsChips.Children.Add(BuildAlertChip(alert.Message, ShortageColor, "⚠"));
         }
 
-        if (_productionAnalysis.Alerts.Count > 4)
+        AlertsScroller?.ScrollToHorizontalOffset(0);
+    }
+
+    private void AlertsScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer scroller)
         {
-            AlertsChips.Children.Add(BuildAlertChip(
-                $"+{_productionAnalysis.Alerts.Count - 4} more",
-                Color.FromRgb(0x0A, 0x84, 0xFF),
-                "…"));
+            scroller.ScrollToHorizontalOffset(scroller.HorizontalOffset - e.Delta);
+            e.Handled = true;
         }
     }
 
