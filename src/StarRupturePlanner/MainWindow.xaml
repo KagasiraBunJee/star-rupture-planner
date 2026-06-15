@@ -27,7 +27,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="76"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="78"/>
+            <RowDefinition Height="92"/>
         </Grid.RowDefinitions>
 
         <Border x:Name="TopCommandBar" Grid.Row="0" Margin="12,10,12,6" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12">
