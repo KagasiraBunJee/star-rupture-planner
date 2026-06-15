@@ -405,7 +405,11 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="14,0">
                         <TextBlock Text="Total Power" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock Text="⚡ —" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="MetricPower" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <StackPanel Margin="14,0">
+                        <TextBlock Text="Temperature" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
+                        <TextBlock x:Name="MetricTemperature" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                     <StackPanel Margin="14,0">
                         <TextBlock Text="Efficiency" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>

@@ -66,7 +66,9 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         {
             var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
             return catalog.Corporations.Count > 0
-                && catalog.TransportTiers.Tiers.Count >= 3;
+                && catalog.TransportTiers.Tiers.Count >= 3
+                && catalog.Buildings.Any(building =>
+                    building.Power is not null || building.Temperature is not null);
         }
         catch
         {

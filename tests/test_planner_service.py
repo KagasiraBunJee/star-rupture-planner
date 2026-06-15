@@ -97,6 +97,34 @@ class PlannerServiceTests(unittest.TestCase):
         )
         self.assertTrue(catalog["transport_tiers"]["tiers"][0]["unlock_requirements"])
 
+    def test_catalog_contains_building_power_and_temperature(self) -> None:
+        catalog = self.service.get_planner_catalog()
+        smelter = next(
+            building
+            for building in catalog["buildings"]
+            if building["building_id"] == "smelter"
+        )
+
+        self.assertEqual(smelter["power"], -5)
+        self.assertEqual(smelter["temperature"], 3)
+
+    def test_building_normalization_keeps_power_and_temperature(self) -> None:
+        scraper = StarRuptureScraper(settings)
+        building = scraper._normalize_building(
+            {
+                "id": "test-building",
+                "name": "Test Building",
+                "url": "/buildings/test-building",
+                "icon": None,
+                "category": "crafting",
+                "power": -12,
+                "temperature": 7,
+            }
+        )
+
+        self.assertEqual(building["power"], -12)
+        self.assertEqual(building["temperature"], 7)
+
     def test_corporation_ref_resolver_resolves_training_rewards(self) -> None:
         scraper = StarRuptureScraper(settings)
         root = {

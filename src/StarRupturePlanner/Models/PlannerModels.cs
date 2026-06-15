@@ -34,6 +34,12 @@ public sealed class BuildingInfo
     [JsonPropertyName("tier")]
     public int? Tier { get; set; }
 
+    [JsonPropertyName("power")]
+    public double? Power { get; set; }
+
+    [JsonPropertyName("temperature")]
+    public double? Temperature { get; set; }
+
     [JsonPropertyName("image_url")]
     public string? ImageUrl { get; set; }
 

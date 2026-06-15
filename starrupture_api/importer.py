@@ -96,8 +96,8 @@ class Importer:
                 """
                 INSERT OR REPLACE INTO buildings (
                     building_id, name, family_name, tier, category, description,
-                    source_url, image_source_url, image_path, image_url
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    power, temperature, source_url, image_source_url, image_path, image_url
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     building["id"],
@@ -106,6 +106,8 @@ class Importer:
                     building.get("tier"),
                     building.get("category"),
                     building.get("description"),
+                    building.get("power"),
+                    building.get("temperature"),
                     building.get("source_url"),
                     building.get("image_source_url"),
                     building.get("image_path"),

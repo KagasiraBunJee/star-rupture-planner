@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS buildings (
     tier INTEGER,
     category TEXT NOT NULL,
     description TEXT,
+    power REAL,
+    temperature REAL,
     source_url TEXT NOT NULL,
     image_source_url TEXT,
     image_path TEXT,
@@ -148,6 +150,17 @@ def connection(db_path: Path) -> Iterator[sqlite3.Connection]:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    ensure_column(conn, "buildings", "power", "REAL")
+    ensure_column(conn, "buildings", "temperature", "REAL")
+
+
+def ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in conn.execute(f"PRAGMA table_info({table})")
+    }
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def reset_dataset(conn: sqlite3.Connection) -> None:
