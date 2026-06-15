@@ -86,9 +86,9 @@
 
             <TabItem Header="In game">
                 <StackPanel Margin="12">
-                    <TextBlock Text="Current rail tier" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <ComboBox x:Name="RailTierPicker" DisplayMemberPath="Name" SelectedValuePath="Id"/>
-                    <TextBlock x:Name="RailTierHelpText" TextWrapping="Wrap" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" Margin="0,10,0,0"/>
+                    <TextBlock Text="Rail tier availability is derived from scheme corporation levels in the inspector."
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
                 </StackPanel>
             </TabItem>
         </TabControl>

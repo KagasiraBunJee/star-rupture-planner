@@ -23,6 +23,10 @@ var tests = new (string Name, Action Body)[]
     ("Canvas view model creates compatible edge", CanvasViewModelCreatesCompatibleEdge),
     ("Canvas geometry routes through divider points", CanvasGeometryRoutesThroughDividerPoints),
     ("Edge label includes transport tier", EdgeLabelIncludesTransportTier),
+    ("Scheme serialization round trips corporation settings", SchemeSerializationRoundTripsCorporationSettings),
+    ("Corporation defaults unlock training rail availability", CorporationDefaultsUnlockTrainingRailAvailability),
+    ("Locked building is hidden until corporation level allows it", LockedBuildingRequiresCorporationLevel),
+    ("Rail recommendation uses available tiers", RailRecommendationUsesAvailableTiers),
     ("API root discovery finds repo", ApiRootDiscoveryFindsRepo),
 };
 
@@ -185,7 +189,7 @@ static void LegacyTargetOutputMigratesToMachineCount()
         new PlannerCatalog { Recipes = [recipe] },
         new PlannerCalculator());
 
-    AssertEqual(2, scheme.Version);
+    AssertEqual(3, scheme.Version);
     AssertEqual(3, scheme.Nodes[0].MachineCount);
     AssertEqual(0d, scheme.Nodes[0].TargetOutputPerMinute);
 }
@@ -563,11 +567,178 @@ static void EdgeLabelIncludesTransportTier()
     AssertTrue(label.Contains("Titanium Rod", StringComparison.Ordinal));
     AssertTrue(label.Contains("30/min", StringComparison.Ordinal));
     AssertTrue(label.Contains("meets demand", StringComparison.Ordinal));
+    AssertTrue(label.Contains("Rail tier 1", StringComparison.Ordinal));
 
     var detail = PlannerEdgeService.EdgeDetail(scheme, catalog, settings, calculator, scheme.Edges[0]);
     AssertTrue(detail.Contains("Item: Titanium Rod", StringComparison.Ordinal));
     AssertTrue(detail.Contains("30 / 20 /min", StringComparison.Ordinal));
-    AssertTrue(detail.Contains("Rail tier 1 — 120/min capacity (OK)", StringComparison.Ordinal));
+    AssertTrue(detail.Contains("Rail tier 1", StringComparison.Ordinal));
+    AssertTrue(detail.Contains("120/min capacity (OK)", StringComparison.Ordinal));
+}
+
+static void SchemeSerializationRoundTripsCorporationSettings()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    ISchemeStore store = new SchemeStore(temp);
+    var document = new SchemeDocument
+    {
+        Name = "Corporation Scheme",
+        CorporationLevels = new Dictionary<string, int>
+        {
+            ["starting"] = 5,
+            ["selenian"] = 3,
+        },
+    };
+
+    var path = store.Save(document);
+    var loaded = store.Load(path);
+    AssertEqual(5, loaded.CorporationLevels["starting"]);
+    AssertEqual(3, loaded.CorporationLevels["selenian"]);
+    AssertNull(loaded.SelectedRailTierId);
+    Directory.Delete(temp, recursive: true);
+}
+
+static void CorporationDefaultsUnlockTrainingRailAvailability()
+{
+    var scheme = new SchemeDocument();
+    var catalog = UnlockCatalog();
+
+    PlannerUnlockService.EnsureSchemeDefaults(scheme, catalog);
+
+    AssertEqual(5, scheme.CorporationLevels["starting"]);
+    AssertEqual(0, scheme.CorporationLevels["selenian"]);
+    AssertNull(scheme.SelectedRailTierId);
+    AssertEqual("rail-tier-1", PlannerUnlockService.MaxAvailableRailTier(catalog, scheme)?.Id);
+    AssertTrue(PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, "smelter"));
+    AssertFalse(PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, "factory"));
+}
+
+static void LockedBuildingRequiresCorporationLevel()
+{
+    var scheme = new SchemeDocument
+    {
+        CorporationLevels = new Dictionary<string, int>
+        {
+            ["starting"] = 5,
+            ["selenian"] = 0,
+        },
+    };
+    var catalog = UnlockCatalog();
+
+    AssertFalse(PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, "factory"));
+    scheme.CorporationLevels["selenian"] = 12;
+    AssertTrue(PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, "factory"));
+}
+
+static void RailRecommendationUsesAvailableTiers()
+{
+    var sourceRecipe = TitaniumRodRecipe();
+    var targetRecipe = new RecipeInfo
+    {
+        RecipeKey = "assembler:rotor",
+        BuildingId = "assembler",
+        BuildingName = "Assembler",
+        Output = new RecipePortInfo { ItemId = "rotor", Name = "Rotor", QuantityPerMinute = 10 },
+        Inputs =
+        [
+            new RecipePortInfo { ItemId = "titanium-rod", Name = "Titanium Rod", QuantityPerMinute = 150 },
+        ],
+    };
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                SourceNodeId = "source",
+                SourceItemId = "titanium-rod",
+                TargetNodeId = "target",
+                TargetItemId = "titanium-rod",
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog
+    {
+        Recipes = [sourceRecipe, targetRecipe],
+        TransportTiers = new TransportTierPayload
+        {
+            Tiers =
+            [
+                new TransportTierInfo { Id = "rail-tier-1", Name = "Rail tier 1", ItemsPerMinute = 120 },
+                new TransportTierInfo { Id = "rail-tier-2", Name = "Rail tier 2", ItemsPerMinute = 240 },
+            ],
+        },
+    };
+    var settings = new AppSettings { CurrentRailTierId = "rail-tier-1" };
+
+    var detail = PlannerEdgeService.EdgeDetail(scheme, catalog, settings, new PlannerCalculator(), scheme.Edges[0]);
+    AssertTrue(detail.Contains("Rail tier 2", StringComparison.Ordinal));
+}
+
+static PlannerCatalog UnlockCatalog()
+{
+    return new PlannerCatalog
+    {
+        Corporations =
+        [
+            new CorporationInfo { CorporationId = "starting", Name = "Training Corporation", MaxLevel = 5 },
+            new CorporationInfo { CorporationId = "selenian", Name = "Selenian Corporation", MaxLevel = 13 },
+        ],
+        BuildingUnlocks = new Dictionary<string, List<BuildingUnlockInfo>>
+        {
+            ["smelter"] =
+            [
+                new BuildingUnlockInfo
+                {
+                    CorporationId = "starting",
+                    CorporationName = "Training Corporation",
+                    Level = 4,
+                },
+            ],
+            ["factory"] =
+            [
+                new BuildingUnlockInfo
+                {
+                    CorporationId = "selenian",
+                    CorporationName = "Selenian Corporation",
+                    Level = 12,
+                },
+            ],
+        },
+        TransportTiers = new TransportTierPayload
+        {
+            Tiers =
+            [
+                new TransportTierInfo
+                {
+                    Id = "rail-tier-1",
+                    Name = "Rail tier 1",
+                    Level = 1,
+                    ItemsPerMinute = 120,
+                    UnlockRequirements =
+                    [
+                        new CorporationUnlockRequirementInfo { CorporationId = "starting", Level = 2 },
+                    ],
+                },
+                new TransportTierInfo
+                {
+                    Id = "rail-tier-2",
+                    Name = "Rail tier 2",
+                    Level = 2,
+                    ItemsPerMinute = 240,
+                    UnlockRequirements =
+                    [
+                        new CorporationUnlockRequirementInfo { CorporationId = "selenian", Level = 8 },
+                    ],
+                },
+            ],
+        },
+    };
 }
 
 static void ApiRootDiscoveryFindsRepo()

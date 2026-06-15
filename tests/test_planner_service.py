@@ -6,6 +6,7 @@ from pathlib import Path
 
 from starrupture_api.config import Settings, settings
 from starrupture_api.service import ResourceService
+from starrupture_api.scraper import StarRuptureScraper
 
 
 class PlannerServiceTests(unittest.TestCase):
@@ -82,6 +83,57 @@ class PlannerServiceTests(unittest.TestCase):
 
         self.assertEqual(payload["tiers"], [])
         self.assertTrue(payload["missing"])
+
+    def test_catalog_contains_corporation_unlock_metadata(self) -> None:
+        catalog = self.service.get_planner_catalog()
+
+        self.assertEqual(len(catalog["corporations"]), 6)
+        self.assertIn("smelter", catalog["building_unlocks"])
+        self.assertTrue(
+            any(
+                entry["corporation_id"] in {"starting", "selenian"}
+                for entry in catalog["building_unlocks"]["smelter"]
+            )
+        )
+        self.assertTrue(catalog["transport_tiers"]["tiers"][0]["unlock_requirements"])
+
+    def test_corporation_ref_resolver_resolves_training_rewards(self) -> None:
+        scraper = StarRuptureScraper(settings)
+        root = {
+            "corporations": [
+                {
+                    "id": "source",
+                    "levels": [
+                        {
+                            "rewards": {
+                                "buildings": [
+                                    {"id": "smelter", "name": "Smelter"},
+                                ],
+                            },
+                        },
+                    ],
+                },
+                {
+                    "id": "target",
+                    "levels": [
+                        {
+                            "rewards": {
+                                "buildings": [
+                                    "$1d:1:props:corporations:0:levels:0:rewards:buildings:0",
+                                ],
+                            },
+                        },
+                    ],
+                },
+            ],
+        }
+
+        resolved = scraper._resolve_shared_refs(root["corporations"], root)
+
+        self.assertEqual(
+            resolved[1]["levels"][0]["rewards"]["buildings"][0]["id"],
+            "smelter",
+        )
 
 
 if __name__ == "__main__":

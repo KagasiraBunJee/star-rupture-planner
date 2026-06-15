@@ -285,6 +285,16 @@
                             </Border>
                         </StackPanel>
 
+                        <StackPanel x:Name="SchemeSettingsPanel" Visibility="Collapsed">
+                            <TextBlock Text="Scheme settings" Style="{StaticResource PanelTitle}" Margin="0,0,0,8"/>
+                            <TextBlock Text="Corporations" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <StackPanel x:Name="CorporationSettingsStack"/>
+
+                            <Border Height="1" Background="{DynamicResource MutedBorderBrush}" Margin="0,14,0,12"/>
+                            <TextBlock Text="Rail tier" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <StackPanel x:Name="RailTierSettingsStack"/>
+                        </StackPanel>
+
                         <StackPanel x:Name="NodeInspectorPanel">
                             <StackPanel x:Name="InspectorDetailsPanel">
                                 <Label Content="Output"/>

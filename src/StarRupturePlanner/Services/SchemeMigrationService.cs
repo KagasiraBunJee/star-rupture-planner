@@ -4,10 +4,11 @@ namespace StarRupturePlanner.Services;
 
 public static class SchemeMigrationService
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     public static void Migrate(SchemeDocument scheme, PlannerCatalog catalog, IPlannerCalculator calculator)
     {
+        PlannerUnlockService.EnsureSchemeDefaults(scheme, catalog);
         foreach (var node in scheme.Nodes)
         {
             var recipe = PlannerEdgeService.RecipeForNode(catalog, node);

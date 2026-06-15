@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Directory = System.IO.Directory;
 using DirectoryInfo = System.IO.DirectoryInfo;
 using Path = System.IO.Path;
@@ -19,7 +20,12 @@ public sealed class LocalApiProcessManager : IApiProcessManager
     {
         if (await _apiClient.IsApiAvailableAsync(cancellationToken))
         {
-            return "API is already running.";
+            if (await IsCompatibleApiAsync(cancellationToken))
+            {
+                return "API is already running.";
+            }
+
+            StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
         }
 
         var repoRoot = FindRepoRoot();
@@ -44,11 +50,114 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             await Task.Delay(250, cancellationToken);
             if (await _apiClient.IsApiAvailableAsync(cancellationToken))
             {
-                return "Started local API.";
+                if (await IsCompatibleApiAsync(cancellationToken))
+                {
+                    return "Started local API.";
+                }
             }
         }
 
         return "Started API process, but it did not answer on port 8010.";
+    }
+
+    private async Task<bool> IsCompatibleApiAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
+            return catalog.Corporations.Count > 0
+                && catalog.TransportTiers.Tiers.Count >= 3;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void StopStalePythonApiOnPort(int port)
+    {
+        var processIds = ListeningProcessIds(port);
+        foreach (var processId in processIds)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(processId);
+                if (!process.ProcessName.Contains("python", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit(3000);
+            }
+            catch
+            {
+                // Best effort only. If the stale API cannot be stopped, startup
+                // will report that the replacement process never became ready.
+            }
+        }
+    }
+
+    private static IReadOnlyList<int> ListeningProcessIds(int port)
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "netstat",
+                Arguments = "-ano -p tcp",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+            });
+            if (process is null)
+            {
+                return [];
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(3000);
+            return output
+                .Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => ListeningProcessId(line, port))
+                .Where(processId => processId > 0)
+                .Distinct()
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static int ListeningProcessId(string line, int port)
+    {
+        var columns = line
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (columns.Length < 5 || !string.Equals(columns[0], "TCP", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+
+        if (!string.Equals(columns[3], "LISTENING", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+
+        if (!PortMatches(columns[1], port))
+        {
+            return 0;
+        }
+
+        return int.TryParse(columns[^1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var processId)
+            ? processId
+            : 0;
+    }
+
+    private static bool PortMatches(string endpoint, int port)
+    {
+        var marker = ":" + port.ToString(CultureInfo.InvariantCulture);
+        return endpoint.EndsWith(marker, StringComparison.OrdinalIgnoreCase);
     }
 
     public static string? FindRepoRoot(string? startPath = null)

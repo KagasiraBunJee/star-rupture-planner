@@ -5,19 +5,52 @@
       "id": "rail-tier-1",
       "name": "Rail tier 1",
       "level": 1,
-      "items_per_minute": 120
+      "items_per_minute": 120,
+      "unlock_requirements": [
+        {
+          "corporation_id": "starting",
+          "level": 2
+        },
+        {
+          "corporation_id": "clever",
+          "level": 1
+        }
+      ],
+      "unlock_building_ids": [
+        "drone-rail-t1"
+      ]
     },
     {
       "id": "rail-tier-2",
       "name": "Rail tier 2",
       "level": 2,
-      "items_per_minute": 240
+      "items_per_minute": 240,
+      "unlock_requirements": [
+        {
+          "corporation_id": "clever",
+          "level": 5
+        }
+      ],
+      "unlock_building_ids": [
+        "drone-lane-3",
+        "drone-merger-3to1"
+      ]
     },
     {
       "id": "rail-tier-3",
       "name": "Rail tier 3",
       "level": 3,
-      "items_per_minute": 480
+      "items_per_minute": 480,
+      "unlock_requirements": [
+        {
+          "corporation_id": "clever",
+          "level": 10
+        }
+      ],
+      "unlock_building_ids": [
+        "drone-lane-5",
+        "drone-merger-5to1"
+      ]
     }
   ]
 }

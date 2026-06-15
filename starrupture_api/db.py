@@ -78,6 +78,43 @@ CREATE TABLE IF NOT EXISTS item_usages (
     PRIMARY KEY (item_id, recipe_key)
 );
 
+CREATE TABLE IF NOT EXISTS corporations (
+    corporation_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    source_url TEXT NOT NULL,
+    icon_url TEXT,
+    colour TEXT,
+    max_level INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS corporation_levels (
+    corporation_id TEXT NOT NULL REFERENCES corporations(corporation_id) ON DELETE CASCADE,
+    level INTEGER NOT NULL,
+    reputation INTEGER,
+    PRIMARY KEY (corporation_id, level)
+);
+
+CREATE TABLE IF NOT EXISTS corporation_building_rewards (
+    corporation_id TEXT NOT NULL REFERENCES corporations(corporation_id) ON DELETE CASCADE,
+    level INTEGER NOT NULL,
+    building_id TEXT NOT NULL,
+    name TEXT,
+    category TEXT,
+    icon_url TEXT,
+    PRIMARY KEY (corporation_id, level, building_id)
+);
+
+CREATE TABLE IF NOT EXISTS corporation_item_rewards (
+    corporation_id TEXT NOT NULL REFERENCES corporations(corporation_id) ON DELETE CASCADE,
+    level INTEGER NOT NULL,
+    item_id TEXT NOT NULL,
+    name TEXT,
+    category TEXT,
+    icon_url TEXT,
+    PRIMARY KEY (corporation_id, level, item_id)
+);
+
 CREATE TABLE IF NOT EXISTS refresh_runs (
     run_id INTEGER PRIMARY KEY AUTOINCREMENT,
     status TEXT NOT NULL,
@@ -115,6 +152,10 @@ def init_db(conn: sqlite3.Connection) -> None:
 
 def reset_dataset(conn: sqlite3.Connection) -> None:
     for table in [
+        "corporation_item_rewards",
+        "corporation_building_rewards",
+        "corporation_levels",
+        "corporations",
         "item_usages",
         "item_unlock_usages",
         "recipe_unlock_requirements",

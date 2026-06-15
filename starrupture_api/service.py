@@ -155,6 +155,19 @@ class ResourceService:
             "message": payload.get("message") if isinstance(payload, dict) else None,
         }
 
+    def get_corporations(self) -> dict[str, Any]:
+        with connection(self.cfg.db_path) as conn:
+            corporations = self._corporations_payload(conn)
+        return {"corporations": corporations}
+
+    def get_corporation_detail(self, corporation_id: str) -> dict[str, Any]:
+        with connection(self.cfg.db_path) as conn:
+            corporations = self._corporations_payload(conn)
+        for corporation in corporations:
+            if corporation["corporation_id"] == corporation_id:
+                return corporation
+        raise DataNotFoundError(corporation_id)
+
     def get_planner_catalog(self) -> dict[str, Any]:
         with connection(self.cfg.db_path) as conn:
             building_rows = conn.execute(
@@ -180,10 +193,14 @@ class ResourceService:
                 """
             ).fetchall()
             recipes = [self._planner_recipe_payload(conn, row) for row in recipe_rows]
+            corporations = self._corporations_payload(conn)
+            building_unlocks = self._building_unlocks_payload(conn)
         return {
             "buildings": [self._building_payload(row) for row in building_rows],
             "recipes": recipes,
             "transport_tiers": self.get_transport_tiers(),
+            "corporations": corporations,
+            "building_unlocks": building_unlocks,
             "meta": {
                 "building_count": len(building_rows),
                 "recipe_count": len(recipes),
@@ -553,6 +570,134 @@ class ResourceService:
             "image_source_url": row["image_source_url"],
             "recipe_count": row["recipe_count"],
         }
+
+    def _corporations_payload(self, conn: sqlite3.Connection) -> list[dict[str, Any]]:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM corporations
+            ORDER BY name COLLATE NOCASE, corporation_id
+            """
+        ).fetchall()
+        payload: list[dict[str, Any]] = []
+        for row in rows:
+            levels = conn.execute(
+                """
+                SELECT *
+                FROM corporation_levels
+                WHERE corporation_id = ?
+                ORDER BY level
+                """,
+                (row["corporation_id"],),
+            ).fetchall()
+            payload.append(
+                {
+                    "corporation_id": row["corporation_id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "source_url": row["source_url"],
+                    "icon_url": self._site_asset_url(row["icon_url"]),
+                    "colour": row["colour"],
+                    "max_level": row["max_level"],
+                    "levels": [
+                        {
+                            "level": level["level"],
+                            "reputation": level["reputation"],
+                            "building_rewards": self._corporation_building_rewards(
+                                conn,
+                                row["corporation_id"],
+                                level["level"],
+                            ),
+                            "item_rewards": self._corporation_item_rewards(
+                                conn,
+                                row["corporation_id"],
+                                level["level"],
+                            ),
+                        }
+                        for level in levels
+                    ],
+                }
+            )
+        return payload
+
+    def _corporation_building_rewards(
+        self,
+        conn: sqlite3.Connection,
+        corporation_id: str,
+        level: int,
+    ) -> list[dict[str, Any]]:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM corporation_building_rewards
+            WHERE corporation_id = ? AND level = ?
+            ORDER BY name COLLATE NOCASE, building_id
+            """,
+            (corporation_id, level),
+        ).fetchall()
+        return [
+            {
+                "building_id": row["building_id"],
+                "name": row["name"],
+                "category": row["category"],
+                "icon_url": self._site_asset_url(row["icon_url"]),
+            }
+            for row in rows
+        ]
+
+    def _corporation_item_rewards(
+        self,
+        conn: sqlite3.Connection,
+        corporation_id: str,
+        level: int,
+    ) -> list[dict[str, Any]]:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM corporation_item_rewards
+            WHERE corporation_id = ? AND level = ?
+            ORDER BY name COLLATE NOCASE, item_id
+            """,
+            (corporation_id, level),
+        ).fetchall()
+        return [
+            {
+                "item_id": row["item_id"],
+                "name": row["name"],
+                "category": row["category"],
+                "icon_url": self._site_asset_url(row["icon_url"]),
+            }
+            for row in rows
+        ]
+
+    def _building_unlocks_payload(self, conn: sqlite3.Connection) -> dict[str, list[dict[str, Any]]]:
+        rows = conn.execute(
+            """
+            SELECT cbr.building_id, cbr.corporation_id, c.name AS corporation_name,
+                   MIN(cbr.level) AS level
+            FROM corporation_building_rewards cbr
+            JOIN corporations c ON c.corporation_id = cbr.corporation_id
+            GROUP BY cbr.building_id, cbr.corporation_id, c.name
+            ORDER BY cbr.building_id, level, c.name COLLATE NOCASE
+            """
+        ).fetchall()
+        result: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            result.setdefault(row["building_id"], []).append(
+                {
+                    "corporation_id": row["corporation_id"],
+                    "corporation_name": row["corporation_name"],
+                    "level": row["level"],
+                }
+            )
+        return result
+
+    def _site_asset_url(self, value: str | None) -> str | None:
+        if not value:
+            return None
+        if value.startswith("http"):
+            return value
+        return f"{self.cfg.base_url}{value}"
 
     def _refresh_run_payload(self, row: sqlite3.Row) -> dict[str, Any]:
         return {

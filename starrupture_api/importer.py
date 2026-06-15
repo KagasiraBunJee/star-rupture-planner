@@ -169,3 +169,74 @@ class Importer:
                     """,
                     (entry.item["id"], recipe.recipe_key, entry.quantity),
                 )
+
+        for entry in result.corporations:
+            corporation = entry.corporation
+            levels = corporation.get("levels", [])
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO corporations (
+                    corporation_id, name, description, source_url, icon_url, colour, max_level
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    corporation["id"],
+                    corporation.get("name"),
+                    corporation.get("description"),
+                    f"{self.cfg.base_url}{corporation.get('url', '')}",
+                    corporation.get("icon"),
+                    corporation.get("colour"),
+                    max((int(level.get("level", 0)) for level in levels), default=0),
+                ),
+            )
+            for level in levels:
+                level_number = int(level.get("level", 0))
+                rewards = level.get("rewards", {})
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO corporation_levels (
+                        corporation_id, level, reputation
+                    ) VALUES (?, ?, ?)
+                    """,
+                    (
+                        corporation["id"],
+                        level_number,
+                        level.get("reputation"),
+                    ),
+                )
+                for building in rewards.get("buildings", []) or []:
+                    if not isinstance(building, dict) or not building.get("id"):
+                        continue
+                    conn.execute(
+                        """
+                        INSERT OR REPLACE INTO corporation_building_rewards (
+                            corporation_id, level, building_id, name, category, icon_url
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            corporation["id"],
+                            level_number,
+                            building.get("id"),
+                            building.get("name"),
+                            building.get("category"),
+                            building.get("icon"),
+                        ),
+                    )
+                for item in rewards.get("items", []) or []:
+                    if not isinstance(item, dict) or not item.get("id"):
+                        continue
+                    conn.execute(
+                        """
+                        INSERT OR REPLACE INTO corporation_item_rewards (
+                            corporation_id, level, item_id, name, category, icon_url
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            corporation["id"],
+                            level_number,
+                            item.get("id"),
+                            item.get("name"),
+                            item.get("category"),
+                            item.get("icon"),
+                        ),
+                    )

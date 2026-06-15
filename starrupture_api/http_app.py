@@ -51,6 +51,17 @@ async def list_buildings(request) -> Response:
     return json_response(service.list_buildings())
 
 
+async def list_corporations(request) -> Response:
+    return json_response(service.get_corporations())
+
+
+async def get_corporation(request) -> Response:
+    try:
+        return json_response(service.get_corporation_detail(request.path_params["corporation_id"]))
+    except DataNotFoundError:
+        return json_response({"error": "corporation_not_found"}, status_code=404)
+
+
 async def get_planner_catalog(request) -> Response:
     return json_response(service.get_planner_catalog())
 
@@ -97,6 +108,8 @@ def create_app(cfg: Settings = settings) -> Starlette:
         Route("/api/items", list_items, methods=["GET"]),
         Route("/api/items/{item_id}", get_item, methods=["GET"]),
         Route("/api/buildings", list_buildings, methods=["GET"]),
+        Route("/api/corporations", list_corporations, methods=["GET"]),
+        Route("/api/corporations/{corporation_id}", get_corporation, methods=["GET"]),
         Route("/api/planner/catalog", get_planner_catalog, methods=["GET"]),
         Route("/api/planner/suggestions", get_planner_suggestions, methods=["GET"]),
         Route("/api/planner/transport-tiers", get_transport_tiers, methods=["GET"]),
