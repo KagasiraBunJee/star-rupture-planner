@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using StarRupturePlanner.Models;
 using Directory = System.IO.Directory;
 using DirectoryInfo = System.IO.DirectoryInfo;
 using Path = System.IO.Path;
@@ -25,6 +26,10 @@ public sealed class LocalApiProcessManager : IApiProcessManager
                 return "API is already running.";
             }
 
+            StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
+        }
+        else
+        {
             StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
         }
 
@@ -65,14 +70,32 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         try
         {
             var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
-            return catalog.Corporations.Count > 0
+            var hasCurrentShape = catalog.Corporations.Count > 0
                 && catalog.TransportTiers.Tiers.Count >= 3
                 && catalog.Buildings.Any(building =>
                     building.Power is not null || building.Temperature is not null);
+            return hasCurrentShape && await SupportsLocalizationAsync(cancellationToken);
         }
         catch
         {
             return false;
+        }
+    }
+
+    private async Task<bool> SupportsLocalizationAsync(CancellationToken cancellationToken)
+    {
+        var previousLanguage = _apiClient.PlannerLanguage;
+        try
+        {
+            _apiClient.PlannerLanguage = PlannerLanguages.Ukrainian;
+            var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
+            var titaniumRod = catalog.Recipes.FirstOrDefault(recipe => recipe.RecipeId == "titanium-rod");
+            return string.Equals(catalog.Meta.Language, PlannerLanguages.Ukrainian, StringComparison.Ordinal)
+                && !string.Equals(titaniumRod?.Output.Name, "Titanium Rod", StringComparison.Ordinal);
+        }
+        finally
+        {
+            _apiClient.PlannerLanguage = previousLanguage;
         }
     }
 

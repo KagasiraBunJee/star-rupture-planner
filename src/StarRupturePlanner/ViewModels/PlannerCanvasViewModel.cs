@@ -64,6 +64,67 @@ public sealed class PlannerCanvasViewModel : ViewModelBase
         };
     }
 
+    public SchemeNode? CreateBlueprintSourceNode(SchemeListItem schemeItem, Point position)
+    {
+        var outputs = new List<BlueprintOutputPort>();
+        foreach (var output in schemeItem.Outputs.Where(item => !string.IsNullOrWhiteSpace(item.RecipeKey)))
+        {
+            var recipe = Catalog.Recipes.FirstOrDefault(item =>
+                string.Equals(item.RecipeKey, output.RecipeKey, StringComparison.Ordinal));
+            if (recipe is null)
+            {
+                continue;
+            }
+
+            var machineCount = Math.Max(1, output.MachineCount);
+            outputs.Add(new BlueprintOutputPort
+            {
+                ItemId = recipe.Output.ItemId,
+                Name = recipe.Output.Name,
+                ImageUrl = recipe.Output.ImageUrl ?? output.ImageUrl,
+                RatePerMinute = recipe.Output.QuantityPerMinute * machineCount,
+            });
+        }
+
+        outputs = outputs
+            .GroupBy(output => output.ItemId, StringComparer.Ordinal)
+            .Select(group =>
+            {
+                var first = group.First();
+                return new BlueprintOutputPort
+                {
+                    ItemId = first.ItemId,
+                    Name = first.Name,
+                    ImageUrl = first.ImageUrl,
+                    RatePerMinute = group.Sum(output => output.RatePerMinute),
+                };
+            })
+            .OrderBy(output => output.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        if (outputs.Count == 0)
+        {
+            return null;
+        }
+
+        var snapped = _layoutService.Snap(position);
+        return new SchemeNode
+        {
+            NodeType = SchemeNodeType.BlueprintSource,
+            SourceSchemeName = schemeItem.Name,
+            SourceSchemePath = schemeItem.FilePath,
+            BuildingId = "",
+            SelectedRecipeKey = null,
+            MachineCount = 0,
+            Priority = ProductionPriority.Mid,
+            OnlyOutput = true,
+            IsSchemeOutput = false,
+            BlueprintOutputs = outputs,
+            X = snapped.X,
+            Y = snapped.Y,
+        };
+    }
+
     public bool CanConnect(PlannerPortReference first, PlannerPortReference second)
     {
         if (first.NodeId == second.NodeId || first.Direction == second.Direction || first.ItemId != second.ItemId)
@@ -73,9 +134,12 @@ public sealed class PlannerCanvasViewModel : ViewModelBase
 
         var source = first.Direction == "output" ? first : second;
         var target = first.Direction == "input" ? first : second;
-        var sourceRecipe = PlannerEdgeService.RecipeForNode(Catalog, Scheme.Nodes.FirstOrDefault(node => node.Id == source.NodeId));
+        var sourceNode = Scheme.Nodes.FirstOrDefault(node => node.Id == source.NodeId);
+        var sourceOutput = PlannerEdgeService.OutputForNode(Catalog, sourceNode, source.ItemId);
         var targetRecipe = PlannerEdgeService.RecipeForNode(Catalog, Scheme.Nodes.FirstOrDefault(node => node.Id == target.NodeId));
-        return _calculator.CanConnectOutputToInput(sourceRecipe, targetRecipe, source.ItemId);
+        return sourceOutput is not null
+            && targetRecipe is not null
+            && targetRecipe.Inputs.Any(input => input.ItemId == source.ItemId);
     }
 
     public bool TryCreateEdge(PlannerPortReference first, PlannerPortReference second, out SchemeEdge? edge)

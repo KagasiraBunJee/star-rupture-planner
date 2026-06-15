@@ -53,6 +53,9 @@ public abstract class SchemeElement
 
 public sealed class SchemeNode : SchemeElement
 {
+    [JsonPropertyName("node_type")]
+    public SchemeNodeType NodeType { get; set; } = SchemeNodeType.Machine;
+
     [JsonPropertyName("building_id")]
     public string BuildingId { get; set; } = "";
 
@@ -75,11 +78,43 @@ public sealed class SchemeNode : SchemeElement
     [JsonPropertyName("is_scheme_output")]
     public bool IsSchemeOutput { get; set; }
 
+    [JsonPropertyName("source_scheme_name")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string SourceSchemeName { get; set; } = "";
+
+    [JsonPropertyName("source_scheme_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string SourceSchemePath { get; set; } = "";
+
+    [JsonPropertyName("blueprint_outputs")]
+    public List<BlueprintOutputPort> BlueprintOutputs { get; set; } = [];
+
     [JsonPropertyName("x")]
     public double X { get; set; }
 
     [JsonPropertyName("y")]
     public double Y { get; set; }
+}
+
+public enum SchemeNodeType
+{
+    Machine = 0,
+    BlueprintSource = 1,
+}
+
+public sealed class BlueprintOutputPort
+{
+    [JsonPropertyName("item_id")]
+    public string ItemId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("image_url")]
+    public string ImageUrl { get; set; } = "";
+
+    [JsonPropertyName("rate_per_minute")]
+    public double RatePerMinute { get; set; }
 }
 
 public enum ProductionPriority

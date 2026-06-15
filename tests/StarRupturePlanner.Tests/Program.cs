@@ -22,12 +22,17 @@ var tests = new (string Name, Action Body)[]
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
     ("Scheme serialization round trips", SchemeSerializationRoundTrips),
+    ("Scheme store deletes saved schemes", SchemeStoreDeletesSavedSchemes),
+    ("Scheme store removes deleted blueprint references", SchemeStoreRemovesDeletedBlueprintReferences),
+    ("Scheme store rejects delete outside folder", SchemeStoreRejectsDeleteOutsideFolder),
     ("Machine node can persist without selected recipe", MachineNodeCanPersistWithoutRecipe),
     ("Connection route points persist", ConnectionRoutePointsPersist),
     ("Comment rectangles persist", CommentRectanglesPersist),
     ("App settings serialization round trips", AppSettingsSerializationRoundTrips),
     ("Async command tracks running state", AsyncCommandTracksRunningState),
     ("Canvas view model creates compatible edge", CanvasViewModelCreatesCompatibleEdge),
+    ("Canvas view model creates scheme output source nodes", CanvasViewModelCreatesSchemeOutputSourceNodes),
+    ("Blueprint source output feeds consumers", BlueprintSourceOutputFeedsConsumers),
     ("Canvas geometry routes through divider points", CanvasGeometryRoutesThroughDividerPoints),
     ("Edge label includes transport tier", EdgeLabelIncludesTransportTier),
     ("Scheme serialization round trips corporation settings", SchemeSerializationRoundTripsCorporationSettings),
@@ -35,6 +40,7 @@ var tests = new (string Name, Action Body)[]
     ("Locked building is hidden until corporation level allows it", LockedBuildingRequiresCorporationLevel),
     ("Rail recommendation uses available tiers", RailRecommendationUsesAvailableTiers),
     ("Building metrics deserialize", BuildingMetricsDeserialize),
+    ("Catalog metadata deserializes language", CatalogMetadataDeserializesLanguage),
     ("Scheme metrics scale by machine count", SchemeMetricsScaleByMachineCount),
     ("Temperature counts for placed machine without recipe", TemperatureCountsForPlacedMachineWithoutRecipe),
     ("Missing building metrics are ignored", MissingBuildingMetricsAreIgnored),
@@ -561,6 +567,85 @@ static void SchemeSerializationRoundTrips()
     Directory.Delete(temp, recursive: true);
 }
 
+static void SchemeStoreDeletesSavedSchemes()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    ISchemeStore store = new SchemeStore(temp);
+    var path = store.Save(new SchemeDocument { Name = "Delete Me" });
+
+    AssertTrue(File.Exists(path));
+    AssertTrue(store.ListSchemes().Any(item => item.FilePath == path));
+
+    store.Delete(path);
+
+    AssertFalse(File.Exists(path));
+    AssertFalse(store.ListSchemes().Any(item => item.FilePath == path));
+    Directory.Delete(temp, recursive: true);
+}
+
+static void SchemeStoreRemovesDeletedBlueprintReferences()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    ISchemeStore store = new SchemeStore(temp);
+    var sourcePath = store.Save(new SchemeDocument { Name = "Source Factory" });
+    var consumer = new SchemeDocument
+    {
+        Name = "Consumer Factory",
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "source-node",
+                NodeType = SchemeNodeType.BlueprintSource,
+                SourceSchemeName = "Source Factory",
+                SourceSchemePath = sourcePath,
+                BlueprintOutputs =
+                [
+                    new BlueprintOutputPort { ItemId = "part", Name = "Part", RatePerMinute = 12 },
+                ],
+            },
+            new SchemeNode
+            {
+                Id = "consumer-node",
+                SelectedRecipeKey = "consumer:part",
+            },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                SourceNodeId = "source-node",
+                SourceItemId = "part",
+                TargetNodeId = "consumer-node",
+                TargetItemId = "part",
+            },
+        ],
+    };
+    var consumerPath = store.Save(consumer);
+
+    store.Delete(sourcePath);
+    var loaded = store.Load(consumerPath);
+
+    AssertFalse(loaded.Nodes.Any(node => node.Id == "source-node"));
+    AssertFalse(loaded.Edges.Any());
+    AssertTrue(loaded.Nodes.Any(node => node.Id == "consumer-node"));
+    Directory.Delete(temp, recursive: true);
+}
+
+static void SchemeStoreRejectsDeleteOutsideFolder()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    var schemeFolder = Path.Combine(temp, "schemes");
+    var outsidePath = Path.Combine(temp, "outside.json");
+    Directory.CreateDirectory(temp);
+    File.WriteAllText(outsidePath, "{}");
+    ISchemeStore store = new SchemeStore(schemeFolder);
+
+    AssertThrows<InvalidOperationException>(() => store.Delete(outsidePath));
+    AssertTrue(File.Exists(outsidePath));
+    Directory.Delete(temp, recursive: true);
+}
+
 static void MachineNodeCanPersistWithoutRecipe()
 {
     var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
@@ -659,6 +744,7 @@ static void AppSettingsSerializationRoundTrips()
     store.Save(new AppSettings
     {
         Theme = AppTheme.Light,
+        PlannerLanguage = PlannerLanguages.Ukrainian,
         CurrentRailTierId = "rail-2",
         CanvasCardFont = new FontSettings { Family = "Segoe UI", Size = 14, Color = "#112233" },
         LeftBarListFont = new FontSettings { Family = "Consolas", Size = 11, Color = "#445566" },
@@ -666,6 +752,7 @@ static void AppSettingsSerializationRoundTrips()
 
     var loaded = store.Load();
     AssertEqual(AppTheme.Light, loaded.Theme);
+    AssertEqual(PlannerLanguages.Ukrainian, loaded.PlannerLanguage);
     AssertEqual("rail-2", loaded.CurrentRailTierId);
     AssertEqual("Segoe UI", loaded.CanvasCardFont.Family);
     AssertEqual(14d, loaded.CanvasCardFont.Size);
@@ -727,6 +814,97 @@ static void CanvasViewModelCreatesCompatibleEdge()
     AssertTrue(connected);
     AssertEqual("source", edge?.SourceNodeId);
     AssertEqual(1, viewModel.Scheme.Edges.Count);
+}
+
+static void CanvasViewModelCreatesSchemeOutputSourceNodes()
+{
+    var titaniumRod = TitaniumRodRecipe();
+    var rotor = new RecipeInfo
+    {
+        RecipeKey = "assembler:rotor",
+        BuildingId = "assembler",
+        BuildingName = "Assembler",
+        Output = new RecipePortInfo { ItemId = "rotor", Name = "Rotor", QuantityPerMinute = 10 },
+    };
+    var viewModel = new PlannerCanvasViewModel(new PlannerCalculator(), new CanvasLayoutService(24))
+    {
+        Catalog = new PlannerCatalog
+        {
+            Recipes = [titaniumRod, rotor],
+        },
+    };
+
+    var node = viewModel.CreateBlueprintSourceNode(
+        new SchemeListItem
+        {
+            Name = "Existing Factory",
+            FilePath = "existing-factory.json",
+            Outputs =
+            [
+                new SchemeListOutputItem { RecipeKey = titaniumRod.RecipeKey, MachineCount = 2 },
+                new SchemeListOutputItem { RecipeKey = rotor.RecipeKey, MachineCount = 3 },
+            ],
+        },
+        new System.Windows.Point(37, 59));
+
+    AssertTrue(node is not null);
+    AssertEqual(SchemeNodeType.BlueprintSource, node!.NodeType);
+    AssertTrue(node.OnlyOutput);
+    AssertFalse(node.IsSchemeOutput);
+    AssertEqual("Existing Factory", node.SourceSchemeName);
+    AssertEqual("existing-factory.json", node.SourceSchemePath);
+    AssertEqual(2, node.BlueprintOutputs.Count);
+    AssertEqual(60d, node.BlueprintOutputs.First(output => output.ItemId == "titanium-rod").RatePerMinute);
+    AssertEqual(30d, node.BlueprintOutputs.First(output => output.ItemId == "rotor").RatePerMinute);
+    AssertEqual(48d, node.X);
+    AssertEqual(48d, node.Y);
+}
+
+static void BlueprintSourceOutputFeedsConsumers()
+{
+    var targetRecipe = ConsumerRecipe("consumer", "Consumer", 20);
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "blueprint",
+                NodeType = SchemeNodeType.BlueprintSource,
+                OnlyOutput = true,
+                SourceSchemeName = "Existing Factory",
+                BlueprintOutputs =
+                [
+                    new BlueprintOutputPort
+                    {
+                        ItemId = "part",
+                        Name = "Part",
+                        RatePerMinute = 12,
+                    },
+                ],
+            },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-blueprint",
+                SourceNodeId = "blueprint",
+                SourceItemId = "part",
+                TargetNodeId = "target",
+                TargetItemId = "part",
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog { Recipes = [targetRecipe] };
+
+    var analysis = ProductionAnalysisService.Analyze(scheme, catalog, new PlannerCalculator());
+
+    AssertTrue(PlannerEdgeService.IsEdgeValid(scheme, catalog, new PlannerCalculator(), scheme.Edges[0]));
+    AssertEqual(12d, analysis.EdgeDeliveries["edge-blueprint"]);
+    AssertEqual(12d, analysis.Inputs[ProductionInputKey.For("target", "part")].DeliveredPerMinute);
+    AssertEqual(1, analysis.Alerts.Count);
 }
 
 static void CanvasGeometryRoutesThroughDividerPoints()
@@ -984,6 +1162,16 @@ static void BuildingMetricsDeserialize()
     AssertEqual(3d, building?.Temperature ?? 0);
 }
 
+static void CatalogMetadataDeserializesLanguage()
+{
+    var catalog = System.Text.Json.JsonSerializer.Deserialize<PlannerCatalog>(
+        "{\"meta\":{\"building_count\":21,\"recipe_count\":132,\"language\":\"uk\"}}",
+        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+    AssertEqual("uk", catalog?.Meta.Language);
+    AssertEqual(132, catalog?.Meta.RecipeCount ?? 0);
+}
+
 static void SchemeMetricsScaleByMachineCount()
 {
     var recipe = TitaniumRodRecipe();
@@ -1133,6 +1321,25 @@ static void AssertEqual<T>(T expected, T actual)
     }
 }
 
+static void AssertThrows<TException>(Action action)
+    where TException : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Expected {typeof(TException).Name}, got {ex.GetType().Name}.");
+    }
+
+    throw new InvalidOperationException($"Expected {typeof(TException).Name}.");
+}
+
 sealed class ImmediateUiDispatcher : IUiDispatcher
 {
     public bool CheckAccess() => true;
@@ -1170,6 +1377,8 @@ sealed class ImmediateBackgroundTaskRunner : IBackgroundTaskRunner
 sealed class TestPlannerApiClient : IPlannerApiClient
 {
     public Uri BaseUri { get; } = new("http://localhost/");
+
+    public string PlannerLanguage { get; set; } = "en";
 
     public Task<bool> IsApiAvailableAsync(CancellationToken cancellationToken = default) => Task.FromResult(true);
 

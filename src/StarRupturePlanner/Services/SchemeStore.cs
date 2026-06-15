@@ -70,6 +70,37 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         return document.FilePath;
     }
 
+    public void Delete(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("Scheme file path is required.", nameof(filePath));
+        }
+
+        var folderPath = Path.GetFullPath(FolderPath);
+        var folderRoot = folderPath.EndsWith(Path.DirectorySeparatorChar)
+            ? folderPath
+            : folderPath + Path.DirectorySeparatorChar;
+        var targetPath = Path.GetFullPath(filePath);
+
+        if (!targetPath.StartsWith(folderRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Scheme file is outside the active scheme folder.");
+        }
+
+        if (!string.Equals(Path.GetExtension(targetPath), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only saved scheme JSON files can be deleted.");
+        }
+
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+
+        RemoveReferencesToDeletedScheme(targetPath);
+    }
+
     public static string SafeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
@@ -101,5 +132,55 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         {
             return [];
         }
+    }
+
+    private void RemoveReferencesToDeletedScheme(string deletedSchemePath)
+    {
+        var deletedName = Path.GetFileNameWithoutExtension(deletedSchemePath);
+        foreach (var path in Directory.EnumerateFiles(FolderPath, "*.json"))
+        {
+            var fullPath = Path.GetFullPath(path);
+            if (string.Equals(fullPath, deletedSchemePath, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            SchemeDocument document;
+            try
+            {
+                document = Load(fullPath);
+            }
+            catch
+            {
+                continue;
+            }
+
+            var removedNodeIds = document.Nodes
+                .Where(node => node.NodeType == SchemeNodeType.BlueprintSource
+                    && ReferencesDeletedScheme(node, deletedSchemePath, deletedName))
+                .Select(node => node.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            if (removedNodeIds.Count == 0)
+            {
+                continue;
+            }
+
+            document.Nodes.RemoveAll(node => removedNodeIds.Contains(node.Id));
+            document.Edges.RemoveAll(edge =>
+                removedNodeIds.Contains(edge.SourceNodeId) || removedNodeIds.Contains(edge.TargetNodeId));
+            Save(document);
+        }
+    }
+
+    private static bool ReferencesDeletedScheme(SchemeNode node, string deletedSchemePath, string deletedName)
+    {
+        if (!string.IsNullOrWhiteSpace(node.SourceSchemePath)
+            && string.Equals(Path.GetFullPath(node.SourceSchemePath), deletedSchemePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.IsNullOrWhiteSpace(node.SourceSchemePath)
+            && string.Equals(node.SourceSchemeName, deletedName, StringComparison.CurrentCultureIgnoreCase);
     }
 }

@@ -45,7 +45,7 @@ public static class PlannerUnlockService
         }
 
         return string.Join(" or ", requirements.Select(requirement =>
-            $"{requirement.CorporationName} level {requirement.Level}"));
+            $"{requirement.CorporationName} {UiText.T("Text.Level")} {requirement.Level}"));
     }
 
     public static IEnumerable<TransportTierInfo> AvailableRailTiers(PlannerCatalog catalog, SchemeDocument scheme)
@@ -68,13 +68,13 @@ public static class PlannerUnlockService
     {
         if (tier.UnlockRequirements.Count == 0)
         {
-            return "Available";
+            return UiText.T("Text.Available");
         }
 
         return string.Join(" or ", tier.UnlockRequirements.Select(requirement =>
         {
             var corporation = catalog.Corporations.FirstOrDefault(item => item.CorporationId == requirement.CorporationId);
-            return $"{corporation?.Name ?? requirement.CorporationId} level {requirement.Level}";
+            return $"{corporation?.Name ?? requirement.CorporationId} {UiText.T("Text.Level")} {requirement.Level}";
         }));
     }
 
@@ -97,8 +97,8 @@ public static class PlannerUnlockService
                 var name = recipe?.BuildingName ?? building?.Name ?? node.BuildingId;
                 var unlock = BuildingUnlockText(catalog, node.BuildingId);
                 return string.IsNullOrWhiteSpace(unlock)
-                    ? $"{name} is locked by corporation levels"
-                    : $"{name} locked: requires {unlock}";
+                    ? $"{name} {UiText.T("Text.LockedByCorporationLevels")}"
+                    : $"{name} {UiText.T("Text.LockedRequires")} {unlock}";
             })
             .ToList();
     }

@@ -1,0 +1,777 @@
+{
+  "language": "en",
+  "name": "English",
+  "items": {
+    "accumulator": {
+      "name": "Accumulator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "aerogel": {
+      "name": "Aerogel",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "airlock": {
+      "name": "Airlock",
+      "description": "Allows access to Habitats. Has to be build on a Habitat wall."
+    },
+    "anti-radiation-covers": {
+      "name": "Anti-Radiation Covers",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "anti-radiation-covers-blueprint": {
+      "name": "Anti-Radiation Covers - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "antimatter-generator": {
+      "name": "Antimatter Generator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "arc-reactor": {
+      "name": "Arc Reactor",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "basic-building-material": {
+      "name": "Basic Building Material",
+      "description": "Material used  by Building Tool to set up basic structures."
+    },
+    "basic-fuel": {
+      "name": "Basic Fuel",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "battery": {
+      "name": "Battery",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "biofilament": {
+      "name": "Biofilament",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "biomass": {
+      "name": "Biomass",
+      "description": "Biomass"
+    },
+    "bioprinter": {
+      "name": "Bioprinter",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "calcite-sheets": {
+      "name": "Calcite Sheets",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "calcium-block": {
+      "name": "Calcium Block",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "calcium-ore": {
+      "name": "Calcium Ore",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "calcium-powder": {
+      "name": "Calcium Powder",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "carbon-sonar": {
+      "name": "Carbon Sonar",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "ceramics": {
+      "name": "Ceramics",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "coal-ore": {
+      "name": "CoalOre",
+      "description": "Coal"
+    },
+    "coil": {
+      "name": "Inductor",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "condenser": {
+      "name": "Condenser",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "condenser-blueprint": {
+      "name": "Condenser - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "containment-vessel": {
+      "name": "Containment Vessel",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "control-systems": {
+      "name": "Control Systems",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "converter": {
+      "name": "Converter",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "copper-bar": {
+      "name": "CopperBar",
+      "description": "Copper"
+    },
+    "copper-ore": {
+      "name": "CopperOre",
+      "description": "Copper"
+    },
+    "cyclotrone": {
+      "name": "Cyclotrone",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "data-point": {
+      "name": "Data Point",
+      "description": "Obtained from analyzing valuable items"
+    },
+    "dome": {
+      "name": "Dome",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "electromagnet": {
+      "name": "Electromagnet",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "electromagnetic-coil": {
+      "name": "Electromagnetic Coil",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "electromagnetic-coil-blueprint": {
+      "name": "Electromagnetic Coil - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "electronics": {
+      "name": "Electronics",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "electronics-blueprint": {
+      "name": "Electronics - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "elementary-building-material": {
+      "name": "Elementary Building Material",
+      "description": "Smallest building block of every Product."
+    },
+    "epoxy": {
+      "name": "Epoxy",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "explosive": {
+      "name": "Chemicals",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "explosive-blueprint": {
+      "name": "Chemicals - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "generator": {
+      "name": "Generator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "genome-alternator": {
+      "name": "Genome Alternator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "glass": {
+      "name": "Glass",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "goethite-ingot": {
+      "name": "Goethite Ingot",
+      "description": "Crafting Material. Used in various recipes."
+    },
+    "goethite-lattice": {
+      "name": "Goethite Lattice",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "goethite-lattice-blueprint": {
+      "name": "Goethite Lattice - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "goethite-ore": {
+      "name": "Goethite Ore",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "goethite-powder": {
+      "name": "Goethite Powder",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "gold-ore": {
+      "name": "GoldOre",
+      "description": "Gold"
+    },
+    "grenade": {
+      "name": "Explosive Charge",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "grenade-blueprint": {
+      "name": "Explosive Charge - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "gyroscope": {
+      "name": "Stabilizer",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "gyroscope-blueprint": {
+      "name": "Stabilizer - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "hardening-agent": {
+      "name": "Hardening Agent",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "hardening-agent-blueprint": {
+      "name": "Hardening Agent - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "heat-resistant-sheet": {
+      "name": "Heat Resistant Sheet",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "heat-shield": {
+      "name": "Heat Shield",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "heat-shield-blueprint": {
+      "name": "Heat Shield - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "helium-cell": {
+      "name": "Helium Cell",
+      "description": "<MISSING STRING TABLE ENTRY>"
+    },
+    "helium-ore": {
+      "name": "Helium-3",
+      "description": "Raw Material. Can be processed."
+    },
+    "impeller": {
+      "name": "Impeller",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "intermediate-building-material": {
+      "name": "Intermediate Building Material",
+      "description": "Material used  by Building Tool to set up intermediate structures."
+    },
+    "ion-bomb": {
+      "name": "Ion Bomb",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "ion-injector": {
+      "name": "Ion Injector",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "ion-stabilizer": {
+      "name": "Ion Stabilizer",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "ion-thrusters": {
+      "name": "Ion Thrusters",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "laser-emitter": {
+      "name": "Laser Emitter",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "lens": {
+      "name": "Lens",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "liquid-helium": {
+      "name": "Liquid Helium",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "magic-oil-ore": {
+      "name": "Crude Oil",
+      "description": "Raw Material. Can be processed."
+    },
+    "mars-habitat-base": {
+      "name": "Mars Habitat Base",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "meteor-core": {
+      "name": "Meteor Heart",
+      "description": "Molten Core of a Meteor. Valuable resource and building material."
+    },
+    "micro-satellite": {
+      "name": "Micro Satellite",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "missile-housing": {
+      "name": "Missile Housing",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "molecular-scalpel": {
+      "name": "Molecular Scalpel",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "nanofibre": {
+      "name": "Nanofibre",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "nanosyringe": {
+      "name": "Nanosyringe",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "nanosyringe-blueprint": {
+      "name": "Nanosyringe - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "neutrino-bomb": {
+      "name": "Neutrino Bomb",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "neutrino-missile": {
+      "name": "Neutrino Missile",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "nozzle": {
+      "name": "Nozzle",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "onboard-instruments": {
+      "name": "Onboard Instruments",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "organ-producer": {
+      "name": "Organ Producer",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "organic-compound": {
+      "name": "Organic Compound",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "panaceum": {
+      "name": "Panaceum™",
+      "description": "<MISSING STRING TABLE ENTRY>"
+    },
+    "payload-stage": {
+      "name": "Payload Stage",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "plasma-generator": {
+      "name": "Plasma Generator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "plasma-oxygen-converter": {
+      "name": "Plasma Oxygen Converter",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "plastic-dust": {
+      "name": "Plastic Dust",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "plastic-dust-blueprint": {
+      "name": "Plastic Dust - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "pressure-tank": {
+      "name": "Pressure Tank",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "pressurized-helium": {
+      "name": "Pressurized Helium",
+      "description": "Crafting Material. Used in various recipes."
+    },
+    "propulsion-stage": {
+      "name": "Propulsion Stage",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "pseudorubber-insulator": {
+      "name": "Pseudorubber Insulator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "pump": {
+      "name": "Pump",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "pyrite-ore": {
+      "name": "Pyrite",
+      "description": "Ore Resource"
+    },
+    "quantum-tranqualizer": {
+      "name": "Quantum Tranqualizer",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "quartz-building-material": {
+      "name": "Quartz Building Material",
+      "description": "Obsolete building material. Use the Recycler to retrieve materials."
+    },
+    "rare-ore1": {
+      "name": "RareOre",
+      "description": "Rare1"
+    },
+    "refined-oil": {
+      "name": "Refined Oil",
+      "description": "Crafting Material. Used in various recipes."
+    },
+    "reinforced-frame": {
+      "name": "Reinforced Frame",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "reinforced-housing": {
+      "name": "Reinforced Housing",
+      "description": "Crafting Material. Used in various recipes."
+    },
+    "resonator": {
+      "name": "Resonator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "rna-stabilizer": {
+      "name": "RNA Stabilizer",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "rocket-engine": {
+      "name": "Rocket Engine",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "rocket-fuel": {
+      "name": "Rocket Fuel",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "rotor": {
+      "name": "Rotor",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "rotor-blueprint": {
+      "name": "Rotor - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "rtsc": {
+      "name": "RTSC",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "rtsc-generator": {
+      "name": "RTSC Generator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "sand-stone-brick": {
+      "name": "SandStoneBrick",
+      "description": "SandStone"
+    },
+    "sand-stone-raw": {
+      "name": "SandStoneRaw",
+      "description": "SandStone"
+    },
+    "satellite-assembly": {
+      "name": "Satellite Assembly",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "satellite-body": {
+      "name": "Satellite Body",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "scafolding": {
+      "name": "Scafolding",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "scanner": {
+      "name": "Scanner",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "self-sustained-habitat": {
+      "name": "Self-sustained Habitat",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "silica-sand": {
+      "name": "Synthetic Silicon",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "silica-sand-blueprint": {
+      "name": "Synthetic Silicon - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "stacking-item": {
+      "name": "Sample Item",
+      "description": "Sample Item Description"
+    },
+    "stator": {
+      "name": "Stator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "stator-blueprint": {
+      "name": "Stator - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "substance-fhs-135-493": {
+      "name": "Substance #FHS-135-493",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "sulphur-ore": {
+      "name": "Sulphur Ore",
+      "description": "Raw Material. Can be processed."
+    },
+    "sulphuric-acid": {
+      "name": "Sulphuric Acid",
+      "description": "Crafting Material. Used in various recipes."
+    },
+    "superconductor": {
+      "name": "Superconductor",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "supermagnet": {
+      "name": "Supermagnet",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "synthetic-dna": {
+      "name": "Synthetic DNA",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "synthetic-fertilizer": {
+      "name": "Synthetic Fertilizer",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "synthetic-protein": {
+      "name": "Synthetic Protein",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "synthetic-resin": {
+      "name": "Synthetic Resin",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "syringe": {
+      "name": "Applicator",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "titanium-bar": {
+      "name": "Titanium Bar",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "titanium-beam": {
+      "name": "Titanium Beam",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "titanium-housing": {
+      "name": "Titanium Housing",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "titanium-ore": {
+      "name": "Titanium Ore",
+      "description": "Raw Material. Can be processed."
+    },
+    "titanium-rod": {
+      "name": "Titanium Rod",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "titanium-sheet": {
+      "name": "Titanium Sheet",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "tracking-device": {
+      "name": "Tracking Device",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "tube": {
+      "name": "Tube",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "tube-blueprint": {
+      "name": "Tube - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "turbine": {
+      "name": "Turbine",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "turbine-blueprint": {
+      "name": "Turbine - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "uber-oil": {
+      "name": "Plastic",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "uber-titanium": {
+      "name": "Titanoferrite Ingot",
+      "description": "Crafting Material. Used in various recipes."
+    },
+    "uber-wolfram": {
+      "name": "Wolfram Steel Ingot",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "uberfilament": {
+      "name": "Uberfilament",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "uberfilament-blueprint": {
+      "name": "Uberfilament - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "universal-space-soil": {
+      "name": "Universal Space Soil",
+      "description": "<MISSING STRING TABLE ENTRY>"
+    },
+    "valve": {
+      "name": "Valve",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "valve-blueprint": {
+      "name": "Valve - Blueprint",
+      "description": "Used in Recipe Station to unlock item production."
+    },
+    "wolfram-bar": {
+      "name": "Wolfram Bar",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "wolfram-ore": {
+      "name": "Wolfram Ore",
+      "description": "Raw Material. Can be processed."
+    },
+    "wolfram-plate": {
+      "name": "Wolfram Plate",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "wolfram-powder": {
+      "name": "Wolfram Powder",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    },
+    "wolfram-wire": {
+      "name": "Wolfram Wire",
+      "description": "Crafting Material. Used in various recipes. Can be exported."
+    }
+  },
+  "buildings": {
+    "acid-extractor": {
+      "name": "Sulfur Extractor",
+      "family_name": "Sulfur Extractor",
+      "description": "Used to extract Sulfur. Can be placed only on Sulfur deposits. Cannot be placed when corrosive gases are present."
+    },
+    "assembler": {
+      "name": "Assembler",
+      "family_name": "Assembler",
+      "description": "Intermediate production building. Utilises nanoscale printing to make Products."
+    },
+    "crafter": {
+      "name": "Fabricator",
+      "family_name": "Fabricator",
+      "description": "Basic production building. Utilises nanoscale printing to make Products."
+    },
+    "crafter-tier2": {
+      "name": "Fabricator v.2",
+      "family_name": "Fabricator",
+      "description": "Improved basic production building. Utilizes nanoscale printing to make Products. Offers optimized recipes designed for higher production output."
+    },
+    "factory": {
+      "name": "Constructorizer",
+      "family_name": "Constructorizer",
+      "description": "Advanced production building. Utilizes nanoscale printing to make Products. "
+    },
+    "factory-tier2": {
+      "name": "Constructorizer v.2",
+      "family_name": "Constructorizer",
+      "description": "Improved advanced production building. Utilizes nanoscale printing to make Products. Offers optimized recipes designed for higher production output."
+    },
+    "forge": {
+      "name": "Pyro Forge",
+      "family_name": "Pyro Forge",
+      "description": "Refines raw Goethite into Products."
+    },
+    "furnace": {
+      "name": "Furnace",
+      "family_name": "Furnace",
+      "description": "Basic production building. Utilises heat to make Products."
+    },
+    "furnace-tier2": {
+      "name": "Furnace v.2",
+      "family_name": "Furnace",
+      "description": "Improved basic production building. Utilizes heat to make Products. Offers optimized recipes designed for higher production output."
+    },
+    "gas-extractor": {
+      "name": "Helium-3 Extractor",
+      "family_name": "Helium-3 Extractor",
+      "description": "Used to extract Helium-3. Can be placed only on Helium-3 deposits."
+    },
+    "hammer": {
+      "name": "Mega Press",
+      "family_name": "Mega Press",
+      "description": "Intermediate production building. Utilises high speed machining to make Products."
+    },
+    "laser-drill": {
+      "name": "Laser Drill",
+      "family_name": "Laser Drill",
+      "description": "Used to extract advanced ores. Can be placed only on Goethite deposits."
+    },
+    "liquid-extractor": {
+      "name": "Oil Extractor",
+      "family_name": "Oil Extractor",
+      "description": "Used to extract Powerium. Can be placed only on Powerium deposits."
+    },
+    "mechanical-drill": {
+      "name": "Ore Excavator",
+      "family_name": "Ore Excavator",
+      "description": "Crucial during the early phase of the mission. Used to extract basic ores. Can be placed only on Titanium, Wolfram, and Calcium deposits."
+    },
+    "mechanical-drill-tier2": {
+      "name": "Ore Excavator v.2",
+      "family_name": "Ore Excavator",
+      "description": "An improved version of the Ore Excavator offering higher extraction rates. Can be placed only on Titanium, Wolfram, and Calcium deposits."
+    },
+    "military-assembler": {
+      "name": "Facturer",
+      "family_name": "Facturer",
+      "description": "Advanced production building. Utilizes high speed machining to make Products."
+    },
+    "pressurizer": {
+      "name": "Refinery",
+      "family_name": "Refinery",
+      "description": "Refines raw Powerium into Products."
+    },
+    "refinery": {
+      "name": "Pressurizer",
+      "family_name": "Pressurizer",
+      "description": "Refines raw Helium and Sulphur into Products."
+    },
+    "smelter": {
+      "name": "Smelter",
+      "family_name": "Smelter",
+      "description": "Refines raw Titanium, Wolfram, and Calcium into Products."
+    },
+    "synthetizer": {
+      "name": "Compounder",
+      "family_name": "Compounder",
+      "description": "Intermediate production building. Utilises chemical reactions to make Products."
+    },
+    "synthetizer-tier2": {
+      "name": "Compounder v.2",
+      "family_name": "Compounder",
+      "description": "Improved intermediate production building. Utilizes chemical reactions to make Products. Offers optimized recipes designed for higher production output."
+    }
+  },
+  "corporations": {
+    "clever": {
+      "name": "Clever Robotics",
+      "description": "Drones and logistic corporation."
+    },
+    "future": {
+      "name": "Future Health Solutions",
+      "description": "Pharmaceutical and medical corporation."
+    },
+    "griffiths": {
+      "name": "Griffith Blue Corporation",
+      "description": "Military corporation."
+    },
+    "moon": {
+      "name": "Moon Energy Corporation",
+      "description": "Energy corporation."
+    },
+    "selenian": {
+      "name": "Selenian Corporation",
+      "description": "Space mining corporation."
+    },
+    "starting": {
+      "name": "Training Corporation",
+      "description": "Fictional corporation. We won’t let you deal with the real ones for now."
+    }
+  },
+  "transport_tiers": {
+    "rail-tier-1": {
+      "name": "Rail tier 1"
+    },
+    "rail-tier-2": {
+      "name": "Rail tier 2"
+    },
+    "rail-tier-3": {
+      "name": "Rail tier 3"
+    }
+  },
+  "ui": {
+    "transport.default_message": "Default rail tier speeds for planner recommendations."
+  }
+}

@@ -7,6 +7,7 @@ namespace StarRupturePlanner.Services;
 public interface IPlannerApiClient
 {
     Uri BaseUri { get; }
+    string PlannerLanguage { get; set; }
     Task<bool> IsApiAvailableAsync(CancellationToken cancellationToken = default);
     Task<PlannerCatalog> GetCatalogAsync(CancellationToken cancellationToken = default);
     Task<SuggestionResponse> GetSuggestionsAsync(string direction, string itemId, CancellationToken cancellationToken = default);
@@ -25,6 +26,7 @@ public interface ISchemeStore
     IReadOnlyList<SchemeListItem> ListSchemes();
     SchemeDocument Load(string filePath);
     string Save(SchemeDocument document);
+    void Delete(string filePath);
 }
 
 public interface IAppSettingsStore

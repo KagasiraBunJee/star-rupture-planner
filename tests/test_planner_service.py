@@ -108,6 +108,34 @@ class PlannerServiceTests(unittest.TestCase):
         self.assertEqual(smelter["power"], -5)
         self.assertEqual(smelter["temperature"], 3)
 
+    def test_catalog_localizes_known_ukrainian_names(self) -> None:
+        catalog = self.service.get_planner_catalog(lang="uk")
+        recipe = next(
+            entry
+            for entry in catalog["recipes"]
+            if entry["recipe_id"] == "titanium-rod"
+        )
+
+        self.assertEqual(recipe["output"]["name"], "Титановий стрижень")
+        self.assertEqual(recipe["building_name"], "Фабрикатор")
+        self.assertEqual(catalog["transport_tiers"]["tiers"][0]["name"], "Рейки, рівень 1")
+
+    def test_unsupported_language_falls_back_to_english(self) -> None:
+        catalog = self.service.get_planner_catalog(lang="zz")
+        recipe = next(
+            entry
+            for entry in catalog["recipes"]
+            if entry["recipe_id"] == "titanium-rod"
+        )
+
+        self.assertEqual(recipe["output"]["name"], "Titanium Rod")
+        self.assertEqual(catalog["meta"]["language"], "en")
+
+    def test_localized_item_search_matches_ukrainian_name(self) -> None:
+        payload = self.service.search_items("стрижень", lang="uk")
+
+        self.assertTrue(any(item["item_id"] == "titanium-rod" for item in payload["items"]))
+
     def test_building_normalization_keeps_power_and_temperature(self) -> None:
         scraper = StarRuptureScraper(settings)
         building = scraper._normalize_building(

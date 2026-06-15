@@ -1,0 +1,777 @@
+{
+  "language": "de",
+  "name": "German",
+  "items": {
+    "accumulator": {
+      "name": "Akkumulator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "aerogel": {
+      "name": "Aerogel",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "airlock": {
+      "name": "Luftschleuse",
+      "description": "Allows access to Habitats. Has to be build on a Habitat wall."
+    },
+    "anti-radiation-covers": {
+      "name": "Strahlenschutz Abdeckungen",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "anti-radiation-covers-blueprint": {
+      "name": "Strahlenschutz Abdeckungen - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "antimatter-generator": {
+      "name": "Antimaterie Generator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "arc-reactor": {
+      "name": "Lichtbogen Reactor",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "basic-building-material": {
+      "name": "Einfaches Baumaterial",
+      "description": "Material used  by Building Tool to set up basic structures."
+    },
+    "basic-fuel": {
+      "name": "Basic Treibstoff",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "battery": {
+      "name": "Batterie",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "biofilament": {
+      "name": "Biofilament",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "biomass": {
+      "name": "Biomasse",
+      "description": "Biomasse"
+    },
+    "bioprinter": {
+      "name": "Biodrucker",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "calcite-sheets": {
+      "name": "Kalzit Sheets",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "calcium-block": {
+      "name": "Kalziumblock",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "calcium-ore": {
+      "name": "Kalziumerz",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "calcium-powder": {
+      "name": "Kalziumpulver",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "carbon-sonar": {
+      "name": "Kohlenstoff-Sonar",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "ceramics": {
+      "name": "Keramik",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "coal-ore": {
+      "name": "Kohleerz",
+      "description": "Kohle"
+    },
+    "coil": {
+      "name": "Inductor",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "condenser": {
+      "name": "Kondensator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "condenser-blueprint": {
+      "name": "Kondensator - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "containment-vessel": {
+      "name": "Eindämmungsbehälter",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "control-systems": {
+      "name": "Steuerungssysteme",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "converter": {
+      "name": "Konverter",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "copper-bar": {
+      "name": "Kupferbarren",
+      "description": "Kupfer"
+    },
+    "copper-ore": {
+      "name": "Kupfererz",
+      "description": "Kupfer"
+    },
+    "cyclotrone": {
+      "name": "Zyklotron",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "data-point": {
+      "name": "Datenpunkt",
+      "description": "Wird durch Analyse wertvoller Gegenstände erhalten."
+    },
+    "dome": {
+      "name": "Kuppel",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "electromagnet": {
+      "name": "Elektromagnet",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "electromagnetic-coil": {
+      "name": "Elektromagnetische Spule",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "electromagnetic-coil-blueprint": {
+      "name": "Elektromagnetische Spule - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "electronics": {
+      "name": "Elektronik",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "electronics-blueprint": {
+      "name": "Elektronik - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "elementary-building-material": {
+      "name": "Elementares Baumaterial",
+      "description": "Smallest building block of every Product."
+    },
+    "epoxy": {
+      "name": "Epoxid",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "explosive": {
+      "name": "Chemikalien",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "explosive-blueprint": {
+      "name": "Chemikalien - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "generator": {
+      "name": "Generator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "genome-alternator": {
+      "name": "Genom-Alternator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "glass": {
+      "name": "Glas",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "goethite-ingot": {
+      "name": "Goethit Barren",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet."
+    },
+    "goethite-lattice": {
+      "name": "Goethit Gitter",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "goethite-lattice-blueprint": {
+      "name": "Goethit Gitter - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "goethite-ore": {
+      "name": "Goethit Erz",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "goethite-powder": {
+      "name": "Goethit Pulver",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "gold-ore": {
+      "name": "Gold Erz",
+      "description": "Gold"
+    },
+    "grenade": {
+      "name": "Sprengstoff Charge",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "grenade-blueprint": {
+      "name": "Sprengstoff Charge - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "gyroscope": {
+      "name": "Stabilizer",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "gyroscope-blueprint": {
+      "name": "Stabilizer - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "hardening-agent": {
+      "name": "Härter Agent",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "hardening-agent-blueprint": {
+      "name": "Härter Agent - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "heat-resistant-sheet": {
+      "name": "Heat Resistant Blech",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "heat-shield": {
+      "name": "Hitzeschild",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "heat-shield-blueprint": {
+      "name": "Hitzeschild - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "helium-cell": {
+      "name": "Helium Zelle",
+      "description": "<MISSING STRING TABLE ENTRY>"
+    },
+    "helium-ore": {
+      "name": "Helium-3",
+      "description": "Raw Material. Can be processed."
+    },
+    "impeller": {
+      "name": "Laufrad",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "intermediate-building-material": {
+      "name": "Mittleres Baumaterial",
+      "description": "Material used  by Building Tool to set up intermediate structures."
+    },
+    "ion-bomb": {
+      "name": "Ionen Bombe",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "ion-injector": {
+      "name": "Ionen Injektor",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "ion-stabilizer": {
+      "name": "Ionen Stabilizer",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "ion-thrusters": {
+      "name": "Ionen Thrusters",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "laser-emitter": {
+      "name": "Laser Emitter",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "lens": {
+      "name": "Linse",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "liquid-helium": {
+      "name": "Flüssiges Helium",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "magic-oil-ore": {
+      "name": "Crude Oil",
+      "description": "Raw Material. Can be processed."
+    },
+    "mars-habitat-base": {
+      "name": "Mars-Habitat-Basis",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "meteor-core": {
+      "name": "Meteor Heart",
+      "description": "Molten Core of a Meteor. Valuable resource and building material."
+    },
+    "micro-satellite": {
+      "name": "Mikrosatellit",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "missile-housing": {
+      "name": "Raketengehäuse",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "molecular-scalpel": {
+      "name": "Molekulares Skalpell",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "nanofibre": {
+      "name": "Nanofaser",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "nanosyringe": {
+      "name": "Nanospritze",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "nanosyringe-blueprint": {
+      "name": "Nanospritze - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "neutrino-bomb": {
+      "name": "Neutrino Bombe",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "neutrino-missile": {
+      "name": "Neutrino Rakete",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "nozzle": {
+      "name": "Düse",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "onboard-instruments": {
+      "name": "Bordinstrumente",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "organ-producer": {
+      "name": "Organ Producer",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "organic-compound": {
+      "name": "Organische Compound",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "panaceum": {
+      "name": "Panaceum™",
+      "description": "<MISSING STRING TABLE ENTRY>"
+    },
+    "payload-stage": {
+      "name": "Nutzlaststufe",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "plasma-generator": {
+      "name": "Plasma Generator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "plasma-oxygen-converter": {
+      "name": "Plasma Oxygen Konverter",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "plastic-dust": {
+      "name": "Plastic Dust",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "plastic-dust-blueprint": {
+      "name": "Plastic Dust - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "pressure-tank": {
+      "name": "Druck Tank",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "pressurized-helium": {
+      "name": "Komprimiertes Helium",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet."
+    },
+    "propulsion-stage": {
+      "name": "Antriebsstufe",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "pseudorubber-insulator": {
+      "name": "Pseudorubber Isolator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "pump": {
+      "name": "Pumpe",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "pyrite-ore": {
+      "name": "Pyrit",
+      "description": "Ore Resource"
+    },
+    "quantum-tranqualizer": {
+      "name": "Quanten Tranqualizer",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "quartz-building-material": {
+      "name": "Quarz-Baumaterial",
+      "description": "Obsolete building material. Use the Recycler to retrieve materials."
+    },
+    "rare-ore1": {
+      "name": "Rare Erz",
+      "description": "Rare1"
+    },
+    "refined-oil": {
+      "name": "Raffiniertes Oil",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet."
+    },
+    "reinforced-frame": {
+      "name": "Verstärkter Frame",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "reinforced-housing": {
+      "name": "Verstärkter Gehäuse",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet."
+    },
+    "resonator": {
+      "name": "Resonator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "rna-stabilizer": {
+      "name": "RNA Stabilizer",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "rocket-engine": {
+      "name": "Raketentriebwerk",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "rocket-fuel": {
+      "name": "Raketentreibstoff",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "rotor": {
+      "name": "Rotor",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "rotor-blueprint": {
+      "name": "Rotor - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "rtsc": {
+      "name": "RTSC",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "rtsc-generator": {
+      "name": "RTSC Generator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "sand-stone-brick": {
+      "name": "Sand Stein Brick",
+      "description": "SandStone"
+    },
+    "sand-stone-raw": {
+      "name": "Sand Stein Raw",
+      "description": "SandStone"
+    },
+    "satellite-assembly": {
+      "name": "Satellit Assembly",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "satellite-body": {
+      "name": "Satellit Body",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "scafolding": {
+      "name": "Gerüst",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "scanner": {
+      "name": "Scanner",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "self-sustained-habitat": {
+      "name": "Self-sustained Habitat",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "silica-sand": {
+      "name": "Synthetic Silicon",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "silica-sand-blueprint": {
+      "name": "Synthetic Silicon - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "stacking-item": {
+      "name": "Sample Item",
+      "description": "Sample Item Description"
+    },
+    "stator": {
+      "name": "Stator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "stator-blueprint": {
+      "name": "Stator - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "substance-fhs-135-493": {
+      "name": "Substanz #FHS-135-493",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "sulphur-ore": {
+      "name": "Schwefel Erz",
+      "description": "Raw Material. Can be processed."
+    },
+    "sulphuric-acid": {
+      "name": "Schwefel Acid",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet."
+    },
+    "superconductor": {
+      "name": "Supraleiter",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "supermagnet": {
+      "name": "Supermagnet",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "synthetic-dna": {
+      "name": "Synthetische DNA",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "synthetic-fertilizer": {
+      "name": "Synthetischer Dünger",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "synthetic-protein": {
+      "name": "Synthetisches Protein",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "synthetic-resin": {
+      "name": "Synthetisches Harz",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "syringe": {
+      "name": "Applikator",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "titanium-bar": {
+      "name": "Titanbarren",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "titanium-beam": {
+      "name": "Titanträger",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "titanium-housing": {
+      "name": "Titangehäuse",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "titanium-ore": {
+      "name": "Titanerz",
+      "description": "Raw Material. Can be processed."
+    },
+    "titanium-rod": {
+      "name": "Titanstab",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "titanium-sheet": {
+      "name": "Titanblech",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "tracking-device": {
+      "name": "Ortungsgerät",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "tube": {
+      "name": "Rohr",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "tube-blueprint": {
+      "name": "Rohr - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "turbine": {
+      "name": "Turbine",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "turbine-blueprint": {
+      "name": "Turbine - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "uber-oil": {
+      "name": "Plastic",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "uber-titanium": {
+      "name": "Titanoferrite Barren",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet."
+    },
+    "uber-wolfram": {
+      "name": "Wolfram Steel Barren",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "uberfilament": {
+      "name": "Uberfilament",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "uberfilament-blueprint": {
+      "name": "Uberfilament - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "universal-space-soil": {
+      "name": "Universeller Weltraumboden",
+      "description": "<MISSING STRING TABLE ENTRY>"
+    },
+    "valve": {
+      "name": "Ventil",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "valve-blueprint": {
+      "name": "Ventil - Bauplan",
+      "description": "Wird in der Rezeptstation verwendet, um die Produktion des Gegenstands freizuschalten."
+    },
+    "wolfram-bar": {
+      "name": "Wolframbarren",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "wolfram-ore": {
+      "name": "Wolframerz",
+      "description": "Raw Material. Can be processed."
+    },
+    "wolfram-plate": {
+      "name": "Wolframplatte",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "wolfram-powder": {
+      "name": "Wolframpulver",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    },
+    "wolfram-wire": {
+      "name": "Wolframdraht",
+      "description": "Fertigungsmaterial. Wird in verschiedenen Rezepten verwendet. Kann exportiert werden."
+    }
+  },
+  "buildings": {
+    "acid-extractor": {
+      "name": "Schwefelextraktor",
+      "family_name": "Schwefelextraktor",
+      "description": "Wird zum Fördern von Sulfur. Kann nur auf Sulfur Vorkommen platziert werden. Cannot be placed when corrosive gases are present."
+    },
+    "assembler": {
+      "name": "Montierer",
+      "family_name": "Montierer",
+      "description": "Mittleres Produktionsgebäude. Nutzt Nanodruck zur Herstellung von Produkten."
+    },
+    "crafter": {
+      "name": "Fabrikator",
+      "family_name": "Fabrikator",
+      "description": "Einfaches Produktionsgebäude. Nutzt Nanodruck zur Herstellung von Produkten."
+    },
+    "crafter-tier2": {
+      "name": "Fabrikator v.2",
+      "family_name": "Fabrikator",
+      "description": "Verbessertes basic production building. Nutzt Nanodruck zur Herstellung von Produkten. Bietet optimierte Rezepte für höhere Produktionsleistung."
+    },
+    "factory": {
+      "name": "Konstruktorisierer",
+      "family_name": "Konstruktorisierer",
+      "description": "Fortgeschrittenes Produktionsgebäude. Nutzt Nanodruck zur Herstellung von Produkten. "
+    },
+    "factory-tier2": {
+      "name": "Konstruktorisierer v.2",
+      "family_name": "Konstruktorisierer",
+      "description": "Verbessertes advanced production building. Nutzt Nanodruck zur Herstellung von Produkten. Bietet optimierte Rezepte für höhere Produktionsleistung."
+    },
+    "forge": {
+      "name": "Pyro-Schmiede",
+      "family_name": "Pyro-Schmiede",
+      "description": "Raffiniert rohes Goethite zu Produkten."
+    },
+    "furnace": {
+      "name": "Ofen",
+      "family_name": "Ofen",
+      "description": "Einfaches Produktionsgebäude. Nutzt Hitze zur Herstellung von Produkten."
+    },
+    "furnace-tier2": {
+      "name": "Ofen v.2",
+      "family_name": "Ofen",
+      "description": "Verbessertes basic production building. Nutzt Hitze zur Herstellung von Produkten. Bietet optimierte Rezepte für höhere Produktionsleistung."
+    },
+    "gas-extractor": {
+      "name": "Helium-3-Extraktor",
+      "family_name": "Helium-3-Extraktor",
+      "description": "Wird zum Fördern von Helium-3. Kann nur auf Helium-3 Vorkommen platziert werden."
+    },
+    "hammer": {
+      "name": "Mega-Presse",
+      "family_name": "Mega-Presse",
+      "description": "Mittleres Produktionsgebäude. Nutzt Hochgeschwindigkeitsbearbeitung zur Herstellung von Produkten."
+    },
+    "laser-drill": {
+      "name": "Laserbohrer",
+      "family_name": "Laserbohrer",
+      "description": "Wird zum Fördern von advanced ores. Kann nur auf Goethite Vorkommen platziert werden."
+    },
+    "liquid-extractor": {
+      "name": "Ölextraktor",
+      "family_name": "Ölextraktor",
+      "description": "Wird zum Fördern von Powerium. Kann nur auf Powerium Vorkommen platziert werden."
+    },
+    "mechanical-drill": {
+      "name": "Erzbagger",
+      "family_name": "Erzbagger",
+      "description": "Crucial during the early phase of the mission. Wird zum Fördern von basic ores. Kann nur auf Titanium, Wolfram, and Calcium Vorkommen platziert werden."
+    },
+    "mechanical-drill-tier2": {
+      "name": "Erzbagger v.2",
+      "family_name": "Erzbagger",
+      "description": "An improved version of the Ore Excavator offering higher extraction rates. Kann nur auf Titanium, Wolfram, and Calcium Vorkommen platziert werden."
+    },
+    "military-assembler": {
+      "name": "Fakturierer",
+      "family_name": "Fakturierer",
+      "description": "Fortgeschrittenes Produktionsgebäude. Nutzt Hochgeschwindigkeitsbearbeitung zur Herstellung von Produkten."
+    },
+    "pressurizer": {
+      "name": "Raffinerie",
+      "family_name": "Raffinerie",
+      "description": "Raffiniert rohes Powerium zu Produkten."
+    },
+    "refinery": {
+      "name": "Druckbeaufschlager",
+      "family_name": "Druckbeaufschlager",
+      "description": "Raffiniert rohes Helium and Sulphur zu Produkten."
+    },
+    "smelter": {
+      "name": "Schmelzer",
+      "family_name": "Schmelzer",
+      "description": "Raffiniert rohes Titanium, Wolfram, and Calcium zu Produkten."
+    },
+    "synthetizer": {
+      "name": "Compounder",
+      "family_name": "Compounder",
+      "description": "Mittleres Produktionsgebäude. Nutzt chemische Reaktionen zur Herstellung von Produkten."
+    },
+    "synthetizer-tier2": {
+      "name": "Compounder v.2",
+      "family_name": "Compounder",
+      "description": "Verbessertes intermediate production building. Nutzt chemische Reaktionen zur Herstellung von Produkten. Bietet optimierte Rezepte für höhere Produktionsleistung."
+    }
+  },
+  "corporations": {
+    "clever": {
+      "name": "Clever Robotics",
+      "description": "Drones and logistic corporation."
+    },
+    "future": {
+      "name": "Future Health Solutions",
+      "description": "Pharmaceutical and medical corporation."
+    },
+    "griffiths": {
+      "name": "Griffith Blue Corporation",
+      "description": "Military corporation."
+    },
+    "moon": {
+      "name": "Moon Energy Corporation",
+      "description": "Energy corporation."
+    },
+    "selenian": {
+      "name": "Selenian Corporation",
+      "description": "Space mining corporation."
+    },
+    "starting": {
+      "name": "Trainingskonzern",
+      "description": "Fictional corporation. We won’t let you deal with the real ones for now."
+    }
+  },
+  "transport_tiers": {
+    "rail-tier-1": {
+      "name": "Schienenstufe 1"
+    },
+    "rail-tier-2": {
+      "name": "Schienenstufe 2"
+    },
+    "rail-tier-3": {
+      "name": "Schienenstufe 3"
+    }
+  },
+  "ui": {
+    "transport.default_message": "Standardgeschwindigkeiten der Schienenstufen für Planerempfehlungen."
+  }
+}
