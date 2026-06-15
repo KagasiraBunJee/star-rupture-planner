@@ -40,6 +40,7 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
             {
                 FilePath = path,
                 Name = Path.GetFileNameWithoutExtension(path),
+                Outputs = ReadSchemeOutputs(path),
             })
             .OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -74,5 +75,31 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         var invalid = Path.GetInvalidFileNameChars();
         var cleaned = new string(name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()).Trim();
         return string.IsNullOrWhiteSpace(cleaned) ? "Untitled" : cleaned;
+    }
+
+    private static List<SchemeListOutputItem> ReadSchemeOutputs(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            var document = JsonSerializer.Deserialize<SchemeDocument>(stream, JsonOptions);
+            if (document is null)
+            {
+                return [];
+            }
+
+            return document.Nodes
+                .Where(node => node.IsSchemeOutput && !string.IsNullOrWhiteSpace(node.SelectedRecipeKey))
+                .Select(node => new SchemeListOutputItem
+                {
+                    RecipeKey = node.SelectedRecipeKey!,
+                    MachineCount = ProductionAnalysisService.EffectiveMachineCount(node),
+                })
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
     }
 }

@@ -11,7 +11,13 @@ public static class PlannerEdgeService
         SchemeEdge edge)
     {
         var sourceRecipe = RecipeForNode(catalog, scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId));
-        var targetRecipe = RecipeForNode(catalog, scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId));
+        var targetNode = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
+        var targetRecipe = RecipeForNode(catalog, targetNode);
+        if (targetNode?.OnlyOutput == true)
+        {
+            return false;
+        }
+
         return calculator.CanConnectOutputToInput(sourceRecipe, targetRecipe, edge.SourceItemId)
             && edge.SourceItemId == edge.TargetItemId;
     }
@@ -28,6 +34,11 @@ public static class PlannerEdgeService
         var target = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
         var sourceRecipe = RecipeForNode(catalog, source);
         var targetRecipe = RecipeForNode(catalog, target);
+        if (target?.OnlyOutput == true)
+        {
+            return "Invalid connection: target is output-only";
+        }
+
         if (source is null || target is null || sourceRecipe is null || targetRecipe is null)
         {
             return "Invalid connection";
@@ -69,6 +80,11 @@ public static class PlannerEdgeService
         var target = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
         var sourceRecipe = RecipeForNode(catalog, source);
         var targetRecipe = RecipeForNode(catalog, target);
+        if (target?.OnlyOutput == true)
+        {
+            return "Invalid connection\nTarget is marked Only output and cannot consume inputs.";
+        }
+
         if (source is null || target is null || sourceRecipe is null || targetRecipe is null)
         {
             return "Invalid connection";

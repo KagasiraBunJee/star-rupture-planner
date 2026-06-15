@@ -67,6 +67,29 @@ public static class PlannerMetricService
         return total > 0 ? $"+{total:g} temp" : $"{total:g} temp";
     }
 
+    public static IReadOnlyList<SchemeOutputSummary> SchemeOutputs(
+        SchemeDocument scheme,
+        PlannerCatalog catalog,
+        IPlannerCalculator calculator)
+    {
+        return scheme.Nodes
+            .Where(node => node.IsSchemeOutput)
+            .Select(node =>
+            {
+                var recipe = PlannerEdgeService.RecipeForNode(catalog, node);
+                if (recipe is null)
+                {
+                    return null;
+                }
+
+                var rate = calculator.OutputPerMinute(recipe, ProductionAnalysisService.EffectiveMachineCount(node));
+                return new SchemeOutputSummary(node.Id, recipe.BuildingName, recipe.Output.Name, rate);
+            })
+            .Where(item => item is not null)
+            .Select(item => item!)
+            .ToList();
+    }
+
     private static int EffectivePlacedMachineCount(int machineCount)
     {
         return Math.Max(1, machineCount);
@@ -77,3 +100,9 @@ public readonly record struct SchemeMetricTotals(
     double PowerConsumption,
     double PowerGeneration,
     double Temperature);
+
+public sealed record SchemeOutputSummary(
+    string NodeId,
+    string MachineName,
+    string ItemName,
+    double RatePerMinute);

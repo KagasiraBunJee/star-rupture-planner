@@ -104,7 +104,7 @@ public static class ProductionAnalysisService
         foreach (var node in scheme.Nodes)
         {
             var recipe = PlannerEdgeService.RecipeForNode(catalog, node);
-            if (recipe is null)
+            if (recipe is null || node.OnlyOutput)
             {
                 continue;
             }

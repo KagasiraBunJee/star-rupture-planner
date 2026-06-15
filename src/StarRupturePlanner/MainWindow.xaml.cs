@@ -658,6 +658,12 @@ public partial class MainWindow : Window
             FontFamily = CardFontFamily(),
             TextWrapping = TextWrapping.Wrap,
         });
+        var badges = CreateNodeBadges(node);
+        if (badges is not null)
+        {
+            titlePanel.Children.Add(badges);
+        }
+
         if (recipe is not null)
         {
             var status = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
@@ -673,7 +679,9 @@ public partial class MainWindow : Window
             {
                 Text = IsNodeLocked(node)
                     ? "Locked by corporations"
-                    : $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
+                    : node.OnlyOutput
+                        ? $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  source"
+                        : $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
                 Foreground = IsNodeLocked(node) ? new SolidColorBrush(ShortageColor) : CardTextBrush(0.75),
                 FontSize = CardFontSize(-1),
                 FontFamily = CardFontFamily(),
@@ -706,29 +714,33 @@ public partial class MainWindow : Window
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
 
-            var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
-            inputs.Children.Add(CreateCardSectionLabel("INPUTS"));
-            foreach (var input in recipe.Inputs)
+            if (!node.OnlyOutput)
             {
-                inputs.Children.Add(CreatePortVisual(node, input, "input"));
-            }
+                var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
+                inputs.Children.Add(CreateCardSectionLabel("INPUTS"));
+                foreach (var input in recipe.Inputs)
+                {
+                    inputs.Children.Add(CreatePortVisual(node, input, "input"));
+                }
 
-            var divider = new Border
-            {
-                Width = 1,
-                Background = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
-                HorizontalAlignment = HorizontalAlignment.Center,
-            };
+                var divider = new Border
+                {
+                    Width = 1,
+                    Background = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                };
+
+                Grid.SetColumn(inputs, 0);
+                Grid.SetColumn(divider, 1);
+                body.Children.Add(inputs);
+                body.Children.Add(divider);
+            }
 
             var output = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 10, 14, 12) };
             output.Children.Add(CreateCardSectionLabel("OUTPUTS"));
             output.Children.Add(CreatePortVisual(node, recipe.Output, "output"));
 
-            Grid.SetColumn(inputs, 0);
-            Grid.SetColumn(divider, 1);
             Grid.SetColumn(output, 2);
-            body.Children.Add(inputs);
-            body.Children.Add(divider);
             body.Children.Add(output);
             Grid.SetRow(body, 2);
             grid.Children.Add(body);
@@ -831,6 +843,53 @@ public partial class MainWindow : Window
             FontSize = CardFontSize(-2),
             FontWeight = FontWeights.SemiBold,
             Margin = new Thickness(0, 0, 0, 6),
+        };
+    }
+
+    private FrameworkElement? CreateNodeBadges(SchemeNode node)
+    {
+        if (!node.OnlyOutput && !node.IsSchemeOutput)
+        {
+            return null;
+        }
+
+        var panel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+
+        if (node.OnlyOutput)
+        {
+            panel.Children.Add(CreateNodeBadge("Only output", OutputPortColor));
+        }
+
+        if (node.IsSchemeOutput)
+        {
+            panel.Children.Add(CreateNodeBadge("Scheme output", SignalGreenColor));
+        }
+
+        return panel;
+    }
+
+    private FrameworkElement CreateNodeBadge(string text, Color accent)
+    {
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(36, accent.R, accent.G, accent.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, accent.R, accent.G, accent.B)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(5),
+            Padding = new Thickness(6, 2, 6, 2),
+            Margin = new Thickness(0, 0, 6, 0),
+            Child = new TextBlock
+            {
+                Text = text,
+                Foreground = new SolidColorBrush(accent),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-2),
+                FontWeight = FontWeights.SemiBold,
+            },
         };
     }
 
@@ -997,6 +1056,11 @@ public partial class MainWindow : Window
 
     private bool IsPortAvailableForConnection(SchemeNode node, RecipePortInfo port, string direction)
     {
+        if (node.OnlyOutput && direction == "input")
+        {
+            return false;
+        }
+
         if (IsNodeLocked(node))
         {
             return false;
@@ -1016,6 +1080,11 @@ public partial class MainWindow : Window
         var node = _scheme.Nodes.FirstOrDefault(item => item.Id == reference.NodeId);
         var recipe = RecipeForNode(node);
         if (node is null || recipe is null)
+        {
+            return false;
+        }
+
+        if (node.OnlyOutput && reference.Direction == "input")
         {
             return false;
         }
@@ -1276,6 +1345,17 @@ public partial class MainWindow : Window
                 : $"{totals.Temperature:g} temp";
         }
 
+        if (MetricSchemeOutputs is not null)
+        {
+            var outputs = PlannerMetricService.SchemeOutputs(_scheme, _catalog, _calculator);
+            MetricSchemeOutputs.Text = outputs.Count == 0
+                ? "No scheme outputs marked"
+                : string.Join(", ", outputs.Select(output => $"{output.ItemName} {output.RatePerMinute:g}/min"));
+            MetricSchemeOutputs.ToolTip = outputs.Count == 0
+                ? "No scheme outputs marked"
+                : string.Join("\n", outputs.Select(output => $"{output.MachineName}: {output.ItemName} {output.RatePerMinute:g}/min"));
+        }
+
         AlertsChips.Children.Clear();
         var lockedAlerts = PlannerUnlockService.LockedNodeAlerts(_catalog, _scheme);
         if (_productionAnalysis.Alerts.Count == 0 && lockedAlerts.Count == 0)
@@ -1404,6 +1484,13 @@ public partial class MainWindow : Window
                 && reference.ItemId == itemId);
         if (handle is null || !handle.IsVisible)
         {
+            var node = _scheme.Nodes.FirstOrDefault(item => item.Id == nodeId);
+            if (node?.OnlyOutput == true && direction == "input")
+            {
+                return nodeView.TransformToAncestor(PlannerCanvas)
+                    .Transform(new Point(0, Math.Max(0, nodeView.ActualHeight) / 2));
+            }
+
             return null;
         }
 
@@ -2639,6 +2726,34 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnlyOutputCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingInspector || _selectedNode is null)
+        {
+            return;
+        }
+
+        _selectedNode.OnlyOutput = OnlyOutputCheckBox.IsChecked == true && RecipeForNode(_selectedNode) is not null;
+        MigrateAndAnalyzeScheme();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus(_selectedNode.OnlyOutput ? "Node marked as output-only source." : "Node input requirements restored.");
+    }
+
+    private void SchemeOutputCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingInspector || _selectedNode is null)
+        {
+            return;
+        }
+
+        _selectedNode.IsSchemeOutput = SchemeOutputCheckBox.IsChecked == true && RecipeForNode(_selectedNode) is not null;
+        MigrateAndAnalyzeScheme();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus(_selectedNode.IsSchemeOutput ? "Node marked as scheme output." : "Node removed from scheme outputs.");
+    }
+
     private void RemoveInvalidEdgesForNode(string nodeId)
     {
         foreach (var edge in _scheme.Edges.Where(edge => edge.SourceNodeId == nodeId || edge.TargetNodeId == nodeId).ToList())
@@ -2667,6 +2782,11 @@ public partial class MainWindow : Window
             ConnectionReadOnly.Text = "";
             InspectorStatusPanel.Visibility = Visibility.Collapsed;
             PriorityBox.SelectedItem = null;
+            PriorityBox.IsEnabled = true;
+            OnlyOutputCheckBox.IsChecked = false;
+            OnlyOutputCheckBox.IsEnabled = false;
+            SchemeOutputCheckBox.IsChecked = false;
+            SchemeOutputCheckBox.IsEnabled = false;
 
             if (_selectedNode is not null)
             {
@@ -2682,6 +2802,10 @@ public partial class MainWindow : Window
                 InspectorRecipeList.SelectedItem = recipe;
                 InspectorRecipeSearchBox.Text = recipe?.InspectorDisplayName ?? "";
                 SetImage(InspectorImage, recipe?.BuildingImageUrl ?? building?.ImageUrl);
+                OnlyOutputCheckBox.IsEnabled = recipe is not null;
+                OnlyOutputCheckBox.IsChecked = _selectedNode.OnlyOutput;
+                SchemeOutputCheckBox.IsEnabled = recipe is not null;
+                SchemeOutputCheckBox.IsChecked = _selectedNode.IsSchemeOutput;
                 if (readTargetBox)
                 {
                     TargetOutputBox.Text = recipe is null
@@ -2689,6 +2813,7 @@ public partial class MainWindow : Window
                         : ProductionAnalysisService.EffectiveMachineCount(_selectedNode).ToString(CultureInfo.CurrentCulture);
                 }
                 SelectPriorityBoxItem(_selectedNode.Priority);
+                PriorityBox.IsEnabled = !_selectedNode.OnlyOutput;
 
                 if (recipe is null)
                 {
@@ -2699,19 +2824,23 @@ public partial class MainWindow : Window
                 var machines = ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
                 var outputPerMinute = _calculator.OutputPerMinute(recipe, machines);
                 BuildInspectorMetrics(_selectedNode, recipe, machines, outputPerMinute);
-                InspectorReadOnly.Text = $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs scale with machine count.";
-                InspectorInputs.ItemsSource = recipe.Inputs
-                    .Select(input =>
-                    {
-                        var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
-                        var key = ProductionInputKey.For(_selectedNode.Id, input.ItemId);
-                        var delivered = _productionAnalysis.Inputs.TryGetValue(key, out var analysis)
-                            ? analysis.DeliveredPerMinute
-                            : 0;
-                        var prefix = delivered + 0.000001 < required ? "SHORT " : "";
-                        return $"{prefix}{input.Name}: {required:g}/min required, {delivered:g}/min delivered";
-                    })
-                    .ToList();
+                InspectorReadOnly.Text = _selectedNode.OnlyOutput
+                    ? $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs are bypassed; output still scales with machine count."
+                    : $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs scale with machine count.";
+                InspectorInputs.ItemsSource = _selectedNode.OnlyOutput
+                    ? new List<string> { "Inputs bypassed by Only output." }
+                    : recipe.Inputs
+                        .Select(input =>
+                        {
+                            var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
+                            var key = ProductionInputKey.For(_selectedNode.Id, input.ItemId);
+                            var delivered = _productionAnalysis.Inputs.TryGetValue(key, out var analysis)
+                                ? analysis.DeliveredPerMinute
+                                : 0;
+                            var prefix = delivered + 0.000001 < required ? "SHORT " : "";
+                            return $"{prefix}{input.Name}: {required:g}/min required, {delivered:g}/min delivered";
+                        })
+                        .ToList();
                 InspectorUnlocks.ItemsSource = recipe.UnlockRequirements.Count == 0
                     ? new List<string> { "None" }
                     : recipe.UnlockRequirements.Select(item => $"{item.Name}: {item.RequiredQuantity:g}").ToList();
@@ -2724,6 +2853,7 @@ public partial class MainWindow : Window
             InspectorRecipeSearchBox.Text = "";
             TargetOutputBox.Text = "";
             PriorityBox.SelectedItem = null;
+            PriorityBox.IsEnabled = true;
             InspectorReadOnly.Text = "";
 
             if (_selectedEdge is not null)
@@ -2964,13 +3094,20 @@ public partial class MainWindow : Window
     {
         InspectorMetricsStack.Children.Clear();
 
-        foreach (var input in recipe.Inputs)
+        if (node.OnlyOutput)
         {
-            var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
-            InspectorMetricsStack.Children.Add(BuildMetricRow(
-                "Input",
-                $"{input.Name}  {input.QuantityPerMinute:g}/min",
-                sub: $"Total {required:g}/min"));
+            InspectorMetricsStack.Children.Add(BuildMetricRow("Input", "Bypassed"));
+        }
+        else
+        {
+            foreach (var input in recipe.Inputs)
+            {
+                var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
+                InspectorMetricsStack.Children.Add(BuildMetricRow(
+                    "Input",
+                    $"{input.Name}  {input.QuantityPerMinute:g}/min",
+                    sub: $"Total {required:g}/min"));
+            }
         }
 
         InspectorMetricsStack.Children.Add(BuildMetricRow(
@@ -2997,7 +3134,7 @@ public partial class MainWindow : Window
             valueBrush: new SolidColorBrush(isShort ? ShortageColor : SignalGreenColor)));
         InspectorMetricsStack.Children.Add(BuildMetricRow(
             "Status",
-            isShort ? "Starved" : "Running",
+            node.OnlyOutput ? "External source" : isShort ? "Starved" : "Running",
             valueBrush: new SolidColorBrush(isShort ? ShortageColor : SignalGreenColor)));
     }
 

@@ -5,7 +5,7 @@ namespace StarRupturePlanner.Models;
 public sealed class SchemeDocument
 {
     [JsonPropertyName("version")]
-    public int Version { get; set; } = 3;
+    public int Version { get; set; } = 4;
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "Untitled";
@@ -68,6 +68,12 @@ public sealed class SchemeNode : SchemeElement
 
     [JsonPropertyName("priority")]
     public ProductionPriority Priority { get; set; } = ProductionPriority.Mid;
+
+    [JsonPropertyName("only_output")]
+    public bool OnlyOutput { get; set; }
+
+    [JsonPropertyName("is_scheme_output")]
+    public bool IsSchemeOutput { get; set; }
 
     [JsonPropertyName("x")]
     public double X { get; set; }
@@ -132,5 +138,20 @@ public sealed class SchemeListItem
 {
     public string Name { get; set; } = "";
     public string FilePath { get; set; } = "";
+    public List<SchemeListOutputItem> Outputs { get; set; } = [];
+    public string OutputStatusText => Outputs.Count == 0
+        ? "No outputs marked"
+        : Outputs.Count == 1 ? "1 scheme output" : $"{Outputs.Count} scheme outputs";
     public override string ToString() => Name;
+}
+
+public sealed class SchemeListOutputItem
+{
+    public string RecipeKey { get; set; } = "";
+    public int MachineCount { get; set; } = 1;
+    public string ItemName { get; set; } = "";
+    public string ImageUrl { get; set; } = "";
+    public double RatePerMinute { get; set; }
+    public string RateText => RatePerMinute > 0 ? $"{RatePerMinute:g}/min" : "";
+    public string DisplayName => string.IsNullOrWhiteSpace(RateText) ? ItemName : $"{ItemName} {RateText}";
 }

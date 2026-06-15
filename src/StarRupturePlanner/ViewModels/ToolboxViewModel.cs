@@ -102,7 +102,7 @@ public sealed class ToolboxViewModel : ViewModelBase
         var scheme = _scheme;
 
         var result = await _backgroundTaskRunner.RunAsync(
-            () => FilterSnapshot(query, schemes, resources, machines, catalog, scheme),
+            () => FilterSnapshot(query, schemes, resources, machines, catalog, scheme, _apiClient.ToAbsoluteAssetUrl),
             token);
 
         await _uiDispatcher.InvokeAsync(
@@ -121,8 +121,10 @@ public sealed class ToolboxViewModel : ViewModelBase
         IReadOnlyList<ResourceToolboxItem> resources,
         IReadOnlyList<MachineToolboxItem> machines,
         PlannerCatalog catalog,
-        SchemeDocument scheme)
+        SchemeDocument scheme,
+        Func<string?, string> assetUrl)
     {
+        schemes = EnrichSchemeOutputs(schemes, catalog, assetUrl);
         resources = resources
             .Where(item => PlannerUnlockService.IsBuildingUnlocked(catalog, scheme, item.Recipe.BuildingId))
             .ToList();
@@ -137,13 +139,57 @@ public sealed class ToolboxViewModel : ViewModelBase
 
         var comparison = StringComparison.CurrentCultureIgnoreCase;
         return new ToolboxFilterResult(
-            schemes.Where(item => item.Name.Contains(query, comparison)).ToList(),
+            schemes
+                .Where(item =>
+                    item.Name.Contains(query, comparison)
+                    || item.Outputs.Any(output => output.ItemName.Contains(query, comparison)))
+                .ToList(),
             resources
                 .Where(item =>
                     item.ResourceName.Contains(query, comparison)
                     || item.MachineName.Contains(query, comparison))
                 .ToList(),
             machines.Where(item => item.Name.Contains(query, comparison)).ToList());
+    }
+
+    private static IReadOnlyList<SchemeListItem> EnrichSchemeOutputs(
+        IReadOnlyList<SchemeListItem> schemes,
+        PlannerCatalog catalog,
+        Func<string?, string> assetUrl)
+    {
+        if (catalog.Recipes.Count == 0)
+        {
+            return schemes;
+        }
+
+        return schemes
+            .Select(scheme => new SchemeListItem
+            {
+                Name = scheme.Name,
+                FilePath = scheme.FilePath,
+                Outputs = scheme.Outputs
+                    .Select(output =>
+                    {
+                        var recipe = catalog.Recipes.FirstOrDefault(item =>
+                            string.Equals(item.RecipeKey, output.RecipeKey, StringComparison.Ordinal));
+                        if (recipe is null)
+                        {
+                            return output;
+                        }
+
+                        var machineCount = Math.Max(1, output.MachineCount);
+                        return new SchemeListOutputItem
+                        {
+                            RecipeKey = output.RecipeKey,
+                            MachineCount = machineCount,
+                            ItemName = recipe.Output.Name,
+                            ImageUrl = assetUrl(recipe.Output.ImageUrl),
+                            RatePerMinute = recipe.Output.QuantityPerMinute * machineCount,
+                        };
+                    })
+                    .ToList(),
+            })
+            .ToList();
     }
 
     private sealed record ToolboxFilterResult(
