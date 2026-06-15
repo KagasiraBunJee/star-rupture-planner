@@ -107,7 +107,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="290"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="380"/>
+                <ColumnDefinition Width="320"/>
             </Grid.ColumnDefinitions>
 
             <Border x:Name="LeftPanel" Grid.Column="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="12">
