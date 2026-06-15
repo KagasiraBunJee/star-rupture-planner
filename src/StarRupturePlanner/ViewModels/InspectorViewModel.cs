@@ -13,7 +13,7 @@ public sealed class InspectorViewModel : ViewModelBase
     private RecipeInfo? _selectedRecipe;
     private string _title = "";
     private string _recipeSearchText = "";
-    private string _targetOutputText = "";
+    private string _machineCountText = "";
     private string _readOnlyText = "";
 
     public InspectorViewModel(IPlannerCalculator calculator)
@@ -43,10 +43,10 @@ public sealed class InspectorViewModel : ViewModelBase
         }
     }
 
-    public string TargetOutputText
+    public string MachineCountText
     {
-        get => _targetOutputText;
-        private set => SetProperty(ref _targetOutputText, value);
+        get => _machineCountText;
+        private set => SetProperty(ref _machineCountText, value);
     }
 
     public string ReadOnlyText
@@ -62,8 +62,8 @@ public sealed class InspectorViewModel : ViewModelBase
         _selectedRecipe = PlannerEdgeService.RecipeForNode(catalog, node);
         var building = PlannerEdgeService.BuildingForNode(catalog, node);
         Title = _selectedRecipe?.BuildingName ?? building?.Name ?? "";
-        TargetOutputText = node?.TargetOutputPerMinute > 0
-            ? node.TargetOutputPerMinute.ToString("0.######", CultureInfo.CurrentCulture)
+        MachineCountText = node?.MachineCount > 0
+            ? node.MachineCount.ToString(CultureInfo.CurrentCulture)
             : "";
         RecipeSearchText = _selectedRecipe?.InspectorDisplayName ?? "";
         ApplyRecipeFilter("");
@@ -103,17 +103,19 @@ public sealed class InspectorViewModel : ViewModelBase
             return;
         }
 
-        var machines = _calculator.MachineCount(_selectedRecipe, _selectedNode.TargetOutputPerMinute);
+        var machines = ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
+        var outputPerMinute = _calculator.OutputPerMinute(_selectedRecipe, machines);
         ReadOnlyText =
             $"Building: {_selectedRecipe.BuildingName}\n" +
-            $"Output: {_selectedRecipe.Output.Name} {_selectedNode.TargetOutputPerMinute:g}/min\n" +
+            $"Machines: {machines}\n" +
+            $"Output: {_selectedRecipe.Output.Name} {outputPerMinute:g}/min\n" +
             $"Recipe base: {_selectedRecipe.Output.QuantityPerMinute:g}/min ({_selectedRecipe.OriginalRateText})\n" +
-            $"Machine count: {machines:0.###}";
+            $"Priority: {_selectedNode.Priority}";
 
         ReplaceCollection(
             Inputs,
             _selectedRecipe.Inputs.Select(input =>
-                $"{input.Name}: {_calculator.RequiredInputPerMinute(_selectedRecipe, input, _selectedNode.TargetOutputPerMinute):g}/min"));
+                $"{input.Name}: {_calculator.RequiredInputPerMinute(_selectedRecipe, input, machines):g}/min"));
         ReplaceCollection(
             Unlocks,
             _selectedRecipe.UnlockRequirements.Count == 0

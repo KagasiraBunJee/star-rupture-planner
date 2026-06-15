@@ -21,7 +21,8 @@ public static class PlannerEdgeService
         PlannerCatalog catalog,
         AppSettings settings,
         IPlannerCalculator calculator,
-        SchemeEdge edge)
+        SchemeEdge edge,
+        ProductionAnalysisResult? analysis = null)
     {
         var source = scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId);
         var target = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
@@ -38,13 +39,15 @@ public static class PlannerEdgeService
             return "Invalid input";
         }
 
-        var sourceRate = source.TargetOutputPerMinute;
-        var requiredRate = calculator.RequiredInputPerMinute(targetRecipe, input, target.TargetOutputPerMinute);
+        var targetMachineCount = ProductionAnalysisService.EffectiveMachineCount(target);
+        var requiredRate = calculator.RequiredInputPerMinute(targetRecipe, input, targetMachineCount);
+        var deliveredRate = analysis?.EdgeDeliveries.GetValueOrDefault(edge.Id)
+            ?? calculator.OutputPerMinute(sourceRecipe, ProductionAnalysisService.EffectiveMachineCount(source));
         var currentTier = CurrentRailTier(catalog, settings);
         var tierText = currentTier is not null
             ? $"{currentTier.Name} {currentTier.ItemsPerMinute:g}/min {(currentTier.ItemsPerMinute >= requiredRate ? "ok" : "over capacity")}"
             : RecommendedTierText(catalog, calculator, requiredRate);
-        return $"src {sourceRate:g}/min  req {requiredRate:g}/min  {tierText}";
+        return $"del {deliveredRate:g}/min  req {requiredRate:g}/min  {tierText}";
     }
 
     public static RecipeInfo? RecipeForNode(PlannerCatalog catalog, SchemeNode? node)

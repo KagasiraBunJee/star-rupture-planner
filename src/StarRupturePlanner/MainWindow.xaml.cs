@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private static readonly Color InputPortColor = Color.FromRgb(10, 132, 255);
     private static readonly Color OutputPortColor = Color.FromRgb(24, 160, 255);
     private static readonly Color SignalGreenColor = Color.FromRgb(99, 214, 77);
+    private static readonly Color ShortageColor = Color.FromRgb(255, 72, 72);
     private static readonly Color PanelGlassColor = Color.FromRgb(16, 24, 32);
     private static readonly Color GraphiteLineColor = Color.FromRgb(38, 52, 61);
 
@@ -39,6 +40,7 @@ public partial class MainWindow : Window
     private PlannerCatalog _catalog = new();
     private SchemeDocument _scheme = new();
     private AppSettings _settings = new();
+    private ProductionAnalysisResult _productionAnalysis = ProductionAnalysisResult.Empty;
     private IReadOnlyList<RecipeInfo> _inspectorRecipes = [];
     private SchemeNode? _selectedNode;
     private SchemeEdge? _selectedEdge;
@@ -283,6 +285,7 @@ public partial class MainWindow : Window
         _scheme.Canvas.Zoom = CanvasScale.ScaleX;
         _scheme.Canvas.OffsetX = CanvasTranslate.X;
         _scheme.Canvas.OffsetY = CanvasTranslate.Y;
+        MigrateAndAnalyzeScheme();
         await _viewModel.SaveSchemeAsync();
         await RefreshSchemeListAsync();
     }
@@ -399,6 +402,7 @@ public partial class MainWindow : Window
 
     private void RenderCanvas()
     {
+        MigrateAndAnalyzeScheme();
         PlannerCanvas.Children.Clear();
         _nodeViews.Clear();
         _edgeViews.Clear();
@@ -602,7 +606,7 @@ public partial class MainWindow : Window
         {
             Text = recipe is null
                 ? "Recipe not selected"
-                : $"{recipe.Output.Name}  {node.TargetOutputPerMinute:g}/min",
+                : $"{recipe.Output.Name}  {NodeOutputRate(node, recipe):g}/min",
             Foreground = CardTextBrush(0.72),
             FontSize = CardFontSize(),
             FontFamily = CardFontFamily(),
@@ -621,7 +625,7 @@ public partial class MainWindow : Window
             });
             status.Children.Add(new TextBlock
             {
-                Text = "100%",
+                Text = $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
                 Foreground = CardTextBrush(0.75),
                 FontSize = CardFontSize(-1),
                 FontFamily = CardFontFamily(),
@@ -771,12 +775,32 @@ public partial class MainWindow : Window
         };
     }
 
+    private double NodeOutputRate(SchemeNode node, RecipeInfo recipe)
+    {
+        return _calculator.OutputPerMinute(recipe, ProductionAnalysisService.EffectiveMachineCount(node));
+    }
+
+    private double PortRate(SchemeNode node, RecipePortInfo port, string direction)
+    {
+        var recipe = RecipeForNode(node);
+        if (recipe is null)
+        {
+            return 0;
+        }
+
+        var machineCount = ProductionAnalysisService.EffectiveMachineCount(node);
+        return direction == "output"
+            ? _calculator.OutputPerMinute(recipe, machineCount)
+            : _calculator.RequiredInputPerMinute(recipe, port, machineCount);
+    }
+
     private FrameworkElement CreatePortVisual(SchemeNode node, RecipePortInfo port, string direction)
     {
+        var rate = PortRate(node, port, direction);
         var row = new Grid
         {
             Margin = new Thickness(0, 4, 0, 4),
-            ToolTip = $"{port.Name} {port.QuantityPerMinute:g}/min",
+            ToolTip = $"{port.Name} {rate:g}/min",
         };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -821,7 +845,7 @@ public partial class MainWindow : Window
         imageFrame.Child = image;
         var label = new TextBlock
         {
-            Text = $"{port.Name} {port.QuantityPerMinute:g}/min",
+            Text = $"{port.Name} {rate:g}/min",
             Foreground = CardTextBrush(),
             VerticalAlignment = VerticalAlignment.Center,
             FontFamily = CardFontFamily(),
@@ -855,12 +879,13 @@ public partial class MainWindow : Window
     private void AddEdgeView(SchemeEdge edge)
     {
         var isValid = IsEdgeValid(edge);
+        var isShort = IsEdgeShort(edge);
         var path = new Path
         {
-            Stroke = isValid ? EdgeStrokeBrush() : Brushes.IndianRed,
+            Stroke = EdgeVisualBrush(edge, isValid),
             StrokeThickness = isValid ? 3.5 : 2.5,
             Tag = edge,
-            Effect = isValid
+            Effect = isValid && !isShort
                 ? new System.Windows.Media.Effects.DropShadowEffect
                 {
                     Color = OutputPortColor,
@@ -883,7 +908,7 @@ public partial class MainWindow : Window
         var label = new TextBlock
         {
             Background = new SolidColorBrush(Color.FromArgb(232, 8, 15, 20)),
-            Foreground = isValid ? CardTextBrush() : Brushes.IndianRed,
+            Foreground = isValid && !isShort ? CardTextBrush() : new SolidColorBrush(ShortageColor),
             Padding = new Thickness(8, 4, 8, 4),
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-1),
@@ -908,6 +933,7 @@ public partial class MainWindow : Window
 
     private void RefreshEdges()
     {
+        MigrateAndAnalyzeScheme();
         foreach (var edge in _scheme.Edges)
         {
             if (!_edgeViews.TryGetValue(edge.Id, out var visual))
@@ -929,7 +955,11 @@ public partial class MainWindow : Window
             var geometry = CanvasGeometryService.CreateRoutedGeometry(routePoints);
             visual.Path.Data = geometry;
             visual.HitPath.Data = geometry;
-            visual.Path.Stroke = IsEdgeValid(edge) ? EdgeStrokeBrush() : Brushes.IndianRed;
+            var isValid = IsEdgeValid(edge);
+            var isShort = IsEdgeShort(edge);
+            visual.Path.Stroke = EdgeVisualBrush(edge, isValid);
+            visual.Path.StrokeThickness = isValid ? 3.5 : 2.5;
+            visual.Label.Foreground = isValid && !isShort ? CardTextBrush() : new SolidColorBrush(ShortageColor);
             var labelPlacement = CanvasGeometryService.LabelPlacementAboveLine(routePoints);
             Canvas.SetLeft(visual.Label, labelPlacement.Position.X);
             Canvas.SetTop(visual.Label, labelPlacement.Position.Y);
@@ -947,9 +977,58 @@ public partial class MainWindow : Window
         UpdateSelectionVisuals();
     }
 
+    private void MigrateAndAnalyzeScheme()
+    {
+        if (_catalog.Recipes.Count > 0)
+        {
+            SchemeMigrationService.Migrate(_scheme, _catalog, _calculator);
+        }
+
+        _productionAnalysis = ProductionAnalysisService.Analyze(_scheme, _catalog, _calculator);
+        UpdateProductionAlerts();
+    }
+
+    private void UpdateProductionAlerts()
+    {
+        if (AlertsText is null)
+        {
+            return;
+        }
+
+        if (_productionAnalysis.Alerts.Count == 0)
+        {
+            AlertsText.Text = "No production shortages";
+            AlertsText.Foreground = (Brush)Resources["ThemeSecondaryForegroundBrush"];
+            return;
+        }
+
+        AlertsText.Text = string.Join("    ", _productionAnalysis.Alerts.Select(alert => alert.Message).Take(3));
+        if (_productionAnalysis.Alerts.Count > 3)
+        {
+            AlertsText.Text += $"    +{_productionAnalysis.Alerts.Count - 3} more";
+        }
+
+        AlertsText.Foreground = new SolidColorBrush(ShortageColor);
+    }
+
     private string EdgeLabel(SchemeEdge edge)
     {
-        return PlannerEdgeService.EdgeLabel(_scheme, _catalog, _settings, _calculator, edge);
+        return PlannerEdgeService.EdgeLabel(_scheme, _catalog, _settings, _calculator, edge, _productionAnalysis);
+    }
+
+    private bool IsEdgeShort(SchemeEdge edge)
+    {
+        return _productionAnalysis.ShortEdges.Contains(edge.Id);
+    }
+
+    private Brush EdgeVisualBrush(SchemeEdge edge, bool isValid)
+    {
+        if (!isValid || IsEdgeShort(edge))
+        {
+            return new SolidColorBrush(ShortageColor);
+        }
+
+        return EdgeStrokeBrush();
     }
 
     private TransportTierInfo? CurrentRailTier()
@@ -2090,7 +2169,9 @@ public partial class MainWindow : Window
 
         _selectedNode.BuildingId = recipe.BuildingId;
         _selectedNode.SelectedRecipeKey = recipe.RecipeKey;
-        _selectedNode.TargetOutputPerMinute = _calculator.DefaultTargetOutput(recipe);
+        _selectedNode.MachineCount = Math.Max(1, _selectedNode.MachineCount);
+        _selectedNode.Priority = ProductionPriority.Mid;
+        _selectedNode.TargetOutputPerMinute = 0;
         InspectorRecipePopup.IsOpen = false;
         RemoveInvalidEdgesForNode(_selectedNode.Id);
         RenderCanvas();
@@ -2177,12 +2258,29 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (double.TryParse(TargetOutputBox.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out var target)
-            || double.TryParse(TargetOutputBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out target))
+        if (int.TryParse(TargetOutputBox.Text, NumberStyles.Integer, CultureInfo.CurrentCulture, out var machineCount)
+            || int.TryParse(TargetOutputBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out machineCount))
         {
-            _selectedNode.TargetOutputPerMinute = Math.Max(0, target);
-            RefreshEdges();
+            _selectedNode.MachineCount = Math.Max(1, machineCount);
+            _selectedNode.TargetOutputPerMinute = 0;
+            RenderCanvas();
             UpdateInspector(readTargetBox: false);
+        }
+    }
+
+    private void PriorityBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingInspector || _selectedNode is null || PriorityBox.SelectedItem is not ComboBoxItem item)
+        {
+            return;
+        }
+
+        if (Enum.TryParse<ProductionPriority>(item.Tag?.ToString(), out var priority))
+        {
+            _selectedNode.Priority = priority;
+            RefreshEdges();
+            RenderCanvas();
+            UpdateInspector();
         }
     }
 
@@ -2209,6 +2307,7 @@ public partial class MainWindow : Window
             InspectorUnlocks.ItemsSource = null;
             ConnectionReadOnly.Text = "";
             InspectorStatusPanel.Visibility = Visibility.Collapsed;
+            PriorityBox.SelectedItem = null;
 
             if (_selectedNode is not null)
             {
@@ -2225,10 +2324,11 @@ public partial class MainWindow : Window
                 SetImage(InspectorImage, recipe?.BuildingImageUrl ?? building?.ImageUrl);
                 if (readTargetBox)
                 {
-                    TargetOutputBox.Text = _selectedNode.TargetOutputPerMinute > 0
-                        ? _selectedNode.TargetOutputPerMinute.ToString("0.######", CultureInfo.CurrentCulture)
-                        : "";
+                    TargetOutputBox.Text = recipe is null
+                        ? ""
+                        : ProductionAnalysisService.EffectiveMachineCount(_selectedNode).ToString(CultureInfo.CurrentCulture);
                 }
+                SelectPriorityBoxItem(_selectedNode.Priority);
 
                 if (recipe is null)
                 {
@@ -2236,14 +2336,26 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                var machines = _calculator.MachineCount(recipe, _selectedNode.TargetOutputPerMinute);
+                var machines = ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
+                var outputPerMinute = _calculator.OutputPerMinute(recipe, machines);
                 InspectorReadOnly.Text =
                     $"Building: {recipe.BuildingName}\n" +
-                    $"Output: {recipe.Output.Name} {_selectedNode.TargetOutputPerMinute:g}/min\n" +
+                    $"Machines: {machines}\n" +
+                    $"Priority: {_selectedNode.Priority}\n" +
+                    $"Output: {recipe.Output.Name} {outputPerMinute:g}/min\n" +
                     $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText})\n" +
-                    $"Machine count: {machines:0.###}";
+                    $"Inputs scale with machine count.";
                 InspectorInputs.ItemsSource = recipe.Inputs
-                    .Select(input => $"{input.Name}: {_calculator.RequiredInputPerMinute(recipe, input, _selectedNode.TargetOutputPerMinute):g}/min")
+                    .Select(input =>
+                    {
+                        var required = _calculator.RequiredInputPerMinute(recipe, input, machines);
+                        var key = ProductionInputKey.For(_selectedNode.Id, input.ItemId);
+                        var delivered = _productionAnalysis.Inputs.TryGetValue(key, out var analysis)
+                            ? analysis.DeliveredPerMinute
+                            : 0;
+                        var prefix = delivered + 0.000001 < required ? "SHORT " : "";
+                        return $"{prefix}{input.Name}: {required:g}/min required, {delivered:g}/min delivered";
+                    })
                     .ToList();
                 InspectorUnlocks.ItemsSource = recipe.UnlockRequirements.Count == 0
                     ? new List<string> { "None" }
@@ -2256,6 +2368,7 @@ public partial class MainWindow : Window
             InspectorRecipeList.SelectedItem = null;
             InspectorRecipeSearchBox.Text = "";
             TargetOutputBox.Text = "";
+            PriorityBox.SelectedItem = null;
             InspectorReadOnly.Text = "";
 
             if (_selectedEdge is not null)
@@ -2269,6 +2382,20 @@ public partial class MainWindow : Window
         {
             _updatingInspector = false;
         }
+    }
+
+    private void SelectPriorityBoxItem(ProductionPriority priority)
+    {
+        foreach (var item in PriorityBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), priority.ToString(), StringComparison.Ordinal))
+            {
+                PriorityBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        PriorityBox.SelectedItem = null;
     }
 
     private RecipeInfo? RecipeForNode(SchemeNode? node)

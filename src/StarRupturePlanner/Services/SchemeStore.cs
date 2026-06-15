@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StarRupturePlanner.Models;
 using Directory = System.IO.Directory;
 using File = System.IO.File;
@@ -12,6 +13,7 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
     {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() },
     };
 
     public SchemeStore(string? folderPath = null)
@@ -59,6 +61,7 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
             document.Name = "Untitled";
         }
 
+        document.Version = SchemeMigrationService.CurrentVersion;
         document.FilePath ??= Path.Combine(FolderPath, $"{SafeFileName(document.Name)}.json");
         Directory.CreateDirectory(Path.GetDirectoryName(document.FilePath)!);
         using var stream = File.Create(document.FilePath);

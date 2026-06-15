@@ -11,9 +11,19 @@ public sealed class PlannerCalculator : IPlannerCalculator
         return PlannerCalculations.MachineCount(recipe, targetOutputPerMinute);
     }
 
+    public double OutputPerMinute(RecipeInfo? recipe, int machineCount)
+    {
+        return PlannerCalculations.OutputPerMinute(recipe, machineCount);
+    }
+
     public double RequiredInputPerMinute(RecipeInfo recipe, RecipePortInfo input, double targetOutputPerMinute)
     {
         return PlannerCalculations.RequiredInputPerMinute(recipe, input, targetOutputPerMinute);
+    }
+
+    public double RequiredInputPerMinute(RecipeInfo recipe, RecipePortInfo input, int machineCount)
+    {
+        return PlannerCalculations.RequiredInputPerMinute(recipe, input, machineCount);
     }
 
     public bool CanConnectOutputToInput(RecipeInfo? sourceRecipe, RecipeInfo? targetRecipe, string itemId)

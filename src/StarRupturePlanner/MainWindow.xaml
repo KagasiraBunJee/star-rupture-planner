@@ -553,9 +553,17 @@
                                 </Popup>
                             </Grid>
 
-                            <Label Content="Target output / min"/>
+                            <Label Content="Machine count"/>
                             <TextBox x:Name="TargetOutputBox"
                                      TextChanged="TargetOutputBox_TextChanged"/>
+
+                            <Label Content="Priority"/>
+                            <ComboBox x:Name="PriorityBox"
+                                      SelectionChanged="PriorityBox_SelectionChanged">
+                                <ComboBoxItem Content="High" Tag="High"/>
+                                <ComboBoxItem Content="Mid" Tag="Mid"/>
+                                <ComboBoxItem Content="Low" Tag="Low"/>
+                            </ComboBox>
 
                             <Label Content="Read only values"/>
                             <TextBlock x:Name="InspectorReadOnly" TextWrapping="Wrap" Foreground="{DynamicResource ThemeForegroundBrush}" Margin="0,2,0,8"/>
@@ -584,7 +592,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Background="#1D1410" BorderBrush="#7A3B1B" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,0,8,0">
-                        <TextBlock Text="Alerts hidden until production metrics exist" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                        <TextBlock x:Name="AlertsText" Text="No production shortages" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" TextTrimming="CharacterEllipsis" MaxWidth="760"/>
                     </Border>
                     <Border Background="#0B141B" BorderBrush="#1D2A34" BorderThickness="1" CornerRadius="8" Padding="12,9">
                         <TextBlock x:Name="StatusText" Text="{Binding Status}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>

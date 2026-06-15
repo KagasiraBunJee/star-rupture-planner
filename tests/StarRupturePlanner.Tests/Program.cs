@@ -6,6 +6,11 @@ var tests = new (string Name, Action Body)[]
 {
     ("Default target equals recipe output", DefaultTargetEqualsRecipeOutput),
     ("Machine count and input rates scale with target", MachineCountAndInputsScale),
+    ("Machine count scales output and inputs", MachineCountScalesOutputAndInputs),
+    ("Legacy target output migrates to machine count", LegacyTargetOutputMigratesToMachineCount),
+    ("High priority consumer is satisfied first", HighPriorityConsumerIsSatisfiedFirst),
+    ("Same priority redistributes capped demand", SamePriorityRedistributesCappedDemand),
+    ("Shortage marks edge and creates alert", ShortageMarksEdgeAndCreatesAlert),
     ("Connection compatibility requires matching item", ConnectionCompatibilityRequiresMatchingItem),
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
@@ -63,6 +68,79 @@ static RecipeInfo TitaniumRodRecipe()
     };
 }
 
+static RecipeInfo SourceRecipe(double outputPerMinute)
+{
+    return new RecipeInfo
+    {
+        RecipeKey = "source:part",
+        BuildingId = "source",
+        BuildingName = "Source",
+        Output = new RecipePortInfo
+        {
+            ItemId = "part",
+            Name = "Part",
+            QuantityPerMinute = outputPerMinute,
+        },
+    };
+}
+
+static RecipeInfo ConsumerRecipe(string key, string outputName, double requiredPerMinute)
+{
+    return new RecipeInfo
+    {
+        RecipeKey = key,
+        BuildingId = key,
+        BuildingName = outputName,
+        Output = new RecipePortInfo
+        {
+            ItemId = key,
+            Name = outputName,
+            QuantityPerMinute = 1,
+        },
+        Inputs =
+        [
+            new RecipePortInfo
+            {
+                ItemId = "part",
+                Name = "Part",
+                QuantityPerMinute = requiredPerMinute,
+            },
+        ],
+    };
+}
+
+static SchemeDocument PriorityScheme(RecipeInfo sourceRecipe, RecipeInfo lowDemandRecipe, RecipeInfo highDemandRecipe)
+{
+    return new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "low", SelectedRecipeKey = lowDemandRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "high", SelectedRecipeKey = highDemandRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-low",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "low",
+                TargetItemId = "part",
+            },
+            new SchemeEdge
+            {
+                Id = "edge-high",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "high",
+                TargetItemId = "part",
+            },
+        ],
+    };
+}
+
 static void DefaultTargetEqualsRecipeOutput()
 {
     IPlannerCalculator calculator = new PlannerCalculator();
@@ -74,7 +152,110 @@ static void MachineCountAndInputsScale()
     var recipe = TitaniumRodRecipe();
     IPlannerCalculator calculator = new PlannerCalculator();
     AssertEqual(2, calculator.MachineCount(recipe, 60));
-    AssertEqual(60, calculator.RequiredInputPerMinute(recipe, recipe.Inputs[0], 60));
+    AssertEqual(60, calculator.RequiredInputPerMinute(recipe, recipe.Inputs[0], 60d));
+}
+
+static void MachineCountScalesOutputAndInputs()
+{
+    var recipe = TitaniumRodRecipe();
+    IPlannerCalculator calculator = new PlannerCalculator();
+    AssertEqual(90, calculator.OutputPerMinute(recipe, 3));
+    AssertEqual(90, calculator.RequiredInputPerMinute(recipe, recipe.Inputs[0], 3));
+}
+
+static void LegacyTargetOutputMigratesToMachineCount()
+{
+    var recipe = TitaniumRodRecipe();
+    var scheme = new SchemeDocument
+    {
+        Version = 1,
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "source",
+                SelectedRecipeKey = recipe.RecipeKey,
+                TargetOutputPerMinute = 61,
+            },
+        ],
+    };
+
+    SchemeMigrationService.Migrate(
+        scheme,
+        new PlannerCatalog { Recipes = [recipe] },
+        new PlannerCalculator());
+
+    AssertEqual(2, scheme.Version);
+    AssertEqual(3, scheme.Nodes[0].MachineCount);
+    AssertEqual(0d, scheme.Nodes[0].TargetOutputPerMinute);
+}
+
+static void HighPriorityConsumerIsSatisfiedFirst()
+{
+    var sourceRecipe = SourceRecipe(12);
+    var lowDemandRecipe = ConsumerRecipe("consumer-low", "Widget", 4);
+    var highDemandRecipe = ConsumerRecipe("consumer-high", "Gadget", 20);
+    var scheme = PriorityScheme(sourceRecipe, lowDemandRecipe, highDemandRecipe);
+    scheme.Nodes.First(node => node.Id == "low").Priority = ProductionPriority.High;
+    scheme.Nodes.First(node => node.Id == "high").Priority = ProductionPriority.Mid;
+
+    var analysis = ProductionAnalysisService.Analyze(
+        scheme,
+        new PlannerCatalog { Recipes = [sourceRecipe, lowDemandRecipe, highDemandRecipe] },
+        new PlannerCalculator());
+
+    AssertEqual(4d, analysis.Inputs[ProductionInputKey.For("low", "part")].DeliveredPerMinute);
+    AssertEqual(8d, analysis.Inputs[ProductionInputKey.For("high", "part")].DeliveredPerMinute);
+    AssertEqual(1, analysis.Alerts.Count);
+}
+
+static void SamePriorityRedistributesCappedDemand()
+{
+    var sourceRecipe = SourceRecipe(12);
+    var lowDemandRecipe = ConsumerRecipe("consumer-low", "Widget", 4);
+    var highDemandRecipe = ConsumerRecipe("consumer-high", "Gadget", 20);
+    var scheme = PriorityScheme(sourceRecipe, lowDemandRecipe, highDemandRecipe);
+
+    var analysis = ProductionAnalysisService.Analyze(
+        scheme,
+        new PlannerCatalog { Recipes = [sourceRecipe, lowDemandRecipe, highDemandRecipe] },
+        new PlannerCalculator());
+
+    AssertEqual(4d, analysis.Inputs[ProductionInputKey.For("low", "part")].DeliveredPerMinute);
+    AssertEqual(8d, analysis.Inputs[ProductionInputKey.For("high", "part")].DeliveredPerMinute);
+}
+
+static void ShortageMarksEdgeAndCreatesAlert()
+{
+    var sourceRecipe = SourceRecipe(12);
+    var targetRecipe = ConsumerRecipe("consumer-high", "Gadget", 20);
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-short",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "target",
+                TargetItemId = "part",
+            },
+        ],
+    };
+
+    var analysis = ProductionAnalysisService.Analyze(
+        scheme,
+        new PlannerCatalog { Recipes = [sourceRecipe, targetRecipe] },
+        new PlannerCalculator());
+
+    AssertTrue(analysis.ShortEdges.Contains("edge-short"));
+    AssertEqual(1, analysis.Alerts.Count);
 }
 
 static void ConnectionCompatibilityRequiresMatchingItem()
@@ -349,8 +530,8 @@ static void EdgeLabelIncludesTransportTier()
     {
         Nodes =
         [
-            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, TargetOutputPerMinute = 30 },
-            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, TargetOutputPerMinute = 10 },
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
         ],
         Edges =
         [
@@ -382,7 +563,8 @@ static void EdgeLabelIncludesTransportTier()
         new PlannerCalculator(),
         scheme.Edges[0]);
 
-    AssertTrue(label.Contains("src 30/min", StringComparison.Ordinal));
+    AssertTrue(label.Contains("del 30/min", StringComparison.Ordinal));
+    AssertTrue(label.Contains("req 20/min", StringComparison.Ordinal));
     AssertTrue(label.Contains("Rail tier 1 120/min", StringComparison.Ordinal));
 }
 

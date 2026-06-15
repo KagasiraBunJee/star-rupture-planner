@@ -19,10 +19,25 @@ public static class PlannerCalculations
         return targetOutputPerMinute / recipe.Output.QuantityPerMinute;
     }
 
+    public static double OutputPerMinute(RecipeInfo? recipe, int machineCount)
+    {
+        if (recipe is null || machineCount <= 0)
+        {
+            return 0;
+        }
+
+        return recipe.Output.QuantityPerMinute * machineCount;
+    }
+
     public static double RequiredInputPerMinute(RecipeInfo recipe, RecipePortInfo input, double targetOutputPerMinute)
     {
         var machineCount = MachineCount(recipe, targetOutputPerMinute);
         return input.QuantityPerMinute * machineCount;
+    }
+
+    public static double RequiredInputPerMinute(RecipeInfo recipe, RecipePortInfo input, int machineCount)
+    {
+        return machineCount <= 0 ? 0 : input.QuantityPerMinute * machineCount;
     }
 
     public static bool CanConnectOutputToInput(RecipeInfo? sourceRecipe, RecipeInfo? targetRecipe, string itemId)

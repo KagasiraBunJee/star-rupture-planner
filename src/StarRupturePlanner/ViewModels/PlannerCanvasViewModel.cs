@@ -43,7 +43,8 @@ public sealed class PlannerCanvasViewModel : ViewModelBase
         {
             BuildingId = recipe.BuildingId,
             SelectedRecipeKey = recipe.RecipeKey,
-            TargetOutputPerMinute = _calculator.DefaultTargetOutput(recipe),
+            MachineCount = 1,
+            Priority = ProductionPriority.Mid,
             X = snapped.X,
             Y = snapped.Y,
         };
@@ -56,7 +57,8 @@ public sealed class PlannerCanvasViewModel : ViewModelBase
         {
             BuildingId = building.BuildingId,
             SelectedRecipeKey = null,
-            TargetOutputPerMinute = 0,
+            MachineCount = 0,
+            Priority = ProductionPriority.Mid,
             X = snapped.X,
             Y = snapped.Y,
         };

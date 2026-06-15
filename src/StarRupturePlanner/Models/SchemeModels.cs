@@ -5,7 +5,7 @@ namespace StarRupturePlanner.Models;
 public sealed class SchemeDocument
 {
     [JsonPropertyName("version")]
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "Untitled";
@@ -53,13 +53,27 @@ public sealed class SchemeNode : SchemeElement
     public string? SelectedRecipeKey { get; set; }
 
     [JsonPropertyName("target_output_per_minute")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public double TargetOutputPerMinute { get; set; }
+
+    [JsonPropertyName("machine_count")]
+    public int MachineCount { get; set; } = 1;
+
+    [JsonPropertyName("priority")]
+    public ProductionPriority Priority { get; set; } = ProductionPriority.Mid;
 
     [JsonPropertyName("x")]
     public double X { get; set; }
 
     [JsonPropertyName("y")]
     public double Y { get; set; }
+}
+
+public enum ProductionPriority
+{
+    Low = 0,
+    Mid = 1,
+    High = 2,
 }
 
 public sealed class SchemeEdge : SchemeElement

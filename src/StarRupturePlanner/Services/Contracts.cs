@@ -38,7 +38,9 @@ public interface IPlannerCalculator
 {
     double DefaultTargetOutput(RecipeInfo? recipe);
     double MachineCount(RecipeInfo? recipe, double targetOutputPerMinute);
+    double OutputPerMinute(RecipeInfo? recipe, int machineCount);
     double RequiredInputPerMinute(RecipeInfo recipe, RecipePortInfo input, double targetOutputPerMinute);
+    double RequiredInputPerMinute(RecipeInfo recipe, RecipePortInfo input, int machineCount);
     bool CanConnectOutputToInput(RecipeInfo? sourceRecipe, RecipeInfo? targetRecipe, string itemId);
     TransportTierInfo? RecommendTransportTier(IEnumerable<TransportTierInfo> tiers, double requiredPerMinute);
 }
