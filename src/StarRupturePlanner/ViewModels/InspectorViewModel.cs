@@ -99,18 +99,18 @@ public sealed class InspectorViewModel : ViewModelBase
 
         if (_selectedRecipe is null)
         {
-            ReadOnlyText = "No recipe selected. Ports are disabled.";
+            ReadOnlyText = UiText.T("Text.NoRecipeSelected");
             return;
         }
 
         var machines = ProductionAnalysisService.EffectiveMachineCount(_selectedNode);
         var outputPerMinute = _calculator.OutputPerMinute(_selectedRecipe, machines);
         ReadOnlyText =
-            $"Building: {_selectedRecipe.BuildingName}\n" +
-            $"Machines: {machines}\n" +
-            $"Output: {_selectedRecipe.Output.Name} {outputPerMinute:g}/min\n" +
-            $"Recipe base: {_selectedRecipe.Output.QuantityPerMinute:g}/min ({_selectedRecipe.OriginalRateText})\n" +
-            $"Priority: {_selectedNode.Priority}";
+            $"{UiText.T("Text.Building")}: {_selectedRecipe.BuildingName}\n" +
+            $"{UiText.T("Text.Machines")}: {machines}\n" +
+            $"{UiText.T("Text.Output")}: {_selectedRecipe.Output.Name} {outputPerMinute:g}/min\n" +
+            $"{UiText.T("Text.RecipeBase")}: {_selectedRecipe.Output.QuantityPerMinute:g}/min ({_selectedRecipe.OriginalRateText})\n" +
+            $"{UiText.T("Text.Priority")}: {_selectedNode.Priority}";
 
         ReplaceCollection(
             Inputs,
@@ -119,7 +119,7 @@ public sealed class InspectorViewModel : ViewModelBase
         ReplaceCollection(
             Unlocks,
             _selectedRecipe.UnlockRequirements.Count == 0
-                ? ["None"]
+                ? [UiText.T("Text.None")]
                 : _selectedRecipe.UnlockRequirements.Select(item => $"{item.Name}: {item.RequiredQuantity:g}"));
     }
 }

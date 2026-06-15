@@ -235,8 +235,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e)
+    private async void Settings_Click(object sender, RoutedEventArgs e)
     {
+        var previousLanguage = PlannerLanguages.Normalize(_settings.PlannerLanguage);
         var window = new SettingsWindow(_settings)
         {
             Owner = this,
@@ -245,9 +246,19 @@ public partial class MainWindow : Window
         {
             _settings = window.Settings;
             _viewModel.SaveSettings(_settings);
+            var languageChanged = !string.Equals(
+                previousLanguage,
+                PlannerLanguages.Normalize(_settings.PlannerLanguage),
+                StringComparison.Ordinal);
+            if (languageChanged)
+            {
+                ApplySettings();
+                await _viewModel.ReloadCatalogAsync();
+            }
             SyncFromViewModel();
             ApplySettings();
             RenderCanvas();
+            UpdateInspector();
         }
     }
 
@@ -259,6 +270,7 @@ public partial class MainWindow : Window
         Resources["LeftListForegroundBrush"] = BrushFromString(_settings.LeftBarListFont.Color, "#F4F0E8");
 
         ApplyTheme(ResolveTheme(_settings.Theme));
+        ApplyLanguage(_settings.PlannerLanguage);
     }
 
     private static void ApplyTheme(AppTheme theme)
@@ -279,6 +291,25 @@ public partial class MainWindow : Window
 
         // Insert the theme ahead of ControlStyles so styles can layer over the tokens.
         merged.Insert(0, new ResourceDictionary { Source = themeUri });
+    }
+
+    private static void ApplyLanguage(string? language)
+    {
+        var code = PlannerLanguages.Normalize(language);
+        var languageUri = new Uri($"Localization/Strings.{code}.xaml", UriKind.Relative);
+        var merged = Application.Current.Resources.MergedDictionaries;
+
+        for (var i = merged.Count - 1; i >= 0; i--)
+        {
+            var source = merged[i].Source?.OriginalString ?? string.Empty;
+            if (source.Contains("Localization/Strings.", StringComparison.OrdinalIgnoreCase))
+            {
+                merged.RemoveAt(i);
+            }
+        }
+
+        var insertIndex = Math.Min(1, merged.Count);
+        merged.Insert(insertIndex, new ResourceDictionary { Source = languageUri });
     }
 
     private async void SchemesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -958,7 +989,7 @@ public partial class MainWindow : Window
         var container = new StackPanel { Margin = new Thickness(14, 8, 14, 10) };
         container.Children.Add(new TextBlock
         {
-            Text = $"ISSUES ({shortInputs.Count})",
+            Text = $"{UiText.T("Text.Issues")} ({shortInputs.Count})",
             Foreground = new SolidColorBrush(ShortageColor),
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-2),
@@ -981,7 +1012,7 @@ public partial class MainWindow : Window
             });
             row.Children.Add(new TextBlock
             {
-                Text = $"{input.ItemName}: {input.DeliveredPerMinute:g}/{input.RequiredPerMinute:g}/min ({deficit:g} short)",
+                Text = $"{input.ItemName}: {input.DeliveredPerMinute:g}/{input.RequiredPerMinute:g}/min ({deficit:g} {UiText.T("Text.Short")})",
                 Foreground = CardTextBrush(0.85),
                 FontFamily = CardFontFamily(),
                 FontSize = CardFontSize(-1),
@@ -1076,7 +1107,7 @@ public partial class MainWindow : Window
             Margin = new Thickness(0, 4, 0, 4),
             ToolTip = available
                 ? $"{port.Name} {rate:g}/min"
-                : $"{port.Name} is not available for connection with current corporation levels.",
+                : $"{port.Name} {UiText.T("Text.NotAvailableForConnection")}",
         };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1229,7 +1260,7 @@ public partial class MainWindow : Window
             {
                 visual.Path.Data = Geometry.Empty;
                 visual.HitPath.Data = Geometry.Empty;
-                visual.Label.Text = "Invalid connection";
+                visual.Label.Text = UiText.T("Text.InvalidConnection");
                 continue;
             }
 
@@ -1313,15 +1344,15 @@ public partial class MainWindow : Window
         if (MetricTemperature is not null)
         {
             MetricTemperature.Text = totals.Temperature > 0
-                ? $"+{totals.Temperature:g} temp"
-                : $"{totals.Temperature:g} temp";
+                ? $"+{totals.Temperature:g} {UiText.T("Text.Temp")}"
+                : $"{totals.Temperature:g} {UiText.T("Text.Temp")}";
         }
 
         AlertsChips.Children.Clear();
         var lockedAlerts = PlannerUnlockService.LockedNodeAlerts(_catalog, _scheme);
         if (_productionAnalysis.Alerts.Count == 0 && lockedAlerts.Count == 0)
         {
-            AlertsChips.Children.Add(BuildAlertChip("No production shortages", SignalGreenColor, "✓"));
+            AlertsChips.Children.Add(BuildAlertChip(UiText.T("Text.NoProductionShortages"), SignalGreenColor, "✓"));
             return;
         }
 
@@ -2138,7 +2169,7 @@ public partial class MainWindow : Window
 
         if (!IsPortReferenceAvailable(port))
         {
-            SetStatus("This resource is not available for connection with current corporation levels.");
+            SetStatus($"This resource {UiText.T("Text.NotAvailableForConnection")}");
             e.Handled = true;
             return;
         }
@@ -2364,7 +2395,7 @@ public partial class MainWindow : Window
         var target = first.Direction == "input" ? first : second;
         if (!IsPortReferenceAvailable(source) || !IsPortReferenceAvailable(target))
         {
-            SetStatus("This resource is not available for connection with current corporation levels.");
+            SetStatus($"This resource {UiText.T("Text.NotAvailableForConnection")}");
             return false;
         }
 

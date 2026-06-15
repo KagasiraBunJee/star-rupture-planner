@@ -7,6 +7,9 @@ public sealed class AppSettings
     [JsonPropertyName("theme")]
     public AppTheme Theme { get; set; } = AppTheme.System;
 
+    [JsonPropertyName("planner_language")]
+    public string PlannerLanguage { get; set; } = PlannerLanguages.English;
+
     [JsonPropertyName("canvas_card_font")]
     public FontSettings CanvasCardFont { get; set; } = new()
     {
@@ -33,6 +36,30 @@ public enum AppTheme
     System,
     Dark,
     Light,
+}
+
+public static class PlannerLanguages
+{
+    public const string English = "en";
+    public const string Russian = "ru";
+    public const string German = "de";
+    public const string Ukrainian = "uk";
+
+    public static readonly string[] Supported =
+    [
+        English,
+        Russian,
+        German,
+        Ukrainian,
+    ];
+
+    public static string Normalize(string? language)
+    {
+        var code = string.IsNullOrWhiteSpace(language)
+            ? English
+            : language.Trim().ToLowerInvariant().Split('-', '_')[0];
+        return Supported.Contains(code, StringComparer.Ordinal) ? code : English;
+    }
 }
 
 public sealed class FontSettings

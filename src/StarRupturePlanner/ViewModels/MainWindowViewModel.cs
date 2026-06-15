@@ -16,7 +16,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private AppSettings _settings = new();
     private string _status = "";
     private string _schemeFolderPath = "";
-    private string _lastSavedText = "Not saved yet";
+    private string _lastSavedText = UiText.T("Status.NotSavedYet");
     private CancellationTokenSource? _startupCancellation;
     private CancellationTokenSource? _schemeListCancellation;
 
@@ -36,6 +36,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _backgroundTaskRunner = backgroundTaskRunner;
         Toolbox = new ToolboxViewModel(apiClient, uiDispatcher, backgroundTaskRunner);
         Settings = _settingsStore.Load();
+        _apiClient.PlannerLanguage = Settings.PlannerLanguage;
         SchemeFolderPath = _schemeStore.FolderPath;
         NewScheme();
     }
@@ -87,19 +88,20 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
-            SetStatus("Starting local API...");
+            SetStatus(UiText.T("Status.StartingApi"));
+            _apiClient.PlannerLanguage = Settings.PlannerLanguage;
             var apiStatus = await _apiProcessManager.EnsureStartedAsync(token);
             var catalog = await _apiClient.GetCatalogAsync(token);
             await _uiDispatcher.InvokeAsync(() => Catalog = catalog, token);
             await Toolbox.SetCatalogAsync(catalog, token);
-            SetStatus($"{apiStatus} Loaded {catalog.Recipes.Count} recipes.");
+            SetStatus($"{apiStatus} {UiText.Format("Status.LoadedRecipes", catalog.Recipes.Count)}");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            SetStatus($"API startup failed: {ex.Message}");
+            SetStatus(UiText.Format("Status.ApiStartupFailed", ex.Message));
         }
     }
 
@@ -117,8 +119,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public void NewScheme()
     {
         Scheme = new SchemeDocument { Name = "Untitled" };
-        LastSavedText = "Not saved yet";
-        SetStatus("New empty scheme.");
+        LastSavedText = UiText.T("Status.NotSavedYet");
+        SetStatus(UiText.T("Status.NewEmptyScheme"));
     }
 
     public async Task OpenSchemeAsync(SchemeListItem item, CancellationToken cancellationToken = default)
@@ -131,11 +133,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 Scheme = loaded;
                 LastSavedText = FormatLastSaved(item.FilePath);
             }, cancellationToken);
-            SetStatus($"Opened {item.Name}.");
+            SetStatus(UiText.Format("Status.Opened", item.Name));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            SetStatus($"Could not open scheme: {ex.Message}");
+            SetStatus(UiText.Format("Status.CouldNotOpenScheme", ex.Message));
         }
     }
 
@@ -145,7 +147,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         var path = await _backgroundTaskRunner.RunAsync(() => _schemeStore.Save(scheme), cancellationToken);
         LastSavedText = FormatLastSaved(path);
         await RefreshSchemeListAsync(cancellationToken);
-        SetStatus($"Saved {System.IO.Path.GetFileName(path)}.");
+        SetStatus(UiText.Format("Status.Saved", System.IO.Path.GetFileName(path)));
     }
 
     public async Task<bool> DeleteSchemeAsync(SchemeListItem item, CancellationToken cancellationToken = default)
@@ -179,9 +181,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         var day = when.Date == DateTime.Today
-            ? "Today"
-            : when.Date == DateTime.Today.AddDays(-1) ? "Yesterday" : when.ToString("MMM d");
-        return $"Last saved: {day}, {when:t}";
+            ? UiText.T("Status.Today")
+            : when.Date == DateTime.Today.AddDays(-1) ? UiText.T("Status.Yesterday") : when.ToString("MMM d");
+        return UiText.Format("Status.LastSaved", day, when.ToString("t"));
     }
 
     public void SetSchemeFolder(string folderPath)
@@ -192,9 +194,32 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void SaveSettings(AppSettings settings)
     {
+        settings.PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage);
         Settings = settings;
+        _apiClient.PlannerLanguage = Settings.PlannerLanguage;
         _settingsStore.Save(Settings);
-        SetStatus("Settings saved.");
+        SetStatus(UiText.T("Status.SettingsSaved"));
+    }
+
+    public async Task ReloadCatalogAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            SetStatus(UiText.T("Status.ReloadingLanguage"));
+            _apiClient.PlannerLanguage = Settings.PlannerLanguage;
+            await _apiProcessManager.EnsureStartedAsync(cancellationToken);
+            var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
+            await _uiDispatcher.InvokeAsync(() => Catalog = catalog, cancellationToken);
+            await Toolbox.SetCatalogAsync(catalog, cancellationToken);
+            SetStatus(UiText.Format("Status.LoadedRecipes", catalog.Recipes.Count));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            SetStatus(UiText.Format("Status.CouldNotReloadLanguage", ex.Message));
+        }
     }
 
     public void SetStatus(string status)

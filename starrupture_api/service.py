@@ -7,6 +7,7 @@ from typing import Any
 from .config import Settings, settings
 from .db import connection, init_db
 from .importer import Importer
+from .localization import LocalizationStore, normalize_language
 from .utils import PLACEHOLDER_RESOURCE_IDS, clean_number
 
 
@@ -17,6 +18,7 @@ class DataNotFoundError(KeyError):
 class ResourceService:
     def __init__(self, cfg: Settings = settings) -> None:
         self.cfg = cfg
+        self.localization = LocalizationStore(self.cfg.localization_dir)
         with connection(self.cfg.db_path) as conn:
             init_db(conn)
 
@@ -50,6 +52,7 @@ class ResourceService:
             "dataset": "starrupture_resources",
             "source": self.cfg.base_url,
             "counts": counts,
+            "languages": self.localization.languages,
             "last_refresh": self._refresh_run_payload(run) if run else None,
         }
 
@@ -61,13 +64,11 @@ class ResourceService:
         used: bool | None = None,
         limit: int = 100,
         offset: int = 0,
+        lang: str | None = None,
     ) -> dict[str, Any]:
+        language = normalize_language(lang)
         clauses = [self._clean_resource_where("i")]
         params: list[Any] = []
-        if q:
-            clauses.append("(LOWER(i.item_id) LIKE ? OR LOWER(i.name) LIKE ?)")
-            needle = f"%{q.lower()}%"
-            params.extend([needle, needle])
         if produced is not None:
             op = "EXISTS" if produced else "NOT EXISTS"
             clauses.append(
@@ -82,9 +83,6 @@ class ResourceService:
         limit = min(max(limit, 1), 500)
         offset = max(offset, 0)
         with connection(self.cfg.db_path) as conn:
-            total = conn.execute(
-                f"SELECT COUNT(*) FROM items i WHERE {where}", params
-            ).fetchone()[0]
             rows = conn.execute(
                 f"""
                 SELECT i.*,
@@ -104,12 +102,27 @@ class ResourceService:
                 FROM items i
                 WHERE {where}
                 ORDER BY i.name COLLATE NOCASE
-                LIMIT ? OFFSET ?
                 """,
-                [*params, limit, offset],
+                params,
             ).fetchall()
+        entries = [
+            (row, self._item_summary(row, language))
+            for row in rows
+        ]
+        if q:
+            needle = q.strip().lower()
+            entries = [
+                (row, payload)
+                for row, payload in entries
+                if needle in payload["item_id"].lower()
+                or needle in (payload.get("name") or "").lower()
+                or needle in (row["name"] or "").lower()
+            ]
+        entries.sort(key=lambda entry: ((entry[1].get("name") or "").casefold(), entry[1]["item_id"]))
+        total = len(entries)
+        page = [payload for _, payload in entries[offset:offset + limit]]
         return {
-            "items": [self._item_summary(row) for row in rows],
+            "items": page,
             "total": total,
             "limit": limit,
             "offset": offset,
@@ -122,10 +135,11 @@ class ResourceService:
     def _clean_resource_count_sql(self) -> str:
         return f"SELECT COUNT(*) FROM items WHERE {self._clean_resource_where('items')}"
 
-    def search_items(self, query: str, limit: int = 20) -> dict[str, Any]:
-        return self.list_items(q=query, limit=limit, offset=0)
+    def search_items(self, query: str, limit: int = 20, lang: str | None = None) -> dict[str, Any]:
+        return self.list_items(q=query, limit=limit, offset=0, lang=lang)
 
-    def list_buildings(self) -> dict[str, Any]:
+    def list_buildings(self, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         with connection(self.cfg.db_path) as conn:
             rows = conn.execute(
                 """
@@ -137,9 +151,10 @@ class ResourceService:
                 ORDER BY b.name COLLATE NOCASE, b.building_id
                 """
             ).fetchall()
-        return {"buildings": [self._building_payload(row) for row in rows]}
+        return {"buildings": [self._building_payload(row, language) for row in rows]}
 
-    def get_transport_tiers(self) -> dict[str, Any]:
+    def get_transport_tiers(self, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         if not self.cfg.transport_tiers_path.exists():
             return {
                 "tiers": [],
@@ -149,26 +164,45 @@ class ResourceService:
         with self.cfg.transport_tiers_path.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
         tiers = payload.get("tiers", []) if isinstance(payload, dict) else []
+        localized_tiers = []
+        for tier in tiers:
+            localized = dict(tier)
+            tier_id = localized.get("id")
+            localized["name"] = self.localization.text(
+                language,
+                "transport_tiers",
+                tier_id,
+                "name",
+                localized.get("name"),
+            )
+            localized_tiers.append(localized)
         return {
-            "tiers": tiers,
+            "tiers": localized_tiers,
             "missing": len(tiers) == 0,
-            "message": payload.get("message") if isinstance(payload, dict) else None,
+            "message": self.localization.ui(
+                language,
+                "transport.default_message",
+                payload.get("message") if isinstance(payload, dict) else None,
+            ) if isinstance(payload, dict) else None,
         }
 
-    def get_corporations(self) -> dict[str, Any]:
+    def get_corporations(self, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         with connection(self.cfg.db_path) as conn:
-            corporations = self._corporations_payload(conn)
+            corporations = self._corporations_payload(conn, language)
         return {"corporations": corporations}
 
-    def get_corporation_detail(self, corporation_id: str) -> dict[str, Any]:
+    def get_corporation_detail(self, corporation_id: str, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         with connection(self.cfg.db_path) as conn:
-            corporations = self._corporations_payload(conn)
+            corporations = self._corporations_payload(conn, language)
         for corporation in corporations:
             if corporation["corporation_id"] == corporation_id:
                 return corporation
         raise DataNotFoundError(corporation_id)
 
-    def get_planner_catalog(self) -> dict[str, Any]:
+    def get_planner_catalog(self, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         with connection(self.cfg.db_path) as conn:
             building_rows = conn.execute(
                 """
@@ -192,22 +226,24 @@ class ResourceService:
                 ORDER BY b.name COLLATE NOCASE, r.recipe_level, r.recipe_id
                 """
             ).fetchall()
-            recipes = [self._planner_recipe_payload(conn, row) for row in recipe_rows]
-            corporations = self._corporations_payload(conn)
-            building_unlocks = self._building_unlocks_payload(conn)
+            recipes = [self._planner_recipe_payload(conn, row, language) for row in recipe_rows]
+            corporations = self._corporations_payload(conn, language)
+            building_unlocks = self._building_unlocks_payload(conn, language)
         return {
-            "buildings": [self._building_payload(row) for row in building_rows],
+            "buildings": [self._building_payload(row, language) for row in building_rows],
             "recipes": recipes,
-            "transport_tiers": self.get_transport_tiers(),
+            "transport_tiers": self.get_transport_tiers(language),
             "corporations": corporations,
             "building_unlocks": building_unlocks,
             "meta": {
                 "building_count": len(building_rows),
                 "recipe_count": len(recipes),
+                "language": language,
             },
         }
 
-    def get_planner_suggestions(self, *, direction: str, item_id: str) -> dict[str, Any]:
+    def get_planner_suggestions(self, *, direction: str, item_id: str, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         direction = direction.lower().strip()
         if direction not in {"input", "output"}:
             return {
@@ -246,7 +282,7 @@ class ResourceService:
                 """,
                 (item_id,),
             ).fetchall()
-            suggestions = [self._planner_recipe_payload(conn, row) for row in rows]
+            suggestions = [self._planner_recipe_payload(conn, row, language) for row in rows]
 
         return {
             "direction": direction,
@@ -254,19 +290,20 @@ class ResourceService:
             "suggestions": suggestions,
         }
 
-    def get_item_detail(self, item_id: str) -> dict[str, Any]:
+    def get_item_detail(self, item_id: str, lang: str | None = None) -> dict[str, Any]:
+        language = normalize_language(lang)
         with connection(self.cfg.db_path) as conn:
             item = conn.execute(
                 "SELECT * FROM items WHERE item_id = ?", (item_id,)
             ).fetchone()
             if not item:
                 raise DataNotFoundError(item_id)
-            produced_by = self._produced_by(conn, item_id)
-            used_in = self._used_in(conn, item_id)
-            unlock_requirements = self._unlock_requirements_for_item(conn, item_id)
-            used_to_unlock = self._used_to_unlock(conn, item_id)
+            produced_by = self._produced_by(conn, item_id, language)
+            used_in = self._used_in(conn, item_id, language)
+            unlock_requirements = self._unlock_requirements_for_item(conn, item_id, language)
+            used_to_unlock = self._used_to_unlock(conn, item_id, language)
         return {
-            "item": self._item_payload(item),
+            "item": self._item_payload(item, language),
             "unlock_requirements": unlock_requirements,
             "used_to_unlock": used_to_unlock,
             "produced_by": produced_by,
@@ -279,7 +316,7 @@ class ResourceService:
             },
         }
 
-    def _produced_by(self, conn: sqlite3.Connection, item_id: str) -> list[dict[str, Any]]:
+    def _produced_by(self, conn: sqlite3.Connection, item_id: str, language: str) -> list[dict[str, Any]]:
         recipe_rows = conn.execute(
             """
             SELECT r.*, b.name AS building_name, b.category AS building_category,
@@ -291,9 +328,9 @@ class ResourceService:
             """,
             (item_id,),
         ).fetchall()
-        return [self._producer_payload(conn, row) for row in recipe_rows]
+        return [self._producer_payload(conn, row, language) for row in recipe_rows]
 
-    def _used_in(self, conn: sqlite3.Connection, item_id: str) -> list[dict[str, Any]]:
+    def _used_in(self, conn: sqlite3.Connection, item_id: str, language: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT u.*, r.recipe_id, r.recipe_level, r.duration_seconds,
@@ -313,14 +350,14 @@ class ResourceService:
         return [
             {
                 "building_id": row["building_id"],
-                "building_name": row["building_name"],
+                "building_name": self._building_text(language, row["building_id"], "name", row["building_name"]),
                 "building_category": row["building_category"],
                 "recipe_id": row["recipe_id"],
                 "recipe_level": row["recipe_level"],
                 "consumed_quantity_per_cycle": clean_number(row["consumed_quantity_per_cycle"]),
                 "consumed_per_minute": clean_number(row["consumed_per_minute"]),
                 "output_item_id": row["output_item_id"],
-                "output_item_name": row["output_item_name"],
+                "output_item_name": self._item_text(language, row["output_item_id"], "name", row["output_item_name"]),
                 "output_item_image_url": row["output_item_image_url"],
                 "output_quantity": clean_number(row["output_quantity"]),
                 "duration_seconds": clean_number(row["duration_seconds"]),
@@ -331,7 +368,7 @@ class ResourceService:
         ]
 
     def _unlock_requirements_for_item(
-        self, conn: sqlite3.Connection, item_id: str
+        self, conn: sqlite3.Connection, item_id: str, language: str
     ) -> list[dict[str, Any]]:
         recipe_rows = conn.execute(
             """
@@ -348,9 +385,9 @@ class ResourceService:
             """,
             (item_id,),
         ).fetchall()
-        return [self._unlock_recipe_payload(conn, row) for row in recipe_rows]
+        return [self._unlock_recipe_payload(conn, row, language) for row in recipe_rows]
 
-    def _used_to_unlock(self, conn: sqlite3.Connection, item_id: str) -> list[dict[str, Any]]:
+    def _used_to_unlock(self, conn: sqlite3.Connection, item_id: str, language: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT uu.*, r.recipe_id, r.recipe_level, r.duration_seconds,
@@ -371,12 +408,12 @@ class ResourceService:
             {
                 "required_quantity": clean_number(row["required_quantity"]),
                 "building_id": row["building_id"],
-                "building_name": row["building_name"],
+                "building_name": self._building_text(language, row["building_id"], "name", row["building_name"]),
                 "building_category": row["building_category"],
                 "recipe_id": row["recipe_id"],
                 "recipe_level": row["recipe_level"],
                 "output_item_id": row["output_item_id"],
-                "output_item_name": row["output_item_name"],
+                "output_item_name": self._item_text(language, row["output_item_id"], "name", row["output_item_name"]),
                 "output_item_image_url": row["output_item_image_url"],
                 "output_quantity": clean_number(row["output_quantity"]),
                 "duration_seconds": clean_number(row["duration_seconds"]),
@@ -386,7 +423,7 @@ class ResourceService:
             for row in rows
         ]
 
-    def _producer_payload(self, conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    def _producer_payload(self, conn: sqlite3.Connection, row: sqlite3.Row, language: str) -> dict[str, Any]:
         inputs = conn.execute(
             """
             SELECT ri.*, i.name, i.image_url
@@ -409,7 +446,7 @@ class ResourceService:
         ).fetchall()
         return {
             "building_id": row["building_id"],
-            "building_name": row["building_name"],
+            "building_name": self._building_text(language, row["building_id"], "name", row["building_name"]),
             "building_category": row["building_category"],
             "building_image_url": row["building_image_url"],
             "recipe_id": row["recipe_id"],
@@ -421,7 +458,7 @@ class ResourceService:
             "inputs": [
                 {
                     "item_id": entry["input_item_id"],
-                    "name": entry["name"],
+                    "name": self._item_text(language, entry["input_item_id"], "name", entry["name"]),
                     "image_url": entry["image_url"],
                     "quantity_per_cycle": clean_number(entry["input_quantity"]),
                     "quantity_per_minute": clean_number(entry["input_per_minute"]),
@@ -431,7 +468,7 @@ class ResourceService:
             "unlock_requirements": [
                 {
                     "item_id": entry["item_id"],
-                    "name": entry["name"],
+                    "name": self._item_text(language, entry["item_id"], "name", entry["name"]),
                     "image_url": entry["image_url"],
                     "required_quantity": clean_number(entry["required_quantity"]),
                 }
@@ -439,7 +476,7 @@ class ResourceService:
             ],
         }
 
-    def _planner_recipe_payload(self, conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    def _planner_recipe_payload(self, conn: sqlite3.Connection, row: sqlite3.Row, language: str) -> dict[str, Any]:
         inputs = conn.execute(
             """
             SELECT ri.*, i.name, i.image_url
@@ -465,15 +502,15 @@ class ResourceService:
             "recipe_id": row["recipe_id"],
             "recipe_level": row["recipe_level"],
             "building_id": row["building_id"],
-            "building_name": row["building_name"],
+            "building_name": self._building_text(language, row["building_id"], "name", row["building_name"]),
             "building_category": row["building_category"],
-            "building_family_name": row["building_family_name"],
+            "building_family_name": self._building_text(language, row["building_id"], "family_name", row["building_family_name"]),
             "building_tier": row["building_tier"],
             "building_image_url": row["building_image_url"],
             "duration_seconds": clean_number(row["duration_seconds"]),
             "output": {
                 "item_id": row["output_item_id"],
-                "name": row["output_item_name"],
+                "name": self._item_text(language, row["output_item_id"], "name", row["output_item_name"]),
                 "image_url": row["output_item_image_url"],
                 "quantity_per_cycle": clean_number(row["output_quantity"]),
                 "quantity_per_minute": clean_number(row["output_per_minute"]),
@@ -482,7 +519,7 @@ class ResourceService:
             "inputs": [
                 {
                     "item_id": entry["input_item_id"],
-                    "name": entry["name"],
+                    "name": self._item_text(language, entry["input_item_id"], "name", entry["name"]),
                     "image_url": entry["image_url"],
                     "quantity_per_cycle": clean_number(entry["input_quantity"]),
                     "quantity_per_minute": clean_number(entry["input_per_minute"]),
@@ -492,7 +529,7 @@ class ResourceService:
             "unlock_requirements": [
                 {
                     "item_id": entry["item_id"],
-                    "name": entry["name"],
+                    "name": self._item_text(language, entry["item_id"], "name", entry["name"]),
                     "image_url": entry["image_url"],
                     "required_quantity": clean_number(entry["required_quantity"]),
                 }
@@ -500,7 +537,7 @@ class ResourceService:
             ],
         }
 
-    def _unlock_recipe_payload(self, conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    def _unlock_recipe_payload(self, conn: sqlite3.Connection, row: sqlite3.Row, language: str) -> dict[str, Any]:
         requirements = conn.execute(
             """
             SELECT rr.*, i.name, i.image_url
@@ -513,13 +550,13 @@ class ResourceService:
         ).fetchall()
         return {
             "building_id": row["building_id"],
-            "building_name": row["building_name"],
+            "building_name": self._building_text(language, row["building_id"], "name", row["building_name"]),
             "building_category": row["building_category"],
             "building_image_url": row["building_image_url"],
             "recipe_id": row["recipe_id"],
             "recipe_level": row["recipe_level"],
             "output_item_id": row["output_item_id"],
-            "output_item_name": row["output_item_name"],
+            "output_item_name": self._item_text(language, row["output_item_id"], "name", row["output_item_name"]),
             "output_item_image_url": row["output_item_image_url"],
             "output_quantity": clean_number(row["output_quantity"]),
             "duration_seconds": clean_number(row["duration_seconds"]),
@@ -528,7 +565,7 @@ class ResourceService:
             "required_items": [
                 {
                     "item_id": entry["item_id"],
-                    "name": entry["name"],
+                    "name": self._item_text(language, entry["item_id"], "name", entry["name"]),
                     "image_url": entry["image_url"],
                     "required_quantity": clean_number(entry["required_quantity"]),
                 }
@@ -536,11 +573,11 @@ class ResourceService:
             ],
         }
 
-    def _item_payload(self, row: sqlite3.Row) -> dict[str, Any]:
+    def _item_payload(self, row: sqlite3.Row, language: str) -> dict[str, Any]:
         return {
             "item_id": row["item_id"],
-            "name": row["name"],
-            "description": row["description"],
+            "name": self._item_text(language, row["item_id"], "name", row["name"]),
+            "description": self._item_text(language, row["item_id"], "description", row["description"]),
             "category": row["category"],
             "stack": row["stack"],
             "level": row["level"],
@@ -549,22 +586,22 @@ class ResourceService:
             "image_source_url": row["image_source_url"],
         }
 
-    def _item_summary(self, row: sqlite3.Row) -> dict[str, Any]:
-        payload = self._item_payload(row)
+    def _item_summary(self, row: sqlite3.Row, language: str) -> dict[str, Any]:
+        payload = self._item_payload(row, language)
         payload["produced"] = bool(row["produced"])
         payload["used"] = bool(row["used"])
         payload["requires_unlock"] = bool(row["requires_unlock"])
         payload["used_to_unlock"] = bool(row["used_to_unlock"])
         return payload
 
-    def _building_payload(self, row: sqlite3.Row) -> dict[str, Any]:
+    def _building_payload(self, row: sqlite3.Row, language: str) -> dict[str, Any]:
         return {
             "building_id": row["building_id"],
-            "name": row["name"],
-            "family_name": row["family_name"],
+            "name": self._building_text(language, row["building_id"], "name", row["name"]),
+            "family_name": self._building_text(language, row["building_id"], "family_name", row["family_name"]),
             "tier": row["tier"],
             "category": row["category"],
-            "description": row["description"],
+            "description": self._building_text(language, row["building_id"], "description", row["description"]),
             "power": None if row["power"] is None else clean_number(row["power"]),
             "temperature": None if row["temperature"] is None else clean_number(row["temperature"]),
             "source_url": row["source_url"],
@@ -573,7 +610,7 @@ class ResourceService:
             "recipe_count": row["recipe_count"],
         }
 
-    def _corporations_payload(self, conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    def _corporations_payload(self, conn: sqlite3.Connection, language: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT *
@@ -595,8 +632,8 @@ class ResourceService:
             payload.append(
                 {
                     "corporation_id": row["corporation_id"],
-                    "name": row["name"],
-                    "description": row["description"],
+                    "name": self._corporation_text(language, row["corporation_id"], "name", row["name"]),
+                    "description": self._corporation_text(language, row["corporation_id"], "description", row["description"]),
                     "source_url": row["source_url"],
                     "icon_url": self._site_asset_url(row["icon_url"]),
                     "colour": row["colour"],
@@ -609,11 +646,13 @@ class ResourceService:
                                 conn,
                                 row["corporation_id"],
                                 level["level"],
+                                language,
                             ),
                             "item_rewards": self._corporation_item_rewards(
                                 conn,
                                 row["corporation_id"],
                                 level["level"],
+                                language,
                             ),
                         }
                         for level in levels
@@ -627,6 +666,7 @@ class ResourceService:
         conn: sqlite3.Connection,
         corporation_id: str,
         level: int,
+        language: str,
     ) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
@@ -640,7 +680,7 @@ class ResourceService:
         return [
             {
                 "building_id": row["building_id"],
-                "name": row["name"],
+                "name": self._building_text(language, row["building_id"], "name", row["name"]),
                 "category": row["category"],
                 "icon_url": self._site_asset_url(row["icon_url"]),
             }
@@ -652,6 +692,7 @@ class ResourceService:
         conn: sqlite3.Connection,
         corporation_id: str,
         level: int,
+        language: str,
     ) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
@@ -665,14 +706,14 @@ class ResourceService:
         return [
             {
                 "item_id": row["item_id"],
-                "name": row["name"],
+                "name": self._item_text(language, row["item_id"], "name", row["name"]),
                 "category": row["category"],
                 "icon_url": self._site_asset_url(row["icon_url"]),
             }
             for row in rows
         ]
 
-    def _building_unlocks_payload(self, conn: sqlite3.Connection) -> dict[str, list[dict[str, Any]]]:
+    def _building_unlocks_payload(self, conn: sqlite3.Connection, language: str) -> dict[str, list[dict[str, Any]]]:
         rows = conn.execute(
             """
             SELECT cbr.building_id, cbr.corporation_id, c.name AS corporation_name,
@@ -688,11 +729,20 @@ class ResourceService:
             result.setdefault(row["building_id"], []).append(
                 {
                     "corporation_id": row["corporation_id"],
-                    "corporation_name": row["corporation_name"],
+                    "corporation_name": self._corporation_text(language, row["corporation_id"], "name", row["corporation_name"]),
                     "level": row["level"],
                 }
             )
         return result
+
+    def _item_text(self, language: str, item_id: str | None, field: str, fallback: Any) -> Any:
+        return self.localization.text(language, "items", item_id, field, fallback)
+
+    def _building_text(self, language: str, building_id: str | None, field: str, fallback: Any) -> Any:
+        return self.localization.text(language, "buildings", building_id, field, fallback)
+
+    def _corporation_text(self, language: str, corporation_id: str | None, field: str, fallback: Any) -> Any:
+        return self.localization.text(language, "corporations", corporation_id, field, fallback)
 
     def _site_asset_url(self, value: str | None) -> str | None:
         if not value:

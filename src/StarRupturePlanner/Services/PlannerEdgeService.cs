@@ -30,29 +30,29 @@ public static class PlannerEdgeService
         var targetRecipe = RecipeForNode(catalog, target);
         if (source is null || target is null || sourceRecipe is null || targetRecipe is null)
         {
-            return "Invalid connection";
+            return UiText.T("Text.InvalidConnection");
         }
 
         var input = targetRecipe.Inputs.FirstOrDefault(item => item.ItemId == edge.TargetItemId);
         if (input is null)
         {
-            return "Invalid input";
+            return UiText.T("Text.InvalidInput");
         }
 
         var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceRecipe, input, edge, analysis);
         var core = metrics.IsShort
-            ? $"{metrics.Delivered:g} of {metrics.Required:g}/min ({metrics.Deficit:g} short)"
-            : $"{metrics.Delivered:g}/min, meets demand";
+            ? $"{metrics.Delivered:g} of {metrics.Required:g}/min ({metrics.Deficit:g} {UiText.T("Text.Short")})"
+            : $"{metrics.Delivered:g}/min, {UiText.T("Text.MeetsDemand")}";
 
         if (metrics.OverCapacity)
         {
             core = metrics.IsShort
-                ? $"{metrics.Delivered:g} of {metrics.Required:g}/min ({metrics.Deficit:g} short), rail over capacity"
-                : $"{metrics.Delivered:g}/min, rail over capacity";
+                ? $"{metrics.Delivered:g} of {metrics.Required:g}/min ({metrics.Deficit:g} {UiText.T("Text.Short")}), {UiText.T("Text.RailOverCapacity")}"
+                : $"{metrics.Delivered:g}/min, {UiText.T("Text.RailOverCapacity")}";
         }
 
         var tierText = metrics.RecommendedTier is null
-            ? "transport tier missing"
+            ? UiText.T("Text.TransportTierMissing")
             : $"{metrics.RecommendedTier.Name} {metrics.RecommendedTier.ItemsPerMinute:g}/min";
         return $"{input.Name} - {core} - {tierText}";
     }
@@ -71,35 +71,35 @@ public static class PlannerEdgeService
         var targetRecipe = RecipeForNode(catalog, target);
         if (source is null || target is null || sourceRecipe is null || targetRecipe is null)
         {
-            return "Invalid connection";
+            return UiText.T("Text.InvalidConnection");
         }
 
         var input = targetRecipe.Inputs.FirstOrDefault(item => item.ItemId == edge.TargetItemId);
         if (input is null)
         {
-            return "Invalid input";
+            return UiText.T("Text.InvalidInput");
         }
 
         var metrics = ComputeFlow(scheme, catalog, calculator, source, target, sourceRecipe, input, edge, analysis);
-        var throughputStatus = metrics.IsShort ? $"{metrics.Deficit:g}/min short" : "meets demand";
+        var throughputStatus = metrics.IsShort ? $"{metrics.Deficit:g}/min {UiText.T("Text.Short")}" : UiText.T("Text.MeetsDemand");
         var lines = new List<string>
         {
-            $"Item: {input.Name}",
-            $"From: {sourceRecipe.BuildingName} -> {targetRecipe.BuildingName}",
-            $"Throughput: {metrics.Delivered:g} / {metrics.Required:g} /min - {throughputStatus}",
+            $"{UiText.T("Text.Item")}: {input.Name}",
+            $"{UiText.T("Text.From")}: {sourceRecipe.BuildingName} -> {targetRecipe.BuildingName}",
+            $"{UiText.T("Text.Throughput")}: {metrics.Delivered:g} / {metrics.Required:g} /min - {throughputStatus}",
         };
 
         if (metrics.RecommendedTier is not null)
         {
-            var capStatus = metrics.OverCapacity ? "over capacity" : "OK";
-            lines.Add($"Transport: {metrics.RecommendedTier.Name} - {metrics.RecommendedTier.ItemsPerMinute:g}/min capacity ({capStatus})");
+            var capStatus = metrics.OverCapacity ? UiText.T("Text.OverCapacity") : UiText.T("Text.Ok");
+            lines.Add($"{UiText.T("Text.Transport")}: {metrics.RecommendedTier.Name} - {metrics.RecommendedTier.ItemsPerMinute:g}/min capacity ({capStatus})");
         }
         else
         {
             var maxAvailable = PlannerUnlockService.MaxAvailableRailTier(catalog, scheme);
             lines.Add(maxAvailable is null
-                ? "Transport: no rail tier available"
-                : $"Transport: exceeds available rails - max {maxAvailable.Name} ({maxAvailable.ItemsPerMinute:g}/min)");
+                ? $"{UiText.T("Text.Transport")}: {UiText.T("Text.NoRailTierAvailable")}"
+                : $"{UiText.T("Text.Transport")}: {UiText.T("Text.ExceedsAvailableRails")} - {UiText.T("Text.Max")} {maxAvailable.Name} ({maxAvailable.ItemsPerMinute:g}/min)");
         }
 
         return string.Join("\n", lines);
@@ -175,6 +175,6 @@ public static class PlannerEdgeService
         var tier = calculator.RecommendTransportTier(
             PlannerUnlockService.AvailableRailTiers(catalog, scheme),
             requiredRate);
-        return tier is null ? "transport tier missing" : $"{tier.Name} {tier.ItemsPerMinute:g}/min";
+        return tier is null ? UiText.T("Text.TransportTierMissing") : $"{tier.Name} {tier.ItemsPerMinute:g}/min";
     }
 }

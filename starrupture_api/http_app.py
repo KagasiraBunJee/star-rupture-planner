@@ -36,34 +36,38 @@ async def list_items(request) -> Response:
         used=used,
         limit=int(params.get("limit", 100)),
         offset=int(params.get("offset", 0)),
+        lang=params.get("lang"),
     )
     return json_response(payload)
 
 
 async def get_item(request) -> Response:
     try:
-        return json_response(service.get_item_detail(request.path_params["item_id"]))
+        return json_response(service.get_item_detail(request.path_params["item_id"], lang=request.query_params.get("lang")))
     except DataNotFoundError:
         return json_response({"error": "item_not_found"}, status_code=404)
 
 
 async def list_buildings(request) -> Response:
-    return json_response(service.list_buildings())
+    return json_response(service.list_buildings(lang=request.query_params.get("lang")))
 
 
 async def list_corporations(request) -> Response:
-    return json_response(service.get_corporations())
+    return json_response(service.get_corporations(lang=request.query_params.get("lang")))
 
 
 async def get_corporation(request) -> Response:
     try:
-        return json_response(service.get_corporation_detail(request.path_params["corporation_id"]))
+        return json_response(service.get_corporation_detail(
+            request.path_params["corporation_id"],
+            lang=request.query_params.get("lang"),
+        ))
     except DataNotFoundError:
         return json_response({"error": "corporation_not_found"}, status_code=404)
 
 
 async def get_planner_catalog(request) -> Response:
-    return json_response(service.get_planner_catalog())
+    return json_response(service.get_planner_catalog(lang=request.query_params.get("lang")))
 
 
 async def get_planner_suggestions(request) -> Response:
@@ -75,14 +79,14 @@ async def get_planner_suggestions(request) -> Response:
             {"error": "direction and item_id query parameters are required"},
             status_code=400,
         )
-    payload = service.get_planner_suggestions(direction=direction, item_id=item_id)
+    payload = service.get_planner_suggestions(direction=direction, item_id=item_id, lang=params.get("lang"))
     if "error" in payload:
         return json_response(payload, status_code=400)
     return json_response(payload)
 
 
 async def get_transport_tiers(request) -> Response:
-    return json_response(service.get_transport_tiers())
+    return json_response(service.get_transport_tiers(lang=request.query_params.get("lang")))
 
 
 async def refresh_dataset(request) -> Response:

@@ -15,6 +15,7 @@ class Settings:
     data_dir: Path = BASE_DIR / "data"
     asset_dir: Path = BASE_DIR / "data" / "assets"
     db_path: Path = BASE_DIR / "data" / "starrupture.sqlite3"
+    localization_dir: Path = BASE_DIR / "data" / "localization"
     transport_tiers_path: Path = BASE_DIR / "data" / "transport_tiers.json"
     host: str = "127.0.0.1"
     port: int = 8010
