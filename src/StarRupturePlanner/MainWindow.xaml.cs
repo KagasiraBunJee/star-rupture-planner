@@ -1140,6 +1140,11 @@ public partial class MainWindow : Window
         return PlannerEdgeService.EdgeLabel(_scheme, _catalog, _settings, _calculator, edge, _productionAnalysis);
     }
 
+    private string EdgeDetail(SchemeEdge edge)
+    {
+        return PlannerEdgeService.EdgeDetail(_scheme, _catalog, _settings, _calculator, edge, _productionAnalysis);
+    }
+
     private bool IsEdgeShort(SchemeEdge edge)
     {
         return _productionAnalysis.ShortEdges.Contains(edge.Id);
@@ -1158,11 +1163,6 @@ public partial class MainWindow : Window
     private TransportTierInfo? CurrentRailTier()
     {
         return PlannerEdgeService.CurrentRailTier(_catalog, _settings);
-    }
-
-    private string RecommendedTierText(double requiredRate)
-    {
-        return PlannerEdgeService.RecommendedTierText(_catalog, _calculator, requiredRate);
     }
 
     private bool IsEdgeValid(SchemeEdge edge)
@@ -2505,7 +2505,7 @@ public partial class MainWindow : Window
             {
                 InspectorTitle.Text = "Connection";
                 ConnectionInspectorPanel.Visibility = Visibility.Visible;
-                ConnectionReadOnly.Text = EdgeLabel(_selectedEdge);
+                ConnectionReadOnly.Text = EdgeDetail(_selectedEdge);
             }
         }
         finally

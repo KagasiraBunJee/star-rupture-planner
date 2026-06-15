@@ -556,16 +556,18 @@ static void EdgeLabelIncludesTransportTier()
         },
     };
 
-    var label = PlannerEdgeService.EdgeLabel(
-        scheme,
-        catalog,
-        new AppSettings { CurrentRailTierId = "rail-1" },
-        new PlannerCalculator(),
-        scheme.Edges[0]);
+    var settings = new AppSettings { CurrentRailTierId = "rail-1" };
+    var calculator = new PlannerCalculator();
 
-    AssertTrue(label.Contains("del 30/min", StringComparison.Ordinal));
-    AssertTrue(label.Contains("req 20/min", StringComparison.Ordinal));
-    AssertTrue(label.Contains("Rail tier 1 120/min", StringComparison.Ordinal));
+    var label = PlannerEdgeService.EdgeLabel(scheme, catalog, settings, calculator, scheme.Edges[0]);
+    AssertTrue(label.Contains("Titanium Rod", StringComparison.Ordinal));
+    AssertTrue(label.Contains("30/min", StringComparison.Ordinal));
+    AssertTrue(label.Contains("meets demand", StringComparison.Ordinal));
+
+    var detail = PlannerEdgeService.EdgeDetail(scheme, catalog, settings, calculator, scheme.Edges[0]);
+    AssertTrue(detail.Contains("Item: Titanium Rod", StringComparison.Ordinal));
+    AssertTrue(detail.Contains("30 / 20 /min", StringComparison.Ordinal));
+    AssertTrue(detail.Contains("Rail tier 1 — 120/min capacity (OK)", StringComparison.Ordinal));
 }
 
 static void ApiRootDiscoveryFindsRepo()
