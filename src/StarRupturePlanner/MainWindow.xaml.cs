@@ -161,6 +161,16 @@ public partial class MainWindow : Window
 
     private void NewScheme_Click(object sender, RoutedEventArgs e) => NewScheme();
 
+    private void TopSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (TopSearchPlaceholder is not null)
+        {
+            TopSearchPlaceholder.Visibility = string.IsNullOrEmpty(TopSearchBox.Text)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+    }
+
     private void NewScheme()
     {
         _viewModel.NewScheme();
