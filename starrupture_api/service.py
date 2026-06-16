@@ -6,7 +6,6 @@ from typing import Any
 
 from .config import Settings, settings
 from .db import connection, init_db
-from .importer import Importer
 from .localization import LocalizationStore, normalize_language
 from .utils import PLACEHOLDER_RESOURCE_IDS, clean_number
 
@@ -22,19 +21,6 @@ class ResourceService:
         with connection(self.cfg.db_path) as conn:
             init_db(conn)
 
-    def refresh_dataset(self) -> dict[str, Any]:
-        summary = Importer(self.cfg).refresh(download_images=True)
-        return {
-            "run_id": summary.run_id,
-            "status": summary.status,
-            "started_at": summary.started_at,
-            "finished_at": summary.finished_at,
-            "item_count": summary.item_count,
-            "building_count": summary.building_count,
-            "recipe_count": summary.recipe_count,
-            "warnings": summary.warnings,
-        }
-
     def get_meta(self) -> dict[str, Any]:
         with connection(self.cfg.db_path) as conn:
             counts = {
@@ -45,15 +31,11 @@ class ResourceService:
                 "buildings": conn.execute("SELECT COUNT(*) FROM buildings").fetchone()[0],
                 "recipes": conn.execute("SELECT COUNT(*) FROM recipes").fetchone()[0],
             }
-            run = conn.execute(
-                "SELECT * FROM refresh_runs ORDER BY run_id DESC LIMIT 1"
-            ).fetchone()
         return {
             "dataset": "starrupture_resources",
-            "source": self.cfg.base_url,
+            "source": "local bundled dataset",
             "counts": counts,
             "languages": self.localization.languages,
-            "last_refresh": self._refresh_run_payload(run) if run else None,
         }
 
     def list_items(
@@ -749,16 +731,4 @@ class ResourceService:
             return None
         if value.startswith("http"):
             return value
-        return f"{self.cfg.base_url}{value}"
-
-    def _refresh_run_payload(self, row: sqlite3.Row) -> dict[str, Any]:
-        return {
-            "run_id": row["run_id"],
-            "status": row["status"],
-            "started_at": row["started_at"],
-            "finished_at": row["finished_at"],
-            "item_count": row["item_count"],
-            "building_count": row["building_count"],
-            "recipe_count": row["recipe_count"],
-            "warnings": json.loads(row["warnings_json"] or "[]"),
-        }
+        return f"{self.cfg.source_site_url}{value}"

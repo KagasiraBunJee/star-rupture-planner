@@ -9,6 +9,18 @@ The repository has two main parts:
 - `starrupture_api/`: Python data service that reads/writes the local SQLite dataset, exposes HTTP JSON endpoints, and mounts an MCP SSE server.
 - `src/StarRupturePlanner/`: .NET 8 WPF desktop app for building production schemes against that local API.
 
+## Screenshots
+
+![Scheme builder canvas](images/scheme_builder.PNG)
+
+Node suggestion helper:
+
+![Node suggestion list](images/node_suggestion_list.png)
+
+| Resource and machine selector | Corporation level settings |
+| --- | --- |
+| ![Resource and machine selector](images/resource_machine_selector.PNG) | ![Corporation level settings](images/corporation_level_settings.PNG) |
+
 ## Requirements
 
 - Windows for the WPF desktop app.
@@ -32,12 +44,6 @@ The Python service stores data in `data/starrupture.sqlite3` and serves cached i
 
 - `data/assets/items`
 - `data/assets/buildings`
-
-Refresh the local dataset from `starrupture.tools`:
-
-```powershell
-python -m starrupture_api.main refresh
-```
 
 Run the HTTP API and MCP SSE server:
 
@@ -67,13 +73,12 @@ Common endpoints:
 - `GET /api/planner/catalog?lang=en`
 - `GET /api/planner/suggestions?direction=input&item_id=titanium-bar&lang=en`
 - `GET /api/planner/transport-tiers?lang=en`
-- `POST /api/admin/refresh`
 - `GET /assets/items/{filename}`
 - `GET /assets/buildings/{filename}`
 
 Supported language codes are normalized by the API; current localization files live in `data/localization`.
 
-`GET /api/items/{item_id}` returns the item, unlock relationships, producers, consumers, and refresh metadata.
+`GET /api/items/{item_id}` returns the item, unlock relationships, producers, and consumers.
 
 Planner endpoints are graph-oriented for the desktop app:
 
@@ -92,7 +97,6 @@ Available MCP tools:
 
 - `search_items(query, limit = 20, language = "en")`
 - `get_item_detail(item_id, language = "en")`
-- `refresh_dataset()`
 - `get_dataset_meta()`
 - `list_corporations(language = "en")`
 - `get_corporation_detail(corporation_id, language = "en")`
