@@ -9,6 +9,16 @@ The repository has two main parts:
 - `starrupture_api/`: Python data service that reads/writes the local SQLite dataset, exposes HTTP JSON endpoints, and mounts an MCP SSE server.
 - `src/StarRupturePlanner/`: .NET 8 WPF desktop app for building production schemes against that local API.
 
+## Screenshots
+
+![Scheme builder canvas](images/scheme_builder.PNG)
+
+![Node suggestion list](images/node_suggestion_list.png)
+
+| Resource and machine selector | Corporation level settings |
+| --- | --- |
+| ![Resource and machine selector](images/resource_machine_selector.PNG) | ![Corporation level settings](images/corporation_level_settings.PNG) |
+
 ## Requirements
 
 - Windows for the WPF desktop app.
