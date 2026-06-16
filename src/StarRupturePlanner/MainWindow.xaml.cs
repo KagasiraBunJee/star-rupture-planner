@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -1906,8 +1907,46 @@ public partial class MainWindow : Window
 
         var centerX = node.X + cardWidth / 2;
         var centerY = node.Y + cardHeight / 2;
-        CanvasTranslate.X = viewportWidth / 2 - centerX * scale;
-        CanvasTranslate.Y = viewportHeight / 2 - centerY * scale;
+        AnimateCanvasTranslate(
+            viewportWidth / 2 - centerX * scale,
+            viewportHeight / 2 - centerY * scale);
+    }
+
+    // Smoothly glides the canvas from its current offset to the target.
+    private void AnimateCanvasTranslate(double targetX, double targetY)
+    {
+        var duration = new Duration(TimeSpan.FromMilliseconds(320));
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var animateX = new DoubleAnimation(targetX, duration) { EasingFunction = ease };
+        var animateY = new DoubleAnimation(targetY, duration) { EasingFunction = ease };
+
+        // On completion, drop the animation and write the concrete value so manual
+        // pan/zoom can move the canvas again afterwards.
+        animateX.Completed += (_, _) =>
+        {
+            CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            CanvasTranslate.X = targetX;
+        };
+        animateY.Completed += (_, _) =>
+        {
+            CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            CanvasTranslate.Y = targetY;
+        };
+
+        CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, animateX);
+        CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, animateY);
+    }
+
+    // Freezes any in-flight focus animation at its current position so a manual
+    // pan/zoom takes over without snapping.
+    private void StopCanvasTranslateAnimation()
+    {
+        var currentX = CanvasTranslate.X;
+        var currentY = CanvasTranslate.Y;
+        CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        CanvasTranslate.X = currentX;
+        CanvasTranslate.Y = currentY;
     }
 
     private void SurplusPills_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -2971,6 +3010,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        StopCanvasTranslateAnimation();
         _isPanning = true;
         _panStartMouse = e.GetPosition(this);
         _panStartOffset = new Point(CanvasTranslate.X, CanvasTranslate.Y);
@@ -3113,6 +3153,7 @@ public partial class MainWindow : Window
 
     private void PlannerCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
     {
+        StopCanvasTranslateAnimation();
         var delta = e.Delta > 0 ? 1.1 : 0.9;
         var zoom = Math.Clamp(CanvasScale.ScaleX * delta, 0.35, 2.4);
         CanvasScale.ScaleX = zoom;
