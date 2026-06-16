@@ -13,6 +13,22 @@
     <SolidColorBrush x:Key="MutedPanelBrush" Color="#EEF2F5"/>
     <SolidColorBrush x:Key="MutedBorderBrush" Color="#C7D1D8"/>
 
+    <!-- Canvas node cards -->
+    <SolidColorBrush x:Key="NodeCardTopBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="NodeCardBottomBrush" Color="#FFEFF3F7"/>
+    <SolidColorBrush x:Key="NodeCardBorderBrush" Color="#C7D1D8"/>
+    <SolidColorBrush x:Key="NodeCardImageBrush" Color="#EEF2F5"/>
+    <SolidColorBrush x:Key="NodeCardImageBorderBrush" Color="#C7D1D8"/>
+    <SolidColorBrush x:Key="NodeCardDividerBrush" Color="#50A9B5BD"/>
+    <SolidColorBrush x:Key="NodeCardTextBrush" Color="#1A2630"/>
+
+    <!-- Canvas comments (soft note look) -->
+    <SolidColorBrush x:Key="CommentBackgroundBrush" Color="#FFFDF3D2"/>
+    <SolidColorBrush x:Key="CommentBorderBrush" Color="#E3C879"/>
+    <SolidColorBrush x:Key="CommentTitleBackgroundBrush" Color="#FFF7E7B0"/>
+    <SolidColorBrush x:Key="CommentBodyBackgroundBrush" Color="#FFFEFAEC"/>
+    <SolidColorBrush x:Key="CommentForegroundBrush" Color="#4A3A12"/>
+
     <!-- Controls -->
     <SolidColorBrush x:Key="ControlBrush" Color="#F6F8FA"/>
     <SolidColorBrush x:Key="ControlHoverBrush" Color="#EAF2FA"/>
