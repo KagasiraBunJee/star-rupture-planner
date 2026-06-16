@@ -3166,10 +3166,21 @@ public partial class MainWindow : Window
     private void PlannerCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
     {
         StopCanvasTranslateAnimation();
-        var delta = e.Delta > 0 ? 1.1 : 0.9;
-        var zoom = Math.Clamp(CanvasScale.ScaleX * delta, 0.35, 2.4);
-        CanvasScale.ScaleX = zoom;
-        CanvasScale.ScaleY = zoom;
+        var oldZoom = CanvasScale.ScaleX;
+        var newZoom = Math.Clamp(oldZoom * (e.Delta > 0 ? 1.1 : 0.9), 0.35, 2.4);
+        if (Math.Abs(newZoom - oldZoom) < 0.0001)
+        {
+            return;
+        }
+
+        // Zoom about the cursor: keep the world point under the mouse fixed on screen.
+        // screen = world*zoom + translate, so translate' = cursor - (cursor - translate) * (newZoom/oldZoom).
+        var cursor = e.GetPosition(GridInputLayer);
+        var ratio = newZoom / oldZoom;
+        CanvasTranslate.X = cursor.X - (cursor.X - CanvasTranslate.X) * ratio;
+        CanvasTranslate.Y = cursor.Y - (cursor.Y - CanvasTranslate.Y) * ratio;
+        CanvasScale.ScaleX = newZoom;
+        CanvasScale.ScaleY = newZoom;
         UpdateZoomText();
     }
 
