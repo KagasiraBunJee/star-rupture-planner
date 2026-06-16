@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -3463,7 +3462,7 @@ public partial class MainWindow : Window
             }
 
             InspectorTitle.Text = "";
-            InspectorImage.Source = null;
+            SetImage(InspectorImage, null);
             InspectorRecipeList.SelectedItem = null;
             InspectorRecipeSearchBox.Text = "";
             TargetOutputBox.Text = "";
@@ -3834,18 +3833,18 @@ public partial class MainWindow : Window
         var absolute = _apiClient.ToAbsoluteAssetUrl(assetUrl);
         if (string.IsNullOrWhiteSpace(absolute))
         {
-            image.Source = null;
+            image.Source = BlueprintPlaceholderIcon.Image;
             return;
         }
 
         try
         {
-            image.Source = new BitmapImage(new Uri(absolute));
+            image.Source = BlueprintPlaceholderIcon.FromUrl(absolute);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[MainWindow.SetImage] Failed to load image '{absolute}': {ex.Message}");
-            image.Source = null;
+            image.Source = BlueprintPlaceholderIcon.Image;
         }
     }
 
