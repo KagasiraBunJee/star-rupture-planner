@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -119,7 +120,7 @@ public partial class MainWindow : Window
         _canvasViewModel = new PlannerCanvasViewModel(_calculator, _layoutService);
         _inspectorViewModel = new InspectorViewModel(_calculator);
         DataContext = _viewModel;
-        PlannerCanvas.GridSize = _layoutService.GridSize;
+        GridInputLayer.GridSize = _layoutService.GridSize;
         _settings = _viewModel.Settings;
         _scheme = _viewModel.Scheme;
         ApplySettings();
@@ -1283,7 +1284,9 @@ public partial class MainWindow : Window
 
     private FrameworkElement? CreateNodeBadges(SchemeNode node)
     {
-        if (!node.OnlyOutput && !node.IsSchemeOutput)
+        var surplus = NodeSurplus(node);
+        var hasSurplus = surplus > 0.0001;
+        if (!node.OnlyOutput && !node.IsSchemeOutput && !hasSurplus)
         {
             return null;
         }
@@ -1304,7 +1307,44 @@ public partial class MainWindow : Window
             panel.Children.Add(CreateNodeBadge(UiText.T("Text.SchemeOutput"), SignalGreenColor));
         }
 
+        if (hasSurplus)
+        {
+            var amber = ((SolidColorBrush)Application.Current.FindResource("ReactorOrangeBrush")).Color;
+            panel.Children.Add(CreateNodeBadge("▲ " + UiText.Format("Text.Surplus", surplus), amber));
+        }
+
         return panel;
+    }
+
+    // Output the node produces beyond what its downstream consumers actually pull
+    // (0 = fully consumed). Uses the recipe's primary output item.
+    private double NodeSurplus(SchemeNode node)
+    {
+        var recipe = RecipeForNode(node);
+        if (recipe is null)
+        {
+            return 0;
+        }
+
+        var output = NodeOutputRate(node, recipe);
+        if (output <= 0.0001)
+        {
+            return 0;
+        }
+
+        var outgoing = _scheme.Edges
+            .Where(edge => string.Equals(edge.SourceNodeId, node.Id, StringComparison.Ordinal)
+                && string.Equals(edge.SourceItemId, recipe.Output.ItemId, StringComparison.Ordinal))
+            .ToList();
+
+        // Unconnected output isn't surplus — it just feeds nothing.
+        if (outgoing.Count == 0)
+        {
+            return 0;
+        }
+
+        var delivered = outgoing.Sum(edge => _productionAnalysis.EdgeDeliveries.GetValueOrDefault(edge.Id));
+        return Math.Max(0, output - delivered);
     }
 
     private FrameworkElement CreateNodeBadge(string text, Color accent)
@@ -1769,7 +1809,199 @@ public partial class MainWindow : Window
 
         _productionAnalysis = ProductionAnalysisService.Analyze(_scheme, _catalog, _calculator);
         UpdateProductionAlerts();
+        UpdateSurplusPills();
         RefreshToolboxUnlocksIfNeeded();
+    }
+
+    private void UpdateSurplusPills()
+    {
+        if (SurplusPills is null)
+        {
+            return;
+        }
+
+        SurplusPills.Children.Clear();
+        var any = false;
+        foreach (var node in _scheme.Nodes)
+        {
+            var surplus = NodeSurplus(node);
+            if (surplus <= 0.0001)
+            {
+                continue;
+            }
+
+            SurplusPills.Children.Add(CreateSurplusPill(node, surplus));
+            any = true;
+        }
+
+        SurplusPillsBar.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private FrameworkElement CreateSurplusPill(SchemeNode node, double surplus)
+    {
+        var amber = ((SolidColorBrush)Application.Current.FindResource("ReactorOrangeBrush")).Color;
+        var name = RecipeForNode(node)?.BuildingName ?? BuildingForNode(node)?.Name ?? UiText.T("Text.UnselectedMachine");
+
+        var content = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        content.Children.Add(new TextBlock
+        {
+            Text = name,
+            Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = $"  +{surplus:g}/min",
+            Foreground = new SolidColorBrush(amber),
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        var pill = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(34, amber.R, amber.G, amber.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, amber.R, amber.G, amber.B)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(10, 4, 10, 4),
+            Margin = new Thickness(0, 0, 8, 0),
+            Cursor = Cursors.Hand,
+            Tag = node,
+            Child = content,
+            ToolTip = UiText.Format("Text.Surplus", surplus),
+        };
+        pill.MouseLeftButtonUp += SurplusPill_MouseLeftButtonUp;
+        return pill;
+    }
+
+    private void SurplusPill_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.Tag is SchemeNode node)
+        {
+            SelectSingleNode(node);
+            UpdateInspector();
+            UpdateSelectionVisuals();
+            FocusNode(node);
+            e.Handled = true;
+        }
+    }
+
+    // Centers the canvas viewport on the given node at the current zoom.
+    private void FocusNode(SchemeNode node)
+    {
+        var viewportWidth = CanvasFrame.ActualWidth;
+        var viewportHeight = CanvasFrame.ActualHeight;
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return;
+        }
+
+        double cardWidth = 470;
+        double cardHeight = 130;
+        if (_nodeViews.TryGetValue(node.Id, out var view))
+        {
+            if (view.ActualWidth > 0)
+            {
+                cardWidth = view.ActualWidth;
+            }
+
+            if (view.ActualHeight > 0)
+            {
+                cardHeight = view.ActualHeight;
+            }
+        }
+
+        // Focus at 100% zoom with the node centered in the viewport (screen = world*1 + translate).
+        var centerX = node.X + cardWidth / 2;
+        var centerY = node.Y + cardHeight / 2;
+        AnimateCanvasView(1.0, viewportWidth / 2 - centerX, viewportHeight / 2 - centerY);
+    }
+
+    private void ResetZoom_Click(object sender, RoutedEventArgs e) => ResetZoom();
+
+    // Animate back to 100% zoom, keeping whatever is currently at the viewport center centered.
+    private void ResetZoom()
+    {
+        var viewportWidth = CanvasFrame.ActualWidth;
+        var viewportHeight = CanvasFrame.ActualHeight;
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return;
+        }
+
+        var scale = CanvasScale.ScaleX <= 0 ? 1 : CanvasScale.ScaleX;
+        var worldCenterX = (viewportWidth / 2 - CanvasTranslate.X) / scale;
+        var worldCenterY = (viewportHeight / 2 - CanvasTranslate.Y) / scale;
+        AnimateCanvasView(1.0, viewportWidth / 2 - worldCenterX, viewportHeight / 2 - worldCenterY);
+    }
+
+    // Smoothly glides the canvas zoom and offset to the targets.
+    private void AnimateCanvasView(double targetScale, double targetX, double targetY)
+    {
+        var duration = new Duration(TimeSpan.FromMilliseconds(320));
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var animateScaleX = new DoubleAnimation(targetScale, duration) { EasingFunction = ease };
+        var animateScaleY = new DoubleAnimation(targetScale, duration) { EasingFunction = ease };
+        var animateX = new DoubleAnimation(targetX, duration) { EasingFunction = ease };
+        var animateY = new DoubleAnimation(targetY, duration) { EasingFunction = ease };
+
+        // On completion, drop each animation and write the concrete value so manual
+        // pan/zoom can take over again afterwards.
+        animateScaleX.Completed += (_, _) =>
+        {
+            CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            CanvasScale.ScaleX = targetScale;
+            UpdateZoomText();
+        };
+        animateScaleY.Completed += (_, _) =>
+        {
+            CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            CanvasScale.ScaleY = targetScale;
+        };
+        animateX.Completed += (_, _) =>
+        {
+            CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            CanvasTranslate.X = targetX;
+        };
+        animateY.Completed += (_, _) =>
+        {
+            CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            CanvasTranslate.Y = targetY;
+        };
+
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, animateScaleX);
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, animateScaleY);
+        CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, animateX);
+        CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, animateY);
+    }
+
+    // Freezes any in-flight focus/zoom animation at its current state so a manual
+    // pan/zoom takes over without snapping.
+    private void StopCanvasTranslateAnimation()
+    {
+        var scaleX = CanvasScale.ScaleX;
+        var scaleY = CanvasScale.ScaleY;
+        var currentX = CanvasTranslate.X;
+        var currentY = CanvasTranslate.Y;
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        CanvasScale.ScaleX = scaleX;
+        CanvasScale.ScaleY = scaleY;
+        CanvasTranslate.X = currentX;
+        CanvasTranslate.Y = currentY;
+        UpdateZoomText();
+    }
+
+    private void SurplusPills_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer scroller)
+        {
+            scroller.ScrollToHorizontalOffset(scroller.HorizontalOffset - e.Delta);
+            e.Handled = true;
+        }
     }
 
     private void RefreshToolboxUnlocksIfNeeded()
@@ -2781,19 +3013,19 @@ public partial class MainWindow : Window
         };
         PlannerCanvas.Children.Insert(0, path);
         _connectionDrag = new ConnectionDrag(port, path, start);
-        Mouse.Capture(PlannerCanvas);
+        Mouse.Capture(CanvasViewport);
         e.Handled = true;
     }
 
     private void PlannerCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource == PlannerCanvas)
+        if (e.OriginalSource == GridInputLayer)
         {
             ClearSelection();
             _isSelecting = true;
             _selectionStart = e.GetPosition(PlannerCanvas);
             ShowSelectionRectangle(_selectionStart, _selectionStart);
-            PlannerCanvas.CaptureMouse();
+            CanvasViewport.CaptureMouse();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -2802,7 +3034,7 @@ public partial class MainWindow : Window
 
     private void PlannerCanvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource != PlannerCanvas || _connectionDrag is not null || _isSelecting || _isPanning)
+        if (e.OriginalSource != GridInputLayer || _connectionDrag is not null || _isSelecting || _isPanning)
         {
             return;
         }
@@ -2811,7 +3043,7 @@ public partial class MainWindow : Window
         _isCreatingComment = true;
         _commentStart = e.GetPosition(PlannerCanvas);
         ShowSelectionRectangle(_commentStart, _commentStart);
-        PlannerCanvas.CaptureMouse();
+        CanvasViewport.CaptureMouse();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -2824,11 +3056,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        StopCanvasTranslateAnimation();
         _isPanning = true;
         _panStartMouse = e.GetPosition(this);
         _panStartOffset = new Point(CanvasTranslate.X, CanvasTranslate.Y);
-        PlannerCanvas.Cursor = Cursors.SizeAll;
-        PlannerCanvas.CaptureMouse();
+        CanvasViewport.Cursor = Cursors.SizeAll;
+        CanvasViewport.CaptureMouse();
         e.Handled = true;
     }
 
@@ -2879,7 +3112,11 @@ public partial class MainWindow : Window
             Mouse.Capture(null);
             PlannerCanvas.Children.Remove(drag.Path);
 
-            var targetPort = FindAncestor<FrameworkElement>(e.OriginalSource as DependencyObject)?.Tag as PortReference;
+            // Capture is on the input layer, so e.OriginalSource isn't the dropped port.
+            // Hit-test the content layer at the drop point to find the target port.
+            var dropPoint = e.GetPosition(PlannerCanvas);
+            var hit = VisualTreeHelper.HitTest(PlannerCanvas, dropPoint)?.VisualHit as DependencyObject;
+            var targetPort = FindAncestor<FrameworkElement>(hit)?.Tag as PortReference;
             if (targetPort is not null && TryCreateEdge(drag.Port, targetPort))
             {
                 RenderCanvas();
@@ -2896,7 +3133,7 @@ public partial class MainWindow : Window
             SelectInsideRectangle(new Rect(_selectionStart, e.GetPosition(PlannerCanvas)));
             HideSelectionRectangle();
             _isSelecting = false;
-            PlannerCanvas.ReleaseMouseCapture();
+            CanvasViewport.ReleaseMouseCapture();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -2919,7 +3156,7 @@ public partial class MainWindow : Window
         var rect = new Rect(_commentStart, e.GetPosition(PlannerCanvas));
         HideSelectionRectangle();
         _isCreatingComment = false;
-        PlannerCanvas.ReleaseMouseCapture();
+        CanvasViewport.ReleaseMouseCapture();
 
         if (rect.Width >= 80 && rect.Height >= 50)
         {
@@ -2957,19 +3194,31 @@ public partial class MainWindow : Window
     private void EndViewportPan()
     {
         _isPanning = false;
-        PlannerCanvas.Cursor = Cursors.Arrow;
-        if (PlannerCanvas.IsMouseCaptured)
+        CanvasViewport.Cursor = Cursors.Arrow;
+        if (CanvasViewport.IsMouseCaptured)
         {
-            PlannerCanvas.ReleaseMouseCapture();
+            CanvasViewport.ReleaseMouseCapture();
         }
     }
 
     private void PlannerCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
     {
-        var delta = e.Delta > 0 ? 1.1 : 0.9;
-        var zoom = Math.Clamp(CanvasScale.ScaleX * delta, 0.35, 2.4);
-        CanvasScale.ScaleX = zoom;
-        CanvasScale.ScaleY = zoom;
+        StopCanvasTranslateAnimation();
+        var oldZoom = CanvasScale.ScaleX;
+        var newZoom = Math.Clamp(oldZoom * (e.Delta > 0 ? 1.1 : 0.9), 0.35, 2.4);
+        if (Math.Abs(newZoom - oldZoom) < 0.0001)
+        {
+            return;
+        }
+
+        // Zoom about the cursor: keep the world point under the mouse fixed on screen.
+        // screen = world*zoom + translate, so translate' = cursor - (cursor - translate) * (newZoom/oldZoom).
+        var cursor = e.GetPosition(GridInputLayer);
+        var ratio = newZoom / oldZoom;
+        CanvasTranslate.X = cursor.X - (cursor.X - CanvasTranslate.X) * ratio;
+        CanvasTranslate.Y = cursor.Y - (cursor.Y - CanvasTranslate.Y) * ratio;
+        CanvasScale.ScaleX = newZoom;
+        CanvasScale.ScaleY = newZoom;
         UpdateZoomText();
     }
 

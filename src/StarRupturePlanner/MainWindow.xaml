@@ -185,32 +185,45 @@
 
             <Grid x:Name="CenterPanel" Grid.Column="1" Margin="10,0" Background="{DynamicResource CenterBackgroundBrush}">
                 <Border x:Name="CanvasFrame" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
-                    <Grid ClipToBounds="True">
-                        <controls:DottedGridCanvas x:Name="PlannerCanvas"
-                                                    Width="5000"
-                                                    Height="3500"
+                    <!-- Canvas-level input is handled here, the common ancestor of the grid and the
+                         content layer, so pan/zoom/select work whether the cursor is over empty grid
+                         or over a node. Node/edge clicks mark the event handled so they take priority. -->
+                    <Grid x:Name="CanvasViewport" ClipToBounds="True"
+                          AllowDrop="True"
+                          DragOver="PlannerCanvas_DragOver"
+                          Drop="PlannerCanvas_Drop"
+                          MouseDown="PlannerCanvas_MouseDown"
+                          MouseLeftButtonDown="PlannerCanvas_MouseLeftButtonDown"
+                          MouseLeftButtonUp="PlannerCanvas_MouseLeftButtonUp"
+                          MouseMove="PlannerCanvas_MouseMove"
+                          MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
+                          MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
+                          MouseUp="PlannerCanvas_MouseUp"
+                          MouseWheel="PlannerCanvas_MouseWheel">
+                        <!-- Screen-space infinite grid (not transformed). Empty-area clicks land on
+                             this layer (it provides the canvas backdrop); events bubble to the viewport. -->
+                        <controls:DottedGridCanvas x:Name="GridInputLayer"
                                                     GridSize="24"
                                                     Background="{DynamicResource CanvasBrush}"
                                                     DotBrush="{DynamicResource CanvasDotBrush}"
                                                     MajorDotBrush="{DynamicResource CanvasMajorDotBrush}"
-                                                    AllowDrop="True"
-                                                    DragOver="PlannerCanvas_DragOver"
-                                                    Drop="PlannerCanvas_Drop"
-                                                    MouseDown="PlannerCanvas_MouseDown"
-                                                    MouseLeftButtonDown="PlannerCanvas_MouseLeftButtonDown"
-                                                    MouseLeftButtonUp="PlannerCanvas_MouseLeftButtonUp"
-                                                    MouseMove="PlannerCanvas_MouseMove"
-                                                    MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
-                                                    MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
-                                                    MouseUp="PlannerCanvas_MouseUp"
-                                                    MouseWheel="PlannerCanvas_MouseWheel">
-                            <controls:DottedGridCanvas.RenderTransform>
+                                                    OffsetX="{Binding X, ElementName=CanvasTranslate}"
+                                                    OffsetY="{Binding Y, ElementName=CanvasTranslate}"
+                                                    Zoom="{Binding ScaleX, ElementName=CanvasScale}"/>
+
+                        <!-- Transformed content layer (transparent so empty areas fall through to the
+                             grid/input layer). Nodes may live at any coordinate, including negative. -->
+                        <Canvas x:Name="PlannerCanvas"
+                                Width="200000"
+                                Height="200000"
+                                Background="{x:Null}">
+                            <Canvas.RenderTransform>
                                 <TransformGroup>
                                     <ScaleTransform x:Name="CanvasScale" ScaleX="1" ScaleY="1"/>
                                     <TranslateTransform x:Name="CanvasTranslate" X="0" Y="0"/>
                                 </TransformGroup>
-                            </controls:DottedGridCanvas.RenderTransform>
-                        </controls:DottedGridCanvas>
+                            </Canvas.RenderTransform>
+                        </Canvas>
                         <Popup x:Name="SuggestionPopup"
                                AllowsTransparency="True"
                                Placement="Relative"
@@ -237,6 +250,34 @@
                                 </DockPanel>
                             </Border>
                         </Popup>
+
+                        <Border x:Name="SurplusPillsBar"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center"
+                                Margin="0,12,0,0"
+                                MaxWidth="900"
+                                Panel.ZIndex="20"
+                                Background="{DynamicResource PanelBrush}"
+                                BorderBrush="{DynamicResource GraphiteLineBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="10,6"
+                                Visibility="Collapsed">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left"
+                                           Text="{DynamicResource Ui.Label.Surplus}"
+                                           Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0"/>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              PreviewMouseWheel="SurplusPills_PreviewMouseWheel">
+                                    <StackPanel x:Name="SurplusPills" Orientation="Horizontal"/>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
@@ -436,6 +477,7 @@
                         <TextBlock Text="{DynamicResource Ui.Metric.Canvas}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="ZoomText" Text="100%" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
+                    <Button Content="⟲" FontSize="15" Width="34" MinHeight="30" Padding="0" Margin="6,0,0,0" VerticalAlignment="Center" Click="ResetZoom_Click" ToolTip="Reset zoom to 100%"/>
                 </StackPanel>
             </Grid>
         </Border>

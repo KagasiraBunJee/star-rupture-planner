@@ -68,6 +68,7 @@ public static class UiText
         ["Text.Requires"] = "Requires: {0}",
         ["Text.OnlyOutput"] = "Only output",
         ["Text.SchemeOutput"] = "Scheme output",
+        ["Text.Surplus"] = "Surplus +{0:g}/min",
         ["Text.NoSchemeOutputsMarked"] = "No scheme outputs marked",
         ["Text.Comment"] = "Comment",
         ["Text.DeleteScheme"] = "Delete scheme",

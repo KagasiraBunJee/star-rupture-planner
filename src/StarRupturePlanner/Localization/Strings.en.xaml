@@ -124,6 +124,8 @@
     <sys:String x:Key="Ui.Text.Requires">Requires: {0}</sys:String>
     <sys:String x:Key="Ui.Text.OnlyOutput">Only output</sys:String>
     <sys:String x:Key="Ui.Text.SchemeOutput">Scheme output</sys:String>
+    <sys:String x:Key="Ui.Text.Surplus">Surplus +{0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Label.Surplus">Surplus</sys:String>
     <sys:String x:Key="Ui.Text.NoSchemeOutputsMarked">No scheme outputs marked</sys:String>
     <sys:String x:Key="Ui.Text.Comment">Comment</sys:String>
     <sys:String x:Key="Ui.Text.DeleteScheme">Delete scheme</sys:String>
