@@ -2975,7 +2975,7 @@ public partial class MainWindow : Window
         };
         PlannerCanvas.Children.Insert(0, path);
         _connectionDrag = new ConnectionDrag(port, path, start);
-        Mouse.Capture(GridInputLayer);
+        Mouse.Capture(CanvasViewport);
         e.Handled = true;
     }
 
@@ -2987,7 +2987,7 @@ public partial class MainWindow : Window
             _isSelecting = true;
             _selectionStart = e.GetPosition(PlannerCanvas);
             ShowSelectionRectangle(_selectionStart, _selectionStart);
-            GridInputLayer.CaptureMouse();
+            CanvasViewport.CaptureMouse();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -3005,7 +3005,7 @@ public partial class MainWindow : Window
         _isCreatingComment = true;
         _commentStart = e.GetPosition(PlannerCanvas);
         ShowSelectionRectangle(_commentStart, _commentStart);
-        GridInputLayer.CaptureMouse();
+        CanvasViewport.CaptureMouse();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -3022,8 +3022,8 @@ public partial class MainWindow : Window
         _isPanning = true;
         _panStartMouse = e.GetPosition(this);
         _panStartOffset = new Point(CanvasTranslate.X, CanvasTranslate.Y);
-        GridInputLayer.Cursor = Cursors.SizeAll;
-        GridInputLayer.CaptureMouse();
+        CanvasViewport.Cursor = Cursors.SizeAll;
+        CanvasViewport.CaptureMouse();
         e.Handled = true;
     }
 
@@ -3095,7 +3095,7 @@ public partial class MainWindow : Window
             SelectInsideRectangle(new Rect(_selectionStart, e.GetPosition(PlannerCanvas)));
             HideSelectionRectangle();
             _isSelecting = false;
-            GridInputLayer.ReleaseMouseCapture();
+            CanvasViewport.ReleaseMouseCapture();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -3118,7 +3118,7 @@ public partial class MainWindow : Window
         var rect = new Rect(_commentStart, e.GetPosition(PlannerCanvas));
         HideSelectionRectangle();
         _isCreatingComment = false;
-        GridInputLayer.ReleaseMouseCapture();
+        CanvasViewport.ReleaseMouseCapture();
 
         if (rect.Width >= 80 && rect.Height >= 50)
         {
@@ -3156,10 +3156,10 @@ public partial class MainWindow : Window
     private void EndViewportPan()
     {
         _isPanning = false;
-        GridInputLayer.Cursor = Cursors.Arrow;
-        if (GridInputLayer.IsMouseCaptured)
+        CanvasViewport.Cursor = Cursors.Arrow;
+        if (CanvasViewport.IsMouseCaptured)
         {
-            GridInputLayer.ReleaseMouseCapture();
+            CanvasViewport.ReleaseMouseCapture();
         }
     }
 

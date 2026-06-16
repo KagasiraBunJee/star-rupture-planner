@@ -185,9 +185,23 @@
 
             <Grid x:Name="CenterPanel" Grid.Column="1" Margin="10,0" Background="{DynamicResource CenterBackgroundBrush}">
                 <Border x:Name="CanvasFrame" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
-                    <Grid x:Name="CanvasViewport" ClipToBounds="True">
-                        <!-- Screen-space infinite grid + input surface (not transformed). Empty-area
-                             clicks land here; node/edge clicks are handled on the content layer above. -->
+                    <!-- Canvas-level input is handled here, the common ancestor of the grid and the
+                         content layer, so pan/zoom/select work whether the cursor is over empty grid
+                         or over a node. Node/edge clicks mark the event handled so they take priority. -->
+                    <Grid x:Name="CanvasViewport" ClipToBounds="True"
+                          AllowDrop="True"
+                          DragOver="PlannerCanvas_DragOver"
+                          Drop="PlannerCanvas_Drop"
+                          MouseDown="PlannerCanvas_MouseDown"
+                          MouseLeftButtonDown="PlannerCanvas_MouseLeftButtonDown"
+                          MouseLeftButtonUp="PlannerCanvas_MouseLeftButtonUp"
+                          MouseMove="PlannerCanvas_MouseMove"
+                          MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
+                          MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
+                          MouseUp="PlannerCanvas_MouseUp"
+                          MouseWheel="PlannerCanvas_MouseWheel">
+                        <!-- Screen-space infinite grid (not transformed). Empty-area clicks land on
+                             this layer (it provides the canvas backdrop); events bubble to the viewport. -->
                         <controls:DottedGridCanvas x:Name="GridInputLayer"
                                                     GridSize="24"
                                                     Background="{DynamicResource CanvasBrush}"
@@ -195,18 +209,7 @@
                                                     MajorDotBrush="{DynamicResource CanvasMajorDotBrush}"
                                                     OffsetX="{Binding X, ElementName=CanvasTranslate}"
                                                     OffsetY="{Binding Y, ElementName=CanvasTranslate}"
-                                                    Zoom="{Binding ScaleX, ElementName=CanvasScale}"
-                                                    AllowDrop="True"
-                                                    DragOver="PlannerCanvas_DragOver"
-                                                    Drop="PlannerCanvas_Drop"
-                                                    MouseDown="PlannerCanvas_MouseDown"
-                                                    MouseLeftButtonDown="PlannerCanvas_MouseLeftButtonDown"
-                                                    MouseLeftButtonUp="PlannerCanvas_MouseLeftButtonUp"
-                                                    MouseMove="PlannerCanvas_MouseMove"
-                                                    MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
-                                                    MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
-                                                    MouseUp="PlannerCanvas_MouseUp"
-                                                    MouseWheel="PlannerCanvas_MouseWheel"/>
+                                                    Zoom="{Binding ScaleX, ElementName=CanvasScale}"/>
 
                         <!-- Transformed content layer (transparent so empty areas fall through to the
                              grid/input layer). Nodes may live at any coordinate, including negative. -->
