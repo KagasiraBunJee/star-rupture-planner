@@ -120,7 +120,7 @@ public partial class MainWindow : Window
         _canvasViewModel = new PlannerCanvasViewModel(_calculator, _layoutService);
         _inspectorViewModel = new InspectorViewModel(_calculator);
         DataContext = _viewModel;
-        PlannerCanvas.GridSize = _layoutService.GridSize;
+        GridInputLayer.GridSize = _layoutService.GridSize;
         _settings = _viewModel.Settings;
         _scheme = _viewModel.Scheme;
         ApplySettings();
@@ -1897,7 +1897,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        var scale = CanvasScale.ScaleX;
         double cardWidth = 470;
         double cardHeight = 130;
         if (_nodeViews.TryGetValue(node.Id, out var view))
@@ -1913,23 +1912,53 @@ public partial class MainWindow : Window
             }
         }
 
+        // Focus at 100% zoom with the node centered in the viewport (screen = world*1 + translate).
         var centerX = node.X + cardWidth / 2;
         var centerY = node.Y + cardHeight / 2;
-        AnimateCanvasTranslate(
-            viewportWidth / 2 - centerX * scale,
-            viewportHeight / 2 - centerY * scale);
+        AnimateCanvasView(1.0, viewportWidth / 2 - centerX, viewportHeight / 2 - centerY);
     }
 
-    // Smoothly glides the canvas from its current offset to the target.
-    private void AnimateCanvasTranslate(double targetX, double targetY)
+    private void ResetZoom_Click(object sender, RoutedEventArgs e) => ResetZoom();
+
+    // Animate back to 100% zoom, keeping whatever is currently at the viewport center centered.
+    private void ResetZoom()
+    {
+        var viewportWidth = CanvasFrame.ActualWidth;
+        var viewportHeight = CanvasFrame.ActualHeight;
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return;
+        }
+
+        var scale = CanvasScale.ScaleX <= 0 ? 1 : CanvasScale.ScaleX;
+        var worldCenterX = (viewportWidth / 2 - CanvasTranslate.X) / scale;
+        var worldCenterY = (viewportHeight / 2 - CanvasTranslate.Y) / scale;
+        AnimateCanvasView(1.0, viewportWidth / 2 - worldCenterX, viewportHeight / 2 - worldCenterY);
+    }
+
+    // Smoothly glides the canvas zoom and offset to the targets.
+    private void AnimateCanvasView(double targetScale, double targetX, double targetY)
     {
         var duration = new Duration(TimeSpan.FromMilliseconds(320));
         var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var animateScaleX = new DoubleAnimation(targetScale, duration) { EasingFunction = ease };
+        var animateScaleY = new DoubleAnimation(targetScale, duration) { EasingFunction = ease };
         var animateX = new DoubleAnimation(targetX, duration) { EasingFunction = ease };
         var animateY = new DoubleAnimation(targetY, duration) { EasingFunction = ease };
 
-        // On completion, drop the animation and write the concrete value so manual
-        // pan/zoom can move the canvas again afterwards.
+        // On completion, drop each animation and write the concrete value so manual
+        // pan/zoom can take over again afterwards.
+        animateScaleX.Completed += (_, _) =>
+        {
+            CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            CanvasScale.ScaleX = targetScale;
+            UpdateZoomText();
+        };
+        animateScaleY.Completed += (_, _) =>
+        {
+            CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            CanvasScale.ScaleY = targetScale;
+        };
         animateX.Completed += (_, _) =>
         {
             CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
@@ -1941,20 +1970,29 @@ public partial class MainWindow : Window
             CanvasTranslate.Y = targetY;
         };
 
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, animateScaleX);
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, animateScaleY);
         CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, animateX);
         CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, animateY);
     }
 
-    // Freezes any in-flight focus animation at its current position so a manual
+    // Freezes any in-flight focus/zoom animation at its current state so a manual
     // pan/zoom takes over without snapping.
     private void StopCanvasTranslateAnimation()
     {
+        var scaleX = CanvasScale.ScaleX;
+        var scaleY = CanvasScale.ScaleY;
         var currentX = CanvasTranslate.X;
         var currentY = CanvasTranslate.Y;
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
         CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        CanvasScale.ScaleX = scaleX;
+        CanvasScale.ScaleY = scaleY;
         CanvasTranslate.X = currentX;
         CanvasTranslate.Y = currentY;
+        UpdateZoomText();
     }
 
     private void SurplusPills_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -2975,19 +3013,19 @@ public partial class MainWindow : Window
         };
         PlannerCanvas.Children.Insert(0, path);
         _connectionDrag = new ConnectionDrag(port, path, start);
-        Mouse.Capture(PlannerCanvas);
+        Mouse.Capture(CanvasViewport);
         e.Handled = true;
     }
 
     private void PlannerCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource == PlannerCanvas)
+        if (e.OriginalSource == GridInputLayer)
         {
             ClearSelection();
             _isSelecting = true;
             _selectionStart = e.GetPosition(PlannerCanvas);
             ShowSelectionRectangle(_selectionStart, _selectionStart);
-            PlannerCanvas.CaptureMouse();
+            CanvasViewport.CaptureMouse();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -2996,7 +3034,7 @@ public partial class MainWindow : Window
 
     private void PlannerCanvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource != PlannerCanvas || _connectionDrag is not null || _isSelecting || _isPanning)
+        if (e.OriginalSource != GridInputLayer || _connectionDrag is not null || _isSelecting || _isPanning)
         {
             return;
         }
@@ -3005,7 +3043,7 @@ public partial class MainWindow : Window
         _isCreatingComment = true;
         _commentStart = e.GetPosition(PlannerCanvas);
         ShowSelectionRectangle(_commentStart, _commentStart);
-        PlannerCanvas.CaptureMouse();
+        CanvasViewport.CaptureMouse();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -3022,8 +3060,8 @@ public partial class MainWindow : Window
         _isPanning = true;
         _panStartMouse = e.GetPosition(this);
         _panStartOffset = new Point(CanvasTranslate.X, CanvasTranslate.Y);
-        PlannerCanvas.Cursor = Cursors.SizeAll;
-        PlannerCanvas.CaptureMouse();
+        CanvasViewport.Cursor = Cursors.SizeAll;
+        CanvasViewport.CaptureMouse();
         e.Handled = true;
     }
 
@@ -3074,7 +3112,11 @@ public partial class MainWindow : Window
             Mouse.Capture(null);
             PlannerCanvas.Children.Remove(drag.Path);
 
-            var targetPort = FindAncestor<FrameworkElement>(e.OriginalSource as DependencyObject)?.Tag as PortReference;
+            // Capture is on the input layer, so e.OriginalSource isn't the dropped port.
+            // Hit-test the content layer at the drop point to find the target port.
+            var dropPoint = e.GetPosition(PlannerCanvas);
+            var hit = VisualTreeHelper.HitTest(PlannerCanvas, dropPoint)?.VisualHit as DependencyObject;
+            var targetPort = FindAncestor<FrameworkElement>(hit)?.Tag as PortReference;
             if (targetPort is not null && TryCreateEdge(drag.Port, targetPort))
             {
                 RenderCanvas();
@@ -3091,7 +3133,7 @@ public partial class MainWindow : Window
             SelectInsideRectangle(new Rect(_selectionStart, e.GetPosition(PlannerCanvas)));
             HideSelectionRectangle();
             _isSelecting = false;
-            PlannerCanvas.ReleaseMouseCapture();
+            CanvasViewport.ReleaseMouseCapture();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -3114,7 +3156,7 @@ public partial class MainWindow : Window
         var rect = new Rect(_commentStart, e.GetPosition(PlannerCanvas));
         HideSelectionRectangle();
         _isCreatingComment = false;
-        PlannerCanvas.ReleaseMouseCapture();
+        CanvasViewport.ReleaseMouseCapture();
 
         if (rect.Width >= 80 && rect.Height >= 50)
         {
@@ -3152,20 +3194,31 @@ public partial class MainWindow : Window
     private void EndViewportPan()
     {
         _isPanning = false;
-        PlannerCanvas.Cursor = Cursors.Arrow;
-        if (PlannerCanvas.IsMouseCaptured)
+        CanvasViewport.Cursor = Cursors.Arrow;
+        if (CanvasViewport.IsMouseCaptured)
         {
-            PlannerCanvas.ReleaseMouseCapture();
+            CanvasViewport.ReleaseMouseCapture();
         }
     }
 
     private void PlannerCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
     {
         StopCanvasTranslateAnimation();
-        var delta = e.Delta > 0 ? 1.1 : 0.9;
-        var zoom = Math.Clamp(CanvasScale.ScaleX * delta, 0.35, 2.4);
-        CanvasScale.ScaleX = zoom;
-        CanvasScale.ScaleY = zoom;
+        var oldZoom = CanvasScale.ScaleX;
+        var newZoom = Math.Clamp(oldZoom * (e.Delta > 0 ? 1.1 : 0.9), 0.35, 2.4);
+        if (Math.Abs(newZoom - oldZoom) < 0.0001)
+        {
+            return;
+        }
+
+        // Zoom about the cursor: keep the world point under the mouse fixed on screen.
+        // screen = world*zoom + translate, so translate' = cursor - (cursor - translate) * (newZoom/oldZoom).
+        var cursor = e.GetPosition(GridInputLayer);
+        var ratio = newZoom / oldZoom;
+        CanvasTranslate.X = cursor.X - (cursor.X - CanvasTranslate.X) * ratio;
+        CanvasTranslate.Y = cursor.Y - (cursor.Y - CanvasTranslate.Y) * ratio;
+        CanvasScale.ScaleX = newZoom;
+        CanvasScale.ScaleY = newZoom;
         UpdateZoomText();
     }
 
