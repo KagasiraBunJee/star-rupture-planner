@@ -1332,10 +1332,18 @@ public partial class MainWindow : Window
             return 0;
         }
 
-        var delivered = _scheme.Edges
+        var outgoing = _scheme.Edges
             .Where(edge => string.Equals(edge.SourceNodeId, node.Id, StringComparison.Ordinal)
                 && string.Equals(edge.SourceItemId, recipe.Output.ItemId, StringComparison.Ordinal))
-            .Sum(edge => _productionAnalysis.EdgeDeliveries.GetValueOrDefault(edge.Id));
+            .ToList();
+
+        // Unconnected output isn't surplus — it just feeds nothing.
+        if (outgoing.Count == 0)
+        {
+            return 0;
+        }
+
+        var delivered = outgoing.Sum(edge => _productionAnalysis.EdgeDeliveries.GetValueOrDefault(edge.Id));
         return Math.Max(0, output - delivered);
     }
 
