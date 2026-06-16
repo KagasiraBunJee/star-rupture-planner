@@ -1800,7 +1800,123 @@ public partial class MainWindow : Window
 
         _productionAnalysis = ProductionAnalysisService.Analyze(_scheme, _catalog, _calculator);
         UpdateProductionAlerts();
+        UpdateSurplusPills();
         RefreshToolboxUnlocksIfNeeded();
+    }
+
+    private void UpdateSurplusPills()
+    {
+        if (SurplusPills is null)
+        {
+            return;
+        }
+
+        SurplusPills.Children.Clear();
+        var any = false;
+        foreach (var node in _scheme.Nodes)
+        {
+            var surplus = NodeSurplus(node);
+            if (surplus <= 0.0001)
+            {
+                continue;
+            }
+
+            SurplusPills.Children.Add(CreateSurplusPill(node, surplus));
+            any = true;
+        }
+
+        SurplusPillsBar.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private FrameworkElement CreateSurplusPill(SchemeNode node, double surplus)
+    {
+        var amber = ((SolidColorBrush)Application.Current.FindResource("ReactorOrangeBrush")).Color;
+        var name = RecipeForNode(node)?.BuildingName ?? BuildingForNode(node)?.Name ?? UiText.T("Text.UnselectedMachine");
+
+        var content = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        content.Children.Add(new TextBlock
+        {
+            Text = name,
+            Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = $"  +{surplus:g}/min",
+            Foreground = new SolidColorBrush(amber),
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        var pill = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(34, amber.R, amber.G, amber.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(150, amber.R, amber.G, amber.B)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(10, 4, 10, 4),
+            Margin = new Thickness(0, 0, 8, 0),
+            Cursor = Cursors.Hand,
+            Tag = node,
+            Child = content,
+            ToolTip = UiText.Format("Text.Surplus", surplus),
+        };
+        pill.MouseLeftButtonUp += SurplusPill_MouseLeftButtonUp;
+        return pill;
+    }
+
+    private void SurplusPill_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.Tag is SchemeNode node)
+        {
+            SelectSingleNode(node);
+            UpdateInspector();
+            UpdateSelectionVisuals();
+            FocusNode(node);
+            e.Handled = true;
+        }
+    }
+
+    // Centers the canvas viewport on the given node at the current zoom.
+    private void FocusNode(SchemeNode node)
+    {
+        var viewportWidth = CanvasFrame.ActualWidth;
+        var viewportHeight = CanvasFrame.ActualHeight;
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return;
+        }
+
+        var scale = CanvasScale.ScaleX;
+        double cardWidth = 470;
+        double cardHeight = 130;
+        if (_nodeViews.TryGetValue(node.Id, out var view))
+        {
+            if (view.ActualWidth > 0)
+            {
+                cardWidth = view.ActualWidth;
+            }
+
+            if (view.ActualHeight > 0)
+            {
+                cardHeight = view.ActualHeight;
+            }
+        }
+
+        var centerX = node.X + cardWidth / 2;
+        var centerY = node.Y + cardHeight / 2;
+        CanvasTranslate.X = viewportWidth / 2 - centerX * scale;
+        CanvasTranslate.Y = viewportHeight / 2 - centerY * scale;
+    }
+
+    private void SurplusPills_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer scroller)
+        {
+            scroller.ScrollToHorizontalOffset(scroller.HorizontalOffset - e.Delta);
+            e.Handled = true;
+        }
     }
 
     private void RefreshToolboxUnlocksIfNeeded()
