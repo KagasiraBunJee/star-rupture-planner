@@ -133,8 +133,12 @@ public sealed class DottedGridCanvas : Canvas
         // The canvas is rendered through ScaleTransform(zoom) then TranslateTransform(offset),
         // so a point at local (lx,ly) appears on screen at (lx*zoom + offset). Invert that to
         // find which local coordinates fall inside the visible viewport.
-        var viewportWidth = ViewportWidth > 0 ? ViewportWidth : ActualWidth;
-        var viewportHeight = ViewportHeight > 0 ? ViewportHeight : ActualHeight;
+        //
+        // Only draw once the real viewport size is known. Never fall back to the canvas'
+        // own (enormous) extent here, or a single render would try to draw the entire
+        // 200000x200000 area worth of dots and exhaust memory.
+        var viewportWidth = ViewportWidth;
+        var viewportHeight = ViewportHeight;
         if (viewportWidth <= 0 || viewportHeight <= 0)
         {
             return;
