@@ -1,6 +1,8 @@
-# StarRupture Resource Data Platform
+# StarRupture Production Planner
 
-Local StarRupture production data, planner API, MCP server, and Windows desktop planner.
+Convenient production planner for StarRupture. It helps keep supply chains, production buildings, inputs, outputs, bottlenecks, and saved schemes in one place while planning factories.
+
+Currently the project ships as a Windows desktop planner with a bundled local API. The API also exposes an MCP server so AI agents can connect to the same production data. Later, the plan is to let MCP-connected agents help create and edit production schemes directly in the app.
 
 The repository has two main parts:
 
@@ -11,7 +13,7 @@ The repository has two main parts:
 
 - Windows for the WPF desktop app.
 - .NET 8 SDK for building and running `StarRupturePlanner`.
-- Release zip, portable EXE, and installer users do not need Python; the manual release workflow bundles the API as `api\StarRuptureApi.exe`.
+- Packaged desktop builds bundle the API as `api\StarRuptureApi.exe`, so users do not need Python.
 - Python 3.11+ is recommended only for source/API development.
 - Python packages used by the source API server: `uvicorn`, `starlette`, and `mcp`.
 
@@ -157,56 +159,7 @@ Publish a self-contained Windows x64 build:
 dotnet publish src\StarRupturePlanner\StarRupturePlanner.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish\StarRupturePlanner-win-x64
 ```
 
-Manual release packages include a bundled API executable. Local source publishes still need Python if you run the published WPF app outside the release package layout.
-
-## Manual GitHub Release
-
-The repository includes a manual GitHub Actions workflow at `.github/workflows/manual-wpf-release.yml`.
-
-To publish a desktop app build:
-
-1. Open GitHub Actions.
-2. Select `Manual WPF Release`.
-3. Click `Run workflow`.
-4. Enter a version/tag such as `v0.2.7-alpha`.
-5. Keep `draft` enabled if you want to review the release before publishing it.
-
-The workflow runs on `windows-latest`, restores/builds the .NET 8 WPF project, runs the planner test harness, builds the Python API into `api\StarRuptureApi.exe` with PyInstaller, publishes a self-contained `win-x64` package, builds a Windows installer with Inno Setup, builds a portable self-extracting EXE with 7-Zip SFX, and uploads the zip, portable EXE, installer, and SHA256 files as workflow artifacts.
-
-Desktop versions are alpha builds while the planner is being validated against StarRupture `0.2.7`. Use tags such as `v0.2.7-alpha`. If the manual workflow receives `v0.2.7`, it still publishes the desktop as `0.2.7-alpha`.
-
-When `create_github_release` is enabled, it also creates a GitHub Release for the entered tag. If the release already exists, it uploads the new zip, portable EXE, installer, and hash files with `--clobber`.
-
-All release app artifacts contain:
-
-- the published WPF app
-- `api\StarRuptureApi.exe`
-- `data/`
-- `README.md`
-
-The release package is intended to run out of the box on Windows without installing Python or Python packages. The WPF app prefers the bundled API executable and only falls back to `python -m starrupture_api.main ...` for source/development layouts.
-
-Download choices:
-
-- `StarRupturePlanner-v0.2.7-alpha-win-x64-Setup.exe`: normal Windows installer.
-- `StarRupturePlanner-v0.2.7-alpha-win-x64-Portable.exe`: single-file, no-install launcher that extracts to a temporary folder and starts the app.
-- `StarRupturePlanner-v0.2.7-alpha-win-x64.zip`: portable folder for manual extraction.
-
-The installer artifact is named like:
-
-```text
-StarRupturePlanner-v0.2.7-alpha-win-x64-Setup.exe
-```
-
-It installs per user into:
-
-```text
-%LOCALAPPDATA%\Programs\StarRupture Planner
-```
-
-This avoids an admin prompt and keeps the bundled `data` folder writable for refreshes. The installer creates a Start Menu shortcut, optionally creates a desktop shortcut, and registers a standard Windows uninstaller.
-
-The portable EXE is intended for quick no-install use. Because it self-extracts when launched, persistent user files such as schemes, settings, and logs still live in the normal user locations listed in the Desktop Planner section. If you need refreshed bundled dataset files to remain beside the app between launches, use the installer or extracted zip.
+Packaged desktop builds include a bundled API executable. Local source publishes still need Python if you run the published WPF app outside the packaged app layout.
 
 ## Tests
 
@@ -221,17 +174,3 @@ Run the .NET planner test harness:
 ```powershell
 dotnet run --project tests\StarRupturePlanner.Tests\StarRupturePlanner.Tests.csproj
 ```
-
-## Project Map
-
-- `starrupture_api/config.py`: default paths, host/port, source URLs.
-- `starrupture_api/main.py`: CLI entrypoint for refresh, serve, and item inspection.
-- `starrupture_api/http_app.py`: Starlette HTTP routes and static asset mounts.
-- `starrupture_api/mcp_app.py`: MCP tool definitions and SSE app.
-- `starrupture_api/service.py`: read/query layer over SQLite and localization.
-- `starrupture_api/scraper.py`: source-site scraper and asset downloader.
-- `src/StarRupturePlanner/App.xaml.cs`: WPF composition root and crash handlers.
-- `src/StarRupturePlanner/MainWindow.xaml`: main planner UI.
-- `src/StarRupturePlanner/ViewModels`: planner view models and commands.
-- `src/StarRupturePlanner/Services`: app services, API client, scheme storage, layout, calculations.
-- `src/StarRupturePlanner/Models`: planner catalog, settings, and scheme document models.
