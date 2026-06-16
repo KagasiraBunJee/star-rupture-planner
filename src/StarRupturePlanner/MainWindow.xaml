@@ -186,9 +186,9 @@
             <Grid x:Name="CenterPanel" Grid.Column="1" Margin="10,0" Background="{DynamicResource CenterBackgroundBrush}">
                 <Border x:Name="CanvasFrame" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
                     <Grid x:Name="CanvasViewport" ClipToBounds="True">
-                        <controls:DottedGridCanvas x:Name="PlannerCanvas"
-                                                    Width="200000"
-                                                    Height="200000"
+                        <!-- Screen-space infinite grid + input surface (not transformed). Empty-area
+                             clicks land here; node/edge clicks are handled on the content layer above. -->
+                        <controls:DottedGridCanvas x:Name="GridInputLayer"
                                                     GridSize="24"
                                                     Background="{DynamicResource CanvasBrush}"
                                                     DotBrush="{DynamicResource CanvasDotBrush}"
@@ -196,8 +196,6 @@
                                                     OffsetX="{Binding X, ElementName=CanvasTranslate}"
                                                     OffsetY="{Binding Y, ElementName=CanvasTranslate}"
                                                     Zoom="{Binding ScaleX, ElementName=CanvasScale}"
-                                                    ViewportWidth="{Binding ActualWidth, ElementName=CanvasViewport}"
-                                                    ViewportHeight="{Binding ActualHeight, ElementName=CanvasViewport}"
                                                     AllowDrop="True"
                                                     DragOver="PlannerCanvas_DragOver"
                                                     Drop="PlannerCanvas_Drop"
@@ -208,14 +206,21 @@
                                                     MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
                                                     MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
                                                     MouseUp="PlannerCanvas_MouseUp"
-                                                    MouseWheel="PlannerCanvas_MouseWheel">
-                            <controls:DottedGridCanvas.RenderTransform>
+                                                    MouseWheel="PlannerCanvas_MouseWheel"/>
+
+                        <!-- Transformed content layer (transparent so empty areas fall through to the
+                             grid/input layer). Nodes may live at any coordinate, including negative. -->
+                        <Canvas x:Name="PlannerCanvas"
+                                Width="200000"
+                                Height="200000"
+                                Background="{x:Null}">
+                            <Canvas.RenderTransform>
                                 <TransformGroup>
                                     <ScaleTransform x:Name="CanvasScale" ScaleX="1" ScaleY="1"/>
                                     <TranslateTransform x:Name="CanvasTranslate" X="0" Y="0"/>
                                 </TransformGroup>
-                            </controls:DottedGridCanvas.RenderTransform>
-                        </controls:DottedGridCanvas>
+                            </Canvas.RenderTransform>
+                        </Canvas>
                         <Popup x:Name="SuggestionPopup"
                                AllowsTransparency="True"
                                Placement="Relative"

@@ -5,10 +5,11 @@ using System.Windows.Media;
 namespace StarRupturePlanner.Controls;
 
 /// <summary>
-/// A canvas that paints an effectively infinite dotted grid. Dots are drawn only
-/// for the currently visible viewport (computed from the pan offset, zoom and
-/// viewport size), so the grid extends in every direction as the user pans while
-/// the number of drawn dots stays bounded.
+/// Paints an infinite dotted grid in screen space. The element fills the viewport and is
+/// NOT transformed; instead it is given the pan offset and zoom of the content layer and
+/// draws only the dots visible in the current viewport. Because it draws in screen space,
+/// the grid tiles infinitely in every direction (including negative world coordinates) and
+/// the drawn dot count stays bounded by viewport size / zoom.
 /// </summary>
 public sealed class DottedGridCanvas : Canvas
 {
@@ -37,9 +38,8 @@ public sealed class DottedGridCanvas : Canvas
                 new SolidColorBrush(Color.FromRgb(70, 80, 86)),
                 FrameworkPropertyMetadataOptions.AffectsRender));
 
-    // Pan offset (TranslateTransform), zoom (ScaleTransform) and viewport size that
-    // the grid is rendered through. Bound to the canvas' own RenderTransform values
-    // and the host viewport so the visible region can be culled correctly.
+    // Pan offset (TranslateTransform) and zoom (ScaleTransform) of the content layer the grid
+    // sits behind. A world point (wx,wy) maps to screen (wx*Zoom + Offset).
     public static readonly DependencyProperty OffsetXProperty =
         DependencyProperty.Register(
             nameof(OffsetX),
@@ -60,20 +60,6 @@ public sealed class DottedGridCanvas : Canvas
             typeof(double),
             typeof(DottedGridCanvas),
             new FrameworkPropertyMetadata(1d, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    public static readonly DependencyProperty ViewportWidthProperty =
-        DependencyProperty.Register(
-            nameof(ViewportWidth),
-            typeof(double),
-            typeof(DottedGridCanvas),
-            new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    public static readonly DependencyProperty ViewportHeightProperty =
-        DependencyProperty.Register(
-            nameof(ViewportHeight),
-            typeof(double),
-            typeof(DottedGridCanvas),
-            new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public double GridSize
     {
@@ -111,16 +97,12 @@ public sealed class DottedGridCanvas : Canvas
         set => SetValue(ZoomProperty, value);
     }
 
-    public double ViewportWidth
+    // Re-render when the viewport size changes (the element fills the viewport).
+    protected override Size ArrangeOverride(Size arrangeSize)
     {
-        get => (double)GetValue(ViewportWidthProperty);
-        set => SetValue(ViewportWidthProperty, value);
-    }
-
-    public double ViewportHeight
-    {
-        get => (double)GetValue(ViewportHeightProperty);
-        set => SetValue(ViewportHeightProperty, value);
+        var result = base.ArrangeOverride(arrangeSize);
+        InvalidateVisual();
+        return result;
     }
 
     protected override void OnRender(DrawingContext drawingContext)
@@ -129,37 +111,33 @@ public sealed class DottedGridCanvas : Canvas
 
         var spacing = GridSize <= 0 ? 24 : GridSize;
         var zoom = Zoom <= 0 ? 1 : Zoom;
-
-        // The canvas is rendered through ScaleTransform(zoom) then TranslateTransform(offset),
-        // so a point at local (lx,ly) appears on screen at (lx*zoom + offset). Invert that to
-        // find which local coordinates fall inside the visible viewport.
-        //
-        // Only draw once the real viewport size is known. Never fall back to the canvas'
-        // own (enormous) extent here, or a single render would try to draw the entire
-        // 200000x200000 area worth of dots and exhaust memory.
-        var viewportWidth = ViewportWidth;
-        var viewportHeight = ViewportHeight;
-        if (viewportWidth <= 0 || viewportHeight <= 0)
+        var width = ActualWidth;
+        var height = ActualHeight;
+        if (width <= 0 || height <= 0)
         {
             return;
         }
 
-        var minX = (0 - OffsetX) / zoom;
-        var maxX = (viewportWidth - OffsetX) / zoom;
-        var minY = (0 - OffsetY) / zoom;
-        var maxY = (viewportHeight - OffsetY) / zoom;
+        // Screen distance between adjacent dots. Guard against pathological density.
+        var step = spacing * zoom;
+        if (step < 2)
+        {
+            return;
+        }
 
-        // One extra cell of margin so dots never pop in at the edges. Columns/rows may be
-        // negative — the grid tiles infinitely in every direction, only ever drawing the
-        // cells that fall inside the current viewport.
-        var startColumn = (int)Math.Floor(minX / spacing) - 1;
-        var endColumn = (int)Math.Ceiling(maxX / spacing) + 1;
-        var startRow = (int)Math.Floor(minY / spacing) - 1;
-        var endRow = (int)Math.Ceiling(maxY / spacing) + 1;
+        var minorRadius = Math.Max(0.5, 1.1 * zoom);
+        var majorRadius = Math.Max(0.8, 1.7 * zoom);
+
+        // Visible world-cell index range: screen x = OffsetX + column*step must fall in [0, width].
+        // Columns/rows may be negative — the grid tiles in every direction.
+        var startColumn = (int)Math.Floor((0 - OffsetX) / step) - 1;
+        var endColumn = (int)Math.Ceiling((width - OffsetX) / step) + 1;
+        var startRow = (int)Math.Floor((0 - OffsetY) / step) - 1;
+        var endRow = (int)Math.Ceiling((height - OffsetY) / step) + 1;
 
         for (var column = startColumn; column <= endColumn; column++)
         {
-            var x = column * spacing;
+            var x = OffsetX + column * step;
             var majorColumn = column % 4 == 0;
             for (var row = startRow; row <= endRow; row++)
             {
@@ -167,9 +145,9 @@ public sealed class DottedGridCanvas : Canvas
                 drawingContext.DrawEllipse(
                     major ? MajorDotBrush : DotBrush,
                     null,
-                    new Point(x, row * spacing),
-                    major ? 1.7 : 1.1,
-                    major ? 1.7 : 1.1);
+                    new Point(x, OffsetY + row * step),
+                    major ? majorRadius : minorRadius,
+                    major ? majorRadius : minorRadius);
             }
         }
     }

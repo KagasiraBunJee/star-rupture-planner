@@ -120,7 +120,7 @@ public partial class MainWindow : Window
         _canvasViewModel = new PlannerCanvasViewModel(_calculator, _layoutService);
         _inspectorViewModel = new InspectorViewModel(_calculator);
         DataContext = _viewModel;
-        PlannerCanvas.GridSize = _layoutService.GridSize;
+        GridInputLayer.GridSize = _layoutService.GridSize;
         _settings = _viewModel.Settings;
         _scheme = _viewModel.Scheme;
         ApplySettings();
@@ -2975,19 +2975,19 @@ public partial class MainWindow : Window
         };
         PlannerCanvas.Children.Insert(0, path);
         _connectionDrag = new ConnectionDrag(port, path, start);
-        Mouse.Capture(PlannerCanvas);
+        Mouse.Capture(GridInputLayer);
         e.Handled = true;
     }
 
     private void PlannerCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource == PlannerCanvas)
+        if (e.OriginalSource == GridInputLayer)
         {
             ClearSelection();
             _isSelecting = true;
             _selectionStart = e.GetPosition(PlannerCanvas);
             ShowSelectionRectangle(_selectionStart, _selectionStart);
-            PlannerCanvas.CaptureMouse();
+            GridInputLayer.CaptureMouse();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -2996,7 +2996,7 @@ public partial class MainWindow : Window
 
     private void PlannerCanvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource != PlannerCanvas || _connectionDrag is not null || _isSelecting || _isPanning)
+        if (e.OriginalSource != GridInputLayer || _connectionDrag is not null || _isSelecting || _isPanning)
         {
             return;
         }
@@ -3005,7 +3005,7 @@ public partial class MainWindow : Window
         _isCreatingComment = true;
         _commentStart = e.GetPosition(PlannerCanvas);
         ShowSelectionRectangle(_commentStart, _commentStart);
-        PlannerCanvas.CaptureMouse();
+        GridInputLayer.CaptureMouse();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -3022,8 +3022,8 @@ public partial class MainWindow : Window
         _isPanning = true;
         _panStartMouse = e.GetPosition(this);
         _panStartOffset = new Point(CanvasTranslate.X, CanvasTranslate.Y);
-        PlannerCanvas.Cursor = Cursors.SizeAll;
-        PlannerCanvas.CaptureMouse();
+        GridInputLayer.Cursor = Cursors.SizeAll;
+        GridInputLayer.CaptureMouse();
         e.Handled = true;
     }
 
@@ -3074,7 +3074,11 @@ public partial class MainWindow : Window
             Mouse.Capture(null);
             PlannerCanvas.Children.Remove(drag.Path);
 
-            var targetPort = FindAncestor<FrameworkElement>(e.OriginalSource as DependencyObject)?.Tag as PortReference;
+            // Capture is on the input layer, so e.OriginalSource isn't the dropped port.
+            // Hit-test the content layer at the drop point to find the target port.
+            var dropPoint = e.GetPosition(PlannerCanvas);
+            var hit = VisualTreeHelper.HitTest(PlannerCanvas, dropPoint)?.VisualHit as DependencyObject;
+            var targetPort = FindAncestor<FrameworkElement>(hit)?.Tag as PortReference;
             if (targetPort is not null && TryCreateEdge(drag.Port, targetPort))
             {
                 RenderCanvas();
@@ -3091,7 +3095,7 @@ public partial class MainWindow : Window
             SelectInsideRectangle(new Rect(_selectionStart, e.GetPosition(PlannerCanvas)));
             HideSelectionRectangle();
             _isSelecting = false;
-            PlannerCanvas.ReleaseMouseCapture();
+            GridInputLayer.ReleaseMouseCapture();
             UpdateInspector();
             UpdateSelectionVisuals();
             e.Handled = true;
@@ -3114,7 +3118,7 @@ public partial class MainWindow : Window
         var rect = new Rect(_commentStart, e.GetPosition(PlannerCanvas));
         HideSelectionRectangle();
         _isCreatingComment = false;
-        PlannerCanvas.ReleaseMouseCapture();
+        GridInputLayer.ReleaseMouseCapture();
 
         if (rect.Width >= 80 && rect.Height >= 50)
         {
@@ -3152,10 +3156,10 @@ public partial class MainWindow : Window
     private void EndViewportPan()
     {
         _isPanning = false;
-        PlannerCanvas.Cursor = Cursors.Arrow;
-        if (PlannerCanvas.IsMouseCaptured)
+        GridInputLayer.Cursor = Cursors.Arrow;
+        if (GridInputLayer.IsMouseCaptured)
         {
-            PlannerCanvas.ReleaseMouseCapture();
+            GridInputLayer.ReleaseMouseCapture();
         }
     }
 
