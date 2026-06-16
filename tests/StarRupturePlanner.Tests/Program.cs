@@ -29,6 +29,7 @@ var tests = new (string Name, Action Body)[]
     ("Connection route points persist", ConnectionRoutePointsPersist),
     ("Comment rectangles persist", CommentRectanglesPersist),
     ("App settings serialization round trips", AppSettingsSerializationRoundTrips),
+    ("View model refreshes localized saved state", ViewModelRefreshesLocalizedSavedState),
     ("Async command tracks running state", AsyncCommandTracksRunningState),
     ("Canvas view model creates compatible edge", CanvasViewModelCreatesCompatibleEdge),
     ("Canvas view model creates scheme output source nodes", CanvasViewModelCreatesSchemeOutputSourceNodes),
@@ -770,6 +771,39 @@ static void AppSettingsSerializationRoundTrips()
     Directory.Delete(temp, recursive: true);
 }
 
+static void ViewModelRefreshesLocalizedSavedState()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-vm-saved-state-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(temp);
+
+    try
+    {
+        var viewModel = new MainWindowViewModel(
+            new TestPlannerApiClient(),
+            new TestApiProcessManager(),
+            new SchemeStore(temp),
+            new AppSettingsStore(Path.Combine(temp, "settings.json")),
+            new ImmediateUiDispatcher(),
+            new ImmediateBackgroundTaskRunner());
+        viewModel.Scheme.Name = "test";
+        viewModel.SaveSchemeAsync().GetAwaiter().GetResult();
+
+        var field = typeof(MainWindowViewModel).GetField(
+            "_lastSavedText",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        field?.SetValue(viewModel, "Сохранено: Сегодня, 15:51");
+
+        viewModel.RefreshLocalizedText();
+
+        AssertTrue(viewModel.LastSavedText.StartsWith("Last saved:", StringComparison.Ordinal));
+        AssertFalse(viewModel.LastSavedText.StartsWith("Сохранено:", StringComparison.Ordinal));
+    }
+    finally
+    {
+        Directory.Delete(temp, recursive: true);
+    }
+}
+
 static void AsyncCommandTracksRunningState()
 {
     var started = new TaskCompletionSource();
@@ -1401,6 +1435,15 @@ sealed class ImmediateBackgroundTaskRunner : IBackgroundTaskRunner
     {
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(action());
+    }
+}
+
+sealed class TestApiProcessManager : IApiProcessManager
+{
+    public Task<string> EnsureStartedAsync(CancellationToken cancellationToken = default) => Task.FromResult("API ready.");
+
+    public void Dispose()
+    {
     }
 }
 

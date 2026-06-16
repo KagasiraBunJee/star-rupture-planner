@@ -45,12 +45,6 @@ The Python service stores data in `data/starrupture.sqlite3` and serves cached i
 - `data/assets/items`
 - `data/assets/buildings`
 
-Refresh the local dataset from `starrupture.tools`:
-
-```powershell
-python -m starrupture_api.main refresh
-```
-
 Run the HTTP API and MCP SSE server:
 
 ```powershell
@@ -79,13 +73,12 @@ Common endpoints:
 - `GET /api/planner/catalog?lang=en`
 - `GET /api/planner/suggestions?direction=input&item_id=titanium-bar&lang=en`
 - `GET /api/planner/transport-tiers?lang=en`
-- `POST /api/admin/refresh`
 - `GET /assets/items/{filename}`
 - `GET /assets/buildings/{filename}`
 
 Supported language codes are normalized by the API; current localization files live in `data/localization`.
 
-`GET /api/items/{item_id}` returns the item, unlock relationships, producers, consumers, and refresh metadata.
+`GET /api/items/{item_id}` returns the item, unlock relationships, producers, and consumers.
 
 Planner endpoints are graph-oriented for the desktop app:
 
@@ -104,7 +97,6 @@ Available MCP tools:
 
 - `search_items(query, limit = 20, language = "en")`
 - `get_item_detail(item_id, language = "en")`
-- `refresh_dataset()`
 - `get_dataset_meta()`
 - `list_corporations(language = "en")`
 - `get_corporation_detail(corporation_id, language = "en")`

@@ -144,7 +144,7 @@ jobs:
             --hidden-import uvicorn.protocols.http.auto `
             --hidden-import uvicorn.protocols.websockets.auto `
             --hidden-import uvicorn.lifespan.on `
-            "tools/starrupture_api_launcher.py"
+            "starrupture_api/launcher.py"
 
           Copy-Item -LiteralPath "data" -Destination $packageRoot -Recurse -Force
           Copy-Item -LiteralPath "README.md" -Destination $packageRoot -Force
