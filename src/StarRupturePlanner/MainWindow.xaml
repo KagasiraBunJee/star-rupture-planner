@@ -185,14 +185,19 @@
 
             <Grid x:Name="CenterPanel" Grid.Column="1" Margin="10,0" Background="{DynamicResource CenterBackgroundBrush}">
                 <Border x:Name="CanvasFrame" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
-                    <Grid ClipToBounds="True">
+                    <Grid x:Name="CanvasViewport" ClipToBounds="True">
                         <controls:DottedGridCanvas x:Name="PlannerCanvas"
-                                                    Width="5000"
-                                                    Height="3500"
+                                                    Width="200000"
+                                                    Height="200000"
                                                     GridSize="24"
                                                     Background="{DynamicResource CanvasBrush}"
                                                     DotBrush="{DynamicResource CanvasDotBrush}"
                                                     MajorDotBrush="{DynamicResource CanvasMajorDotBrush}"
+                                                    OffsetX="{Binding X, ElementName=CanvasTranslate}"
+                                                    OffsetY="{Binding Y, ElementName=CanvasTranslate}"
+                                                    Zoom="{Binding ScaleX, ElementName=CanvasScale}"
+                                                    ViewportWidth="{Binding ActualWidth, ElementName=CanvasViewport}"
+                                                    ViewportHeight="{Binding ActualHeight, ElementName=CanvasViewport}"
                                                     AllowDrop="True"
                                                     DragOver="PlannerCanvas_DragOver"
                                                     Drop="PlannerCanvas_Drop"
