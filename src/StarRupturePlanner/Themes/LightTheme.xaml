@@ -6,12 +6,34 @@
     <SolidColorBrush x:Key="PanelBrushSoft" Color="#F3F6F8"/>
     <SolidColorBrush x:Key="CenterBackgroundBrush" Color="#E9EEF3"/>
     <SolidColorBrush x:Key="CanvasBrush" Color="#F8FAFB"/>
-    <SolidColorBrush x:Key="CanvasDotBrush" Color="#D6DDE1"/>
-    <SolidColorBrush x:Key="CanvasMajorDotBrush" Color="#B9C4CA"/>
+    <SolidColorBrush x:Key="CanvasDotBrush" Color="#B6C1C9"/>
+    <SolidColorBrush x:Key="CanvasMajorDotBrush" Color="#93A2AC"/>
 
     <!-- Inner cards -->
     <SolidColorBrush x:Key="MutedPanelBrush" Color="#EEF2F5"/>
     <SolidColorBrush x:Key="MutedBorderBrush" Color="#C7D1D8"/>
+
+    <!-- Canvas node cards -->
+    <SolidColorBrush x:Key="NodeCardTopBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="NodeCardBottomBrush" Color="#FFEFF3F7"/>
+    <SolidColorBrush x:Key="NodeCardBorderBrush" Color="#C7D1D8"/>
+    <SolidColorBrush x:Key="NodeCardImageBrush" Color="#EEF2F5"/>
+    <SolidColorBrush x:Key="NodeCardImageBorderBrush" Color="#C7D1D8"/>
+    <SolidColorBrush x:Key="NodeCardDividerBrush" Color="#50A9B5BD"/>
+    <SolidColorBrush x:Key="NodeCardTextBrush" Color="#1A2630"/>
+
+    <!-- Canvas comments (soft note look) -->
+    <SolidColorBrush x:Key="CommentBackgroundBrush" Color="#FFFDF3D2"/>
+    <SolidColorBrush x:Key="CommentBorderBrush" Color="#E3C879"/>
+    <SolidColorBrush x:Key="CommentTitleBackgroundBrush" Color="#FFF7E7B0"/>
+    <SolidColorBrush x:Key="CommentBodyBackgroundBrush" Color="#FFFEFAEC"/>
+    <SolidColorBrush x:Key="CommentForegroundBrush" Color="#4A3A12"/>
+
+    <!-- Navigation + list items -->
+    <SolidColorBrush x:Key="NavActiveBackgroundBrush" Color="#DCEBFF"/>
+    <SolidColorBrush x:Key="ListItemHoverBrush" Color="#EAF1F8"/>
+    <SolidColorBrush x:Key="ListItemHoverBorderBrush" Color="#9FBBD3"/>
+    <SolidColorBrush x:Key="ListItemSelectedBrush" Color="#D6E8FF"/>
 
     <!-- Controls -->
     <SolidColorBrush x:Key="ControlBrush" Color="#F6F8FA"/>
