@@ -77,7 +77,7 @@
                                        IsHitTestVisible="False">
                             </TextBlock>
                         </Grid>
-                        <Border Grid.Column="2" VerticalAlignment="Center" Height="22" BorderBrush="#24313B" BorderThickness="1" CornerRadius="5" Padding="8,0">
+                        <Border Grid.Column="2" VerticalAlignment="Center" Height="22" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="5" Padding="8,0">
                             <TextBlock Text="Ctrl+K" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
                         </Border>
                     </Grid>
@@ -122,7 +122,7 @@
                     <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                         <TextBlock Text="{DynamicResource Ui.Nav.Navigation}" Style="{StaticResource PanelTitle}"/>
                         <StackPanel>
-                            <Border Background="#122233" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="3,0,0,0" CornerRadius="7" Padding="12,9" Margin="0,0,0,6">
+                            <Border Background="{DynamicResource NavActiveBackgroundBrush}" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="3,0,0,0" CornerRadius="7" Padding="12,9" Margin="0,0,0,6">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="▤" Foreground="{DynamicResource StarBlueBrush}" Margin="0,0,10,0"/>
                                     <TextBlock Text="{DynamicResource Ui.Nav.Production}" FontWeight="SemiBold"/>
@@ -291,7 +291,7 @@
                                     <ColumnDefinition Width="76"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Width="64" Height="64" Background="#121E28" BorderBrush="#2B3A44" BorderThickness="1" CornerRadius="9">
+                                <Border Width="64" Height="64" Background="{DynamicResource NodeCardImageBrush}" BorderBrush="{DynamicResource NodeCardImageBorderBrush}" BorderThickness="1" CornerRadius="9">
                                     <Image x:Name="InspectorImage" Width="56" Height="56" Source="{x:Static services:BlueprintPlaceholderIcon.Image}" Stretch="Uniform"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">

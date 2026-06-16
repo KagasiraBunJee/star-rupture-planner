@@ -29,6 +29,12 @@
     <SolidColorBrush x:Key="CommentBodyBackgroundBrush" Color="#FFFEFAEC"/>
     <SolidColorBrush x:Key="CommentForegroundBrush" Color="#4A3A12"/>
 
+    <!-- Navigation + list items -->
+    <SolidColorBrush x:Key="NavActiveBackgroundBrush" Color="#DCEBFF"/>
+    <SolidColorBrush x:Key="ListItemHoverBrush" Color="#EAF1F8"/>
+    <SolidColorBrush x:Key="ListItemHoverBorderBrush" Color="#9FBBD3"/>
+    <SolidColorBrush x:Key="ListItemSelectedBrush" Color="#D6E8FF"/>
+
     <!-- Controls -->
     <SolidColorBrush x:Key="ControlBrush" Color="#F6F8FA"/>
     <SolidColorBrush x:Key="ControlHoverBrush" Color="#EAF2FA"/>
