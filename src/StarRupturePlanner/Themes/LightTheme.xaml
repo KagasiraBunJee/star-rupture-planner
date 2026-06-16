@@ -6,8 +6,8 @@
     <SolidColorBrush x:Key="PanelBrushSoft" Color="#F3F6F8"/>
     <SolidColorBrush x:Key="CenterBackgroundBrush" Color="#E9EEF3"/>
     <SolidColorBrush x:Key="CanvasBrush" Color="#F8FAFB"/>
-    <SolidColorBrush x:Key="CanvasDotBrush" Color="#D6DDE1"/>
-    <SolidColorBrush x:Key="CanvasMajorDotBrush" Color="#B9C4CA"/>
+    <SolidColorBrush x:Key="CanvasDotBrush" Color="#B6C1C9"/>
+    <SolidColorBrush x:Key="CanvasMajorDotBrush" Color="#93A2AC"/>
 
     <!-- Inner cards -->
     <SolidColorBrush x:Key="MutedPanelBrush" Color="#EEF2F5"/>
