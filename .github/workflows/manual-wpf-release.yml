@@ -1,0 +1,326 @@
+name: Manual WPF Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version/tag, for example v0.2.7-alpha"
+        required: true
+        type: string
+      create_github_release:
+        description: "Create or update a GitHub Release"
+        required: true
+        default: true
+        type: boolean
+      draft:
+        description: "Create the GitHub Release as a draft"
+        required: true
+        default: true
+        type: boolean
+      prerelease:
+        description: "Mark the GitHub Release as a prerelease"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  PYTHON_VERSION: "3.12"
+  PROJECT_PATH: "src/StarRupturePlanner/StarRupturePlanner.csproj"
+  TEST_PROJECT_PATH: "tests/StarRupturePlanner.Tests/StarRupturePlanner.Tests.csproj"
+  INSTALLER_SCRIPT: "installer/StarRupturePlanner.iss"
+  RUNTIME_ID: "win-x64"
+
+jobs:
+  release:
+    name: Build Windows release package
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python build tools
+        run: python -m pip install --upgrade pip pyinstaller uvicorn starlette mcp
+
+      - name: Install packaging tools
+        run: choco install innosetup 7zip --no-progress -y
+
+      - name: Restore
+        run: dotnet restore $env:PROJECT_PATH
+
+      - name: Build
+        run: dotnet build $env:PROJECT_PATH -c Release --no-restore
+
+      - name: Run planner tests
+        run: dotnet run --project $env:TEST_PROJECT_PATH -c Release
+
+      - name: Publish and package
+        id: package
+        shell: pwsh
+        run: |
+          $rawVersion = "${{ inputs.version }}".Trim()
+          if ([string]::IsNullOrWhiteSpace($rawVersion)) {
+            throw "Release version is required."
+          }
+
+          $appVersion = $rawVersion
+          if ($appVersion.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase)) {
+            $appVersion = $appVersion.Substring(1)
+          }
+          if (-not $appVersion.Contains("-")) {
+            $appVersion = "$appVersion-alpha"
+          }
+
+          $version = "v$appVersion"
+          $numericVersion = ($appVersion -split "-", 2)[0]
+          $numericParts = @($numericVersion -split "\.")
+          while ($numericParts.Count -lt 4) {
+            $numericParts += "0"
+          }
+          $assemblyVersion = ($numericParts[0..3] -join ".")
+          $safeVersion = $version -replace '[^A-Za-z0-9._-]', '-'
+          $packageName = "StarRupturePlanner-$safeVersion-$env:RUNTIME_ID"
+          $stagingRoot = Join-Path $env:RUNNER_TEMP "starrupture-release"
+          $packageRoot = Join-Path $stagingRoot $packageName
+          $apiRoot = Join-Path $packageRoot "api"
+          $zipPath = Join-Path $env:RUNNER_TEMP "$packageName.zip"
+          $hashPath = Join-Path $env:RUNNER_TEMP "$packageName.zip.sha256"
+          $installerDir = Join-Path $env:RUNNER_TEMP "installer"
+          $installerName = "$packageName-Setup"
+          $installerPath = Join-Path $installerDir "$installerName.exe"
+          $installerHashPath = Join-Path $env:RUNNER_TEMP "$installerName.exe.sha256"
+          $portableName = "$packageName-Portable"
+          $portableExePath = Join-Path $env:RUNNER_TEMP "$portableName.exe"
+          $portableHashPath = Join-Path $env:RUNNER_TEMP "$portableName.exe.sha256"
+          $portableArchivePath = Join-Path $env:RUNNER_TEMP "$portableName.7z"
+          $sfxConfigPath = Join-Path $env:RUNNER_TEMP "portable-sfx-config.txt"
+          $notesPath = Join-Path $env:RUNNER_TEMP "release-notes.md"
+
+          if (Test-Path $stagingRoot) {
+            Remove-Item -LiteralPath $stagingRoot -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
+          New-Item -ItemType Directory -Path $apiRoot -Force | Out-Null
+          New-Item -ItemType Directory -Path $installerDir -Force | Out-Null
+
+          dotnet publish $env:PROJECT_PATH `
+            -c Release `
+            -r $env:RUNTIME_ID `
+            --self-contained `
+            -p:Version=$appVersion `
+            -p:AssemblyVersion=$assemblyVersion `
+            -p:FileVersion=$assemblyVersion `
+            -p:InformationalVersion=$appVersion `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $packageRoot
+
+          python -m PyInstaller `
+            --onefile `
+            --clean `
+            --noconsole `
+            --name StarRuptureApi `
+            --distpath $apiRoot `
+            --workpath (Join-Path $env:RUNNER_TEMP "pyinstaller-work") `
+            --specpath (Join-Path $env:RUNNER_TEMP "pyinstaller-spec") `
+            --collect-all mcp `
+            --collect-all starlette `
+            --collect-all uvicorn `
+            --hidden-import uvicorn.loops.auto `
+            --hidden-import uvicorn.protocols.http.auto `
+            --hidden-import uvicorn.protocols.websockets.auto `
+            --hidden-import uvicorn.lifespan.on `
+            "tools/starrupture_api_launcher.py"
+
+          Copy-Item -LiteralPath "data" -Destination $packageRoot -Recurse -Force
+          Copy-Item -LiteralPath "README.md" -Destination $packageRoot -Force
+
+          @"
+          # StarRupture Planner $version
+
+          Release assets:
+
+          - ${installerName}.exe: Windows installer for normal user installs
+          - ${portableName}.exe: portable self-extracting app, no install required
+          - ${packageName}.zip: portable package for manual extraction
+          - *.sha256: SHA256 checksums for all downloads
+
+          All app downloads contain:
+
+          - the self-contained Windows x64 WPF desktop app
+          - bundled api\StarRuptureApi.exe local API server
+          - the local data folder with SQLite data, localization, transport tiers, and cached assets
+
+          Notes:
+
+          - Built for StarRupture 0.2.7.
+          - Desktop app version: $appVersion.
+          - Windows is required for the desktop app.
+          - No Python installation is required for the release package.
+          - The app starts the API on 127.0.0.1:8010 when needed.
+          - The portable EXE extracts to a temporary folder before launching.
+          "@ | Set-Content -LiteralPath $notesPath -Encoding UTF8
+
+          if (Test-Path $zipPath) {
+            Remove-Item -LiteralPath $zipPath -Force
+          }
+          Compress-Archive -Path $packageRoot -DestinationPath $zipPath -Force
+
+          $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath
+          "$($hash.Hash)  $(Split-Path -Leaf $zipPath)" | Set-Content -LiteralPath $hashPath -Encoding ASCII
+
+          @"
+          ;!@Install@!UTF-8!
+          Title="StarRupture Planner Portable"
+          RunProgram="StarRupturePlanner.exe"
+          ;!@InstallEnd@!
+          "@ | Set-Content -LiteralPath $sfxConfigPath -Encoding UTF8
+
+          $sevenZipPath = Join-Path $env:ProgramFiles "7-Zip\7z.exe"
+          if (-not (Test-Path -LiteralPath $sevenZipPath)) {
+            $sevenZipPath = "7z.exe"
+          }
+
+          $sfxModulePath = Join-Path $env:ProgramFiles "7-Zip\7z.sfx"
+          if (-not (Test-Path -LiteralPath $sfxModulePath)) {
+            throw "7-Zip SFX module was not found at $sfxModulePath"
+          }
+
+          if (Test-Path -LiteralPath $portableArchivePath) {
+            Remove-Item -LiteralPath $portableArchivePath -Force
+          }
+          if (Test-Path -LiteralPath $portableExePath) {
+            Remove-Item -LiteralPath $portableExePath -Force
+          }
+
+          & $sevenZipPath a -t7z $portableArchivePath "$packageRoot\*" -mx=9
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          $portableOutput = [System.IO.File]::Open($portableExePath, [System.IO.FileMode]::CreateNew)
+          try {
+            foreach ($partPath in @($sfxModulePath, $sfxConfigPath, $portableArchivePath)) {
+              $partBytes = [System.IO.File]::ReadAllBytes($partPath)
+              $portableOutput.Write($partBytes, 0, $partBytes.Length)
+            }
+          }
+          finally {
+            $portableOutput.Dispose()
+          }
+
+          if (-not (Test-Path -LiteralPath $portableExePath)) {
+            throw "Portable executable was not created at $portableExePath"
+          }
+
+          $portableHash = Get-FileHash -Algorithm SHA256 -LiteralPath $portableExePath
+          "$($portableHash.Hash)  $(Split-Path -Leaf $portableExePath)" | Set-Content -LiteralPath $portableHashPath -Encoding ASCII
+
+          $env:APP_VERSION = $appVersion
+          $env:PACKAGE_ROOT = $packageRoot
+          $env:INSTALLER_OUTPUT_DIR = $installerDir
+          $env:INSTALLER_BASE_NAME = $installerName
+
+          $isccPath = Join-Path "${env:ProgramFiles(x86)}" "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path -LiteralPath $isccPath)) {
+            $isccPath = "iscc.exe"
+          }
+
+          & $isccPath $env:INSTALLER_SCRIPT
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          if (-not (Test-Path -LiteralPath $installerPath)) {
+            throw "Installer was not created at $installerPath"
+          }
+
+          $installerHash = Get-FileHash -Algorithm SHA256 -LiteralPath $installerPath
+          "$($installerHash.Hash)  $(Split-Path -Leaf $installerPath)" | Set-Content -LiteralPath $installerHashPath -Encoding ASCII
+
+          "package_name=$packageName" >> $env:GITHUB_OUTPUT
+          "zip_path=$zipPath" >> $env:GITHUB_OUTPUT
+          "hash_path=$hashPath" >> $env:GITHUB_OUTPUT
+          "installer_path=$installerPath" >> $env:GITHUB_OUTPUT
+          "installer_hash_path=$installerHashPath" >> $env:GITHUB_OUTPUT
+          "portable_exe_path=$portableExePath" >> $env:GITHUB_OUTPUT
+          "portable_hash_path=$portableHashPath" >> $env:GITHUB_OUTPUT
+          "release_version=$version" >> $env:GITHUB_OUTPUT
+          "notes_path=$notesPath" >> $env:GITHUB_OUTPUT
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.package_name }}
+          path: |
+            ${{ steps.package.outputs.zip_path }}
+            ${{ steps.package.outputs.hash_path }}
+            ${{ steps.package.outputs.installer_path }}
+            ${{ steps.package.outputs.installer_hash_path }}
+            ${{ steps.package.outputs.portable_exe_path }}
+            ${{ steps.package.outputs.portable_hash_path }}
+          if-no-files-found: error
+
+      - name: Create or update GitHub Release
+        if: ${{ inputs.create_github_release }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ steps.package.outputs.release_version }}"
+          $title = "StarRupture Planner $tag"
+          $zipPath = "${{ steps.package.outputs.zip_path }}"
+          $hashPath = "${{ steps.package.outputs.hash_path }}"
+          $installerPath = "${{ steps.package.outputs.installer_path }}"
+          $installerHashPath = "${{ steps.package.outputs.installer_hash_path }}"
+          $portableExePath = "${{ steps.package.outputs.portable_exe_path }}"
+          $portableHashPath = "${{ steps.package.outputs.portable_hash_path }}"
+          $notesPath = "${{ steps.package.outputs.notes_path }}"
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $zipPath $hashPath $installerPath $installerHashPath $portableExePath $portableHashPath --clobber
+            exit $LASTEXITCODE
+          }
+
+          $releaseArgs = @(
+            "release",
+            "create",
+            $tag,
+            $zipPath,
+            $hashPath,
+            $installerPath,
+            $installerHashPath,
+            $portableExePath,
+            $portableHashPath,
+            "--target",
+            $env:GITHUB_SHA,
+            "--title",
+            $title,
+            "--notes-file",
+            $notesPath
+          )
+
+          if ("${{ inputs.draft }}" -eq "true") {
+            $releaseArgs += "--draft"
+          }
+
+          if ("${{ inputs.prerelease }}" -eq "true") {
+            $releaseArgs += "--prerelease"
+          }
+
+          gh @releaseArgs

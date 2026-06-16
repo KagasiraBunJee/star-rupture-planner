@@ -55,7 +55,7 @@ class ServiceFixtureTests(unittest.TestCase):
 
     def test_converter_production_example(self) -> None:
         detail = self.service.get_item_detail("converter")
-        facturer = [entry for entry in detail["produced_by"] if entry["building_name"] == "Facturer"]
+        facturer = [entry for entry in detail["produced_by"] if entry["building_id"] == "military-assembler"]
         self.assertEqual(len(facturer), 1)
         self.assertEqual(facturer[0]["original_rate_text"], "1 per 15 seconds")
         self.assertEqual(facturer[0]["items_per_minute"], 4)

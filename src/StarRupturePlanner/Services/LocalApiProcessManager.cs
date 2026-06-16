@@ -3,6 +3,7 @@ using System.Globalization;
 using StarRupturePlanner.Models;
 using Directory = System.IO.Directory;
 using DirectoryInfo = System.IO.DirectoryInfo;
+using File = System.IO.File;
 using Path = System.IO.Path;
 
 namespace StarRupturePlanner.Services;
@@ -26,27 +27,18 @@ public sealed class LocalApiProcessManager : IApiProcessManager
                 return "API is already running.";
             }
 
-            StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
+            StopStaleApiOnPort(_apiClient.BaseUri.Port);
         }
         else
         {
-            StopStalePythonApiOnPort(_apiClient.BaseUri.Port);
+            StopStaleApiOnPort(_apiClient.BaseUri.Port);
         }
 
-        var repoRoot = FindRepoRoot();
-        if (repoRoot is null)
+        var startInfo = CreateApiStartInfo();
+        if (startInfo is null)
         {
-            return "Could not find starrupture_api beside the app. Start the API manually.";
+            return "Could not find bundled API or starrupture_api beside the app. Start the API manually.";
         }
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "python",
-            Arguments = "-m starrupture_api.main serve --host 127.0.0.1 --port 8010",
-            WorkingDirectory = repoRoot,
-            CreateNoWindow = true,
-            UseShellExecute = false,
-        };
 
         _process = Process.Start(startInfo);
         for (var attempt = 0; attempt < 40; attempt++)
@@ -57,12 +49,45 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             {
                 if (await IsCompatibleApiAsync(cancellationToken))
                 {
-                    return "Started local API.";
+                    return startInfo.FileName.EndsWith("StarRuptureApi.exe", StringComparison.OrdinalIgnoreCase)
+                        ? "Started bundled API."
+                        : "Started local API.";
                 }
             }
         }
 
         return "Started API process, but it did not answer on port 8010.";
+    }
+
+    private static ProcessStartInfo? CreateApiStartInfo()
+    {
+        var bundledApi = FindBundledApiExecutable();
+        if (bundledApi is not null)
+        {
+            return new ProcessStartInfo
+            {
+                FileName = bundledApi,
+                Arguments = "serve --host 127.0.0.1 --port 8010",
+                WorkingDirectory = Path.GetDirectoryName(bundledApi)!,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            };
+        }
+
+        var repoRoot = FindRepoRoot();
+        if (repoRoot is null)
+        {
+            return null;
+        }
+
+        return new ProcessStartInfo
+        {
+            FileName = "python",
+            Arguments = "-m starrupture_api.main serve --host 127.0.0.1 --port 8010",
+            WorkingDirectory = repoRoot,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+        };
     }
 
     private async Task<bool> IsCompatibleApiAsync(CancellationToken cancellationToken)
@@ -76,8 +101,9 @@ public sealed class LocalApiProcessManager : IApiProcessManager
                     building.Power is not null || building.Temperature is not null);
             return hasCurrentShape && await SupportsLocalizationAsync(cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[LocalApiProcessManager] API compatibility check failed: {ex.Message}");
             return false;
         }
     }
@@ -87,11 +113,16 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         var previousLanguage = _apiClient.PlannerLanguage;
         try
         {
+            _apiClient.PlannerLanguage = PlannerLanguages.English;
+            var englishCatalog = await _apiClient.GetCatalogAsync(cancellationToken);
+            if (!HasOfficialEnglishNames(englishCatalog))
+            {
+                return false;
+            }
+
             _apiClient.PlannerLanguage = PlannerLanguages.Ukrainian;
-            var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
-            var titaniumRod = catalog.Recipes.FirstOrDefault(recipe => recipe.RecipeId == "titanium-rod");
-            return string.Equals(catalog.Meta.Language, PlannerLanguages.Ukrainian, StringComparison.Ordinal)
-                && !string.Equals(titaniumRod?.Output.Name, "Titanium Rod", StringComparison.Ordinal);
+            var ukrainianCatalog = await _apiClient.GetCatalogAsync(cancellationToken);
+            return HasOfficialUkrainianNames(ukrainianCatalog);
         }
         finally
         {
@@ -99,7 +130,41 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         }
     }
 
-    private static void StopStalePythonApiOnPort(int port)
+    private static bool HasOfficialEnglishNames(PlannerCatalog catalog)
+    {
+        if (!string.Equals(catalog.Meta.Language, PlannerLanguages.English, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var powerium = catalog.Recipes.FirstOrDefault(recipe => recipe.Output.ItemId == "magic-oil-ore");
+        var sulfuricAcid = catalog.Recipes.FirstOrDefault(recipe => recipe.Output.ItemId == "sulphuric-acid");
+        var pressurizer = catalog.Recipes.FirstOrDefault(recipe => recipe.BuildingId == "pressurizer");
+        var refinery = catalog.Recipes.FirstOrDefault(recipe => recipe.BuildingId == "refinery");
+        return string.Equals(powerium?.Output.Name, "Powerium", StringComparison.Ordinal)
+            && string.Equals(sulfuricAcid?.Output.Name, "Sulfuric Acid", StringComparison.Ordinal)
+            && string.Equals(pressurizer?.BuildingName, "Pressurizer", StringComparison.Ordinal)
+            && string.Equals(refinery?.BuildingName, "Refinery", StringComparison.Ordinal);
+    }
+
+    private static bool HasOfficialUkrainianNames(PlannerCatalog catalog)
+    {
+        if (!string.Equals(catalog.Meta.Language, PlannerLanguages.Ukrainian, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var powerium = catalog.Recipes.FirstOrDefault(recipe => recipe.Output.ItemId == "magic-oil-ore");
+        var sulfuricAcid = catalog.Recipes.FirstOrDefault(recipe => recipe.Output.ItemId == "sulphuric-acid");
+        var pressurizer = catalog.Recipes.FirstOrDefault(recipe => recipe.BuildingId == "pressurizer");
+        var refinery = catalog.Recipes.FirstOrDefault(recipe => recipe.BuildingId == "refinery");
+        return string.Equals(powerium?.Output.Name, "Енергіум", StringComparison.Ordinal)
+            && string.Equals(sulfuricAcid?.Output.Name, "Сірчана кислота", StringComparison.Ordinal)
+            && string.Equals(pressurizer?.BuildingName, "Нагнітач", StringComparison.Ordinal)
+            && string.Equals(refinery?.BuildingName, "Очисник", StringComparison.Ordinal);
+    }
+
+    private static void StopStaleApiOnPort(int port)
     {
         var processIds = ListeningProcessIds(port);
         foreach (var processId in processIds)
@@ -107,7 +172,7 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             try
             {
                 using var process = Process.GetProcessById(processId);
-                if (!process.ProcessName.Contains("python", StringComparison.OrdinalIgnoreCase))
+                if (!IsManagedApiProcess(process.ProcessName))
                 {
                     continue;
                 }
@@ -115,12 +180,19 @@ public sealed class LocalApiProcessManager : IApiProcessManager
                 process.Kill(entireProcessTree: true);
                 process.WaitForExit(3000);
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"[LocalApiProcessManager] Failed to stop stale Python API process {processId}: {ex.Message}");
                 // Best effort only. If the stale API cannot be stopped, startup
                 // will report that the replacement process never became ready.
             }
         }
+    }
+
+    private static bool IsManagedApiProcess(string processName)
+    {
+        return processName.Contains("python", StringComparison.OrdinalIgnoreCase)
+            || processName.Contains("StarRuptureApi", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IReadOnlyList<int> ListeningProcessIds(int port)
@@ -149,8 +221,9 @@ public sealed class LocalApiProcessManager : IApiProcessManager
                 .Distinct()
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[LocalApiProcessManager] Failed to inspect listeners on port {port}: {ex.Message}");
             return [];
         }
     }
@@ -212,8 +285,50 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         return null;
     }
 
+    public static string? FindBundledApiExecutable(string? startPath = null)
+    {
+        var directory = new DirectoryInfo(startPath ?? AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var apiPath = Path.Combine(directory.FullName, "api", "StarRuptureApi.exe");
+            if (File.Exists(apiPath))
+            {
+                return apiPath;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return null;
+    }
+
     public void Dispose()
     {
+        StopOwnedProcess();
         _process?.Dispose();
+        _process = null;
+    }
+
+    private void StopOwnedProcess()
+    {
+        if (_process is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!_process.HasExited)
+            {
+                _process.Kill(entireProcessTree: true);
+                _process.WaitForExit(3000);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[LocalApiProcessManager] Failed to stop owned API process: {ex.Message}");
+            // Best effort during app shutdown; if Windows has already reaped
+            // the process or access is denied there is nothing useful to show.
+        }
     }
 }

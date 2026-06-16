@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using System.Diagnostics;
 
 namespace StarRupturePlanner.ViewModels;
 
@@ -34,9 +35,9 @@ public sealed class AsyncRelayCommand : ICommand
 
     public bool CanExecute(object? parameter) => !IsRunning && (_canExecute?.Invoke() ?? true);
 
-    public async void Execute(object? parameter)
+    public void Execute(object? parameter)
     {
-        await ExecuteAsync();
+        _ = ExecuteAsync();
     }
 
     public async Task ExecuteAsync()
@@ -54,6 +55,11 @@ public sealed class AsyncRelayCommand : ICommand
         }
         catch (OperationCanceledException)
         {
+            Debug.WriteLine("[AsyncRelayCommand] Command canceled.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AsyncRelayCommand] Command failed: {ex}");
         }
         finally
         {

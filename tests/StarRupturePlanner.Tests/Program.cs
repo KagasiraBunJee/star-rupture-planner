@@ -45,6 +45,8 @@ var tests = new (string Name, Action Body)[]
     ("Temperature counts for placed machine without recipe", TemperatureCountsForPlacedMachineWithoutRecipe),
     ("Missing building metrics are ignored", MissingBuildingMetricsAreIgnored),
     ("API root discovery finds repo", ApiRootDiscoveryFindsRepo),
+    ("Bundled API discovery finds release executable", BundledApiDiscoveryFindsReleaseExecutable),
+    ("App version info marks alpha build", AppVersionInfoMarksAlphaBuild),
 };
 
 var failed = 0;
@@ -87,6 +89,14 @@ static RecipeInfo TitaniumRodRecipe()
             },
         ],
     };
+}
+
+static void AppVersionInfoMarksAlphaBuild()
+{
+    AssertTrue(AppVersionInfo.DisplayVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase));
+    AssertTrue(AppVersionInfo.IsAlpha);
+    AssertEqual("ALPHA", AppVersionInfo.ChannelLabel);
+    AssertEqual("0.2.7", AppVersionInfo.SupportedGameVersion);
 }
 
 static RecipeInfo SourceRecipe(double outputPerMinute)
@@ -1287,6 +1297,26 @@ static void ApiRootDiscoveryFindsRepo()
 {
     var root = LocalApiProcessManager.FindRepoRoot(Environment.CurrentDirectory);
     AssertTrue(root is not null && Directory.Exists(Path.Combine(root, "starrupture_api")));
+}
+
+static void BundledApiDiscoveryFindsReleaseExecutable()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-api-" + Guid.NewGuid().ToString("N"));
+    var nested = Path.Combine(temp, "app", "nested");
+    var apiDir = Path.Combine(temp, "app", "api");
+    Directory.CreateDirectory(nested);
+    Directory.CreateDirectory(apiDir);
+    var apiPath = Path.Combine(apiDir, "StarRuptureApi.exe");
+    File.WriteAllText(apiPath, "");
+
+    try
+    {
+        AssertEqual(apiPath, LocalApiProcessManager.FindBundledApiExecutable(nested));
+    }
+    finally
+    {
+        Directory.Delete(temp, recursive: true);
+    }
 }
 
 static void AssertTrue(bool condition)

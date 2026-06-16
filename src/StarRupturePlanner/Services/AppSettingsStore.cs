@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using StarRupturePlanner.Models;
 using Directory = System.IO.Directory;
@@ -31,19 +32,34 @@ public sealed class AppSettingsStore : IAppSettingsStore
 
     public AppSettings Load()
     {
-        if (!File.Exists(FilePath))
+        try
         {
+            if (!File.Exists(FilePath))
+            {
+                return new AppSettings();
+            }
+
+            using var stream = File.OpenRead(FilePath);
+            return JsonSerializer.Deserialize<AppSettings>(stream, JsonOptions) ?? new AppSettings();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AppSettingsStore] Failed to load settings: {ex.Message}");
             return new AppSettings();
         }
-
-        using var stream = File.OpenRead(FilePath);
-        return JsonSerializer.Deserialize<AppSettings>(stream, JsonOptions) ?? new AppSettings();
     }
 
     public void Save(AppSettings settings)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-        using var stream = File.Create(FilePath);
-        JsonSerializer.Serialize(stream, settings, JsonOptions);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+            using var stream = File.Create(FilePath);
+            JsonSerializer.Serialize(stream, settings, JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AppSettingsStore] Failed to save settings: {ex.Message}");
+        }
     }
 }

@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+def _base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        executable_dir = Path(sys.executable).resolve().parent
+        return executable_dir.parent if executable_dir.name.lower() == "api" else executable_dir
+
+    return Path(__file__).resolve().parent.parent
+
+
+BASE_DIR = _base_dir()
 
 
 @dataclass(frozen=True)

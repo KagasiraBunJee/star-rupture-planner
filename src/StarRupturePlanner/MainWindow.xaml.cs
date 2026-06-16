@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using StarRupturePlanner.Controls;
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
 using StarRupturePlanner.ViewModels;
@@ -37,6 +39,9 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, FrameworkElement> _nodeViews = [];
     private readonly Dictionary<string, EdgeVisual> _edgeViews = [];
     private readonly Dictionary<string, FrameworkElement> _commentViews = [];
+    private readonly Dictionary<PortReference, FrameworkElement> _portViews = [];
+    private readonly Dictionary<string, EdgeRenderItem> _edgeRenderItems = [];
+    private EdgeLayer? _edgeLayer;
 
     private PlannerCatalog _catalog = new();
     private SchemeDocument _scheme = new();
@@ -76,40 +81,34 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, Point> _groupDragNodeStarts = [];
     private readonly Dictionary<string, Point> _groupDragCommentStarts = [];
     private readonly Dictionary<RoutePointReference, Point> _groupDragRoutePointStarts = [];
+    private readonly HashSet<string> _groupDragEdgeIds = [];
+    private readonly HashSet<string> _pendingDragEdgeIds = [];
+    private bool _dragEdgeRefreshScheduled;
     private Rectangle? _selectionRectangle;
     private bool _isSelecting;
     private bool _isCreatingComment;
     private Point _selectionStart;
     private Point _commentStart;
-
-    public MainWindow()
-        : this(
-            new PlannerApiClient(),
-            new SchemeStore(),
-            new AppSettingsStore(),
-            new PlannerCalculator(),
-            new CanvasLayoutService())
-    {
-    }
+    private bool _disposed;
 
     public MainWindow(
         IPlannerApiClient apiClient,
+        IApiProcessManager apiProcessManager,
         ISchemeStore schemeStore,
         IAppSettingsStore settingsStore,
         IPlannerCalculator calculator,
         ICanvasLayoutService layoutService,
-        IApiProcessManager? apiProcessManager = null)
+        IBackgroundTaskRunner backgroundTaskRunner)
     {
         InitializeComponent();
 
         _apiClient = apiClient;
-        _apiProcessManager = apiProcessManager ?? new LocalApiProcessManager(_apiClient);
+        _apiProcessManager = apiProcessManager;
         _schemeStore = schemeStore;
         _settingsStore = settingsStore;
         _calculator = calculator;
         _layoutService = layoutService;
         var uiDispatcher = new WpfUiDispatcher(Dispatcher);
-        var backgroundTaskRunner = new BackgroundTaskRunner();
         _viewModel = new MainWindowViewModel(
             _apiClient,
             _apiProcessManager,
@@ -126,20 +125,58 @@ public partial class MainWindow : Window
         ApplySettings();
 
         Loaded += MainWindow_Loaded;
-        Closed += (_, _) =>
-        {
-            _suggestionCancellation?.Cancel();
-            _suggestionCancellation?.Dispose();
-            _viewModel.Dispose();
-        };
+        Closed += (_, _) => DisposeWindowResources();
     }
 
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    protected override void OnClosed(EventArgs e)
     {
-        await RefreshSchemeListAsync();
-        NewScheme();
-        await InitializeApiAsync();
+        DisposeWindowResources();
+        base.OnClosed(e);
     }
+
+    private void DisposeWindowResources()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _suggestionCancellation?.Cancel();
+        _suggestionCancellation?.Dispose();
+        _suggestionCancellation = null;
+        _viewModel.Dispose();
+    }
+
+    private void RunUiAsync(Func<Task> operation, string context)
+    {
+        _ = RunUiAsyncCore(operation, context);
+    }
+
+    private async Task RunUiAsyncCore(Func<Task> operation, string context)
+    {
+        try
+        {
+            await operation();
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.WriteLine($"[{context}] Operation canceled.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[{context}] {ex}");
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e) =>
+        RunUiAsync(async () =>
+        {
+            await RefreshSchemeListAsync();
+            NewScheme();
+            await InitializeApiAsync();
+        }, "MainWindow.Loaded");
 
     private async Task InitializeApiAsync()
     {
@@ -225,27 +262,31 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Choose StarRupture scheme folder",
+            Title = UiText.T("Text.ChooseSchemeFolder"),
             InitialDirectory = _schemeStore.FolderPath,
         };
 
         if (dialog.ShowDialog(this) == true)
         {
             _viewModel.SetSchemeFolder(dialog.FolderName);
-            _ = RefreshSchemeListAsync();
-            SetStatus("Scheme folder changed.");
+            RunUiAsync(RefreshSchemeListAsync, "MainWindow.RefreshSchemeList");
+            SetStatus(UiText.T("Status.SchemeFolderChanged"));
         }
     }
 
-    private async void Settings_Click(object sender, RoutedEventArgs e)
-    {
-        var previousLanguage = PlannerLanguages.Normalize(_settings.PlannerLanguage);
-        var window = new SettingsWindow(_settings)
+    private void Settings_Click(object sender, RoutedEventArgs e) =>
+        RunUiAsync(async () =>
         {
-            Owner = this,
-        };
-        if (window.ShowDialog() == true)
-        {
+            var previousLanguage = PlannerLanguages.Normalize(_settings.PlannerLanguage);
+            var window = new SettingsWindow(_settings)
+            {
+                Owner = this,
+            };
+            if (window.ShowDialog() != true)
+            {
+                return;
+            }
+
             _settings = window.Settings;
             _viewModel.SaveSettings(_settings);
             var languageChanged = !string.Equals(
@@ -257,12 +298,12 @@ public partial class MainWindow : Window
                 ApplySettings();
                 await _viewModel.ReloadCatalogAsync();
             }
+
             SyncFromViewModel();
             ApplySettings();
             RenderCanvas();
             UpdateInspector();
-        }
-    }
+        }, "MainWindow.Settings");
 
     private void ApplySettings()
     {
@@ -273,6 +314,14 @@ public partial class MainWindow : Window
 
         ApplyTheme(ResolveTheme(_settings.Theme));
         ApplyLanguage(_settings.PlannerLanguage);
+        UpdateVersionChrome();
+    }
+
+    private void UpdateVersionChrome()
+    {
+        Title = AppVersionInfo.WindowTitle(UiText.T("App.Title"));
+        AppChannelText.Text = AppVersionInfo.ChannelLabel;
+        AppVersionText.Text = AppVersionInfo.Subtitle(UiText.T("App.Subtitle"));
     }
 
     private static void ApplyTheme(AppTheme theme)
@@ -314,20 +363,21 @@ public partial class MainWindow : Window
         merged.Insert(insertIndex, new ResourceDictionary { Source = languageUri });
     }
 
-    private async void SchemesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_schemeDragItem is not null)
+    private void SchemesList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+        RunUiAsync(async () =>
         {
-            return;
-        }
+            if (_schemeDragItem is not null)
+            {
+                return;
+            }
 
-        if (SchemesList.SelectedItem is not SchemeListItem item)
-        {
-            return;
-        }
+            if (SchemesList.SelectedItem is not SchemeListItem item)
+            {
+                return;
+            }
 
-        await OpenSchemeListItemAsync(item);
-    }
+            await OpenSchemeListItemAsync(item);
+        }, "MainWindow.SchemeSelection");
 
     private async Task OpenSchemeListItemAsync(SchemeListItem item)
     {
@@ -343,23 +393,24 @@ public partial class MainWindow : Window
         UpdateInspector();
     }
 
-    private async void OpenBlueprintSourceButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_selectedNode is null || _selectedNode.NodeType != SchemeNodeType.BlueprintSource)
+    private void OpenBlueprintSourceButton_Click(object sender, RoutedEventArgs e) =>
+        RunUiAsync(async () =>
         {
-            return;
-        }
+            if (_selectedNode is null || _selectedNode.NodeType != SchemeNodeType.BlueprintSource)
+            {
+                return;
+            }
 
-        var item = FindBlueprintSourceScheme(_selectedNode);
-        if (item is null)
-        {
-            SetStatus("Source scheme is no longer available.");
-            UpdateInspector();
-            return;
-        }
+            var item = FindBlueprintSourceScheme(_selectedNode);
+            if (item is null)
+            {
+                SetStatus(UiText.T("Status.SourceSchemeUnavailable"));
+                UpdateInspector();
+                return;
+            }
 
-        await OpenSchemeListItemAsync(item);
-    }
+            await OpenSchemeListItemAsync(item);
+        }, "MainWindow.OpenBlueprintSource");
 
     private bool BlueprintSourceSchemeExists(SchemeNode node)
     {
@@ -382,7 +433,7 @@ public partial class MainWindow : Window
             string.Equals(item.Name, node.SourceSchemeName, StringComparison.CurrentCultureIgnoreCase));
     }
 
-    private async void SchemesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void SchemesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         var button = FindAncestor<Button>(e.OriginalSource as DependencyObject);
         if (button?.Tag as string != "DeleteScheme" || button.DataContext is not SchemeListItem item)
@@ -393,40 +444,43 @@ public partial class MainWindow : Window
 
         e.Handled = true;
 
-        var result = MessageBox.Show(
-            this,
-            $"Delete saved scheme \"{item.Name}\"? This cannot be undone.",
-            "Delete scheme",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-        if (result != MessageBoxResult.Yes)
+        RunUiAsync(async () =>
         {
-            return;
-        }
-
-        var deletedCurrentScheme = SamePath(_scheme.FilePath, item.FilePath);
-        var deleted = await _viewModel.DeleteSchemeAsync(item);
-        if (!deleted || !deletedCurrentScheme)
-        {
-            if (deleted)
+            var result = MessageBox.Show(
+                this,
+                UiText.Format("Text.DeleteSchemeConfirm", item.Name),
+                UiText.T("Text.DeleteScheme"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
             {
-                RemoveBlueprintReferencesFromCurrentScheme(item);
+                return;
             }
 
-            return;
-        }
+            var deletedCurrentScheme = SamePath(_scheme.FilePath, item.FilePath);
+            var deleted = await _viewModel.DeleteSchemeAsync(item);
+            if (!deleted || !deletedCurrentScheme)
+            {
+                if (deleted)
+                {
+                    RemoveBlueprintReferencesFromCurrentScheme(item);
+                }
 
-        _viewModel.NewScheme();
-        SyncFromViewModel();
-        ClearSelection();
-        CanvasScale.ScaleX = 1;
-        CanvasScale.ScaleY = 1;
-        CanvasTranslate.X = 0;
-        CanvasTranslate.Y = 0;
-        UpdateZoomText();
-        RenderCanvas();
-        UpdateInspector();
-        SetStatus($"Deleted {item.Name}.");
+                return;
+            }
+
+            _viewModel.NewScheme();
+            SyncFromViewModel();
+            ClearSelection();
+            CanvasScale.ScaleX = 1;
+            CanvasScale.ScaleY = 1;
+            CanvasTranslate.X = 0;
+            CanvasTranslate.Y = 0;
+            UpdateZoomText();
+            RenderCanvas();
+            UpdateInspector();
+            SetStatus(UiText.Format("Status.Deleted", item.Name));
+        }, "MainWindow.DeleteScheme");
     }
 
     private void RemoveBlueprintReferencesFromCurrentScheme(SchemeListItem deletedScheme)
@@ -447,7 +501,7 @@ public partial class MainWindow : Window
         ClearSelection();
         RenderCanvas();
         UpdateInspector();
-        SetStatus($"Removed {removedNodeIds.Count} blueprint reference{(removedNodeIds.Count == 1 ? "" : "s")} to {deletedScheme.Name}.");
+        SetStatus(UiText.Format("Status.RemovedBlueprintReferences", removedNodeIds.Count, deletedScheme.Name));
     }
 
     private static bool BlueprintReferencesScheme(SchemeNode node, SchemeListItem scheme)
@@ -467,23 +521,24 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void SchemesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void SchemesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         var item = _schemeDragItem;
         ClearSchemeToolboxDrag();
         if (item is not null && Equals(SchemesList.SelectedItem, item))
         {
-            await OpenSchemeListItemAsync(item);
+            RunUiAsync(() => OpenSchemeListItemAsync(item), "MainWindow.OpenSchemeFromMouseUp");
         }
     }
 
-    private async void SaveScheme_Click(object sender, RoutedEventArgs e) => await SaveCurrentSchemeAsync();
+    private void SaveScheme_Click(object sender, RoutedEventArgs e) =>
+        RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveScheme");
 
     private async Task SaveCurrentSchemeAsync()
     {
         if (_scheme.FilePath is null && _scheme.Name == "Untitled")
         {
-            var name = PromptForName("Scheme name", "Untitled");
+            var name = PromptForName(UiText.T("Text.SchemeName"), "Untitled");
             if (string.IsNullOrWhiteSpace(name))
             {
                 return;
@@ -621,14 +676,14 @@ public partial class MainWindow : Window
             .ToList();
         if (outputs.Count == 0)
         {
-            SetStatus($"Scheme \"{schemeItem.Name}\" has no marked outputs.");
+            SetStatus(UiText.Format("Status.SchemeHasNoMarkedOutputs", schemeItem.Name));
             return;
         }
 
         var node = _canvasViewModel.CreateBlueprintSourceNode(schemeItem, position);
         if (node is null)
         {
-            SetStatus($"Scheme \"{schemeItem.Name}\" outputs are not available in the current catalog.");
+            SetStatus(UiText.Format("Status.SchemeOutputsUnavailable", schemeItem.Name));
             return;
         }
 
@@ -636,7 +691,7 @@ public partial class MainWindow : Window
         SelectSingleNode(node);
         RenderCanvas();
         UpdateInspector();
-        SetStatus($"Added blueprint source from {schemeItem.Name} with {node.BlueprintOutputs.Count} output{(node.BlueprintOutputs.Count == 1 ? "" : "s")}.");
+        SetStatus(UiText.Format("Status.AddedBlueprintSource", schemeItem.Name, node.BlueprintOutputs.Count));
     }
 
     private SchemeNode CreateNode(RecipeInfo recipe, double x, double y)
@@ -651,12 +706,17 @@ public partial class MainWindow : Window
         _nodeViews.Clear();
         _edgeViews.Clear();
         _commentViews.Clear();
+        _portViews.Clear();
+        _edgeRenderItems.Clear();
+        _edgeLayer = null;
         _selectionRectangle = null;
 
         foreach (var comment in _scheme.Comments)
         {
             AddCommentView(comment);
         }
+
+        AddEdgeLayer();
 
         foreach (var edge in _scheme.Edges)
         {
@@ -668,14 +728,26 @@ public partial class MainWindow : Window
             AddNodeView(node);
         }
 
-        RefreshEdges();
+        RefreshEdges(refreshAnalysis: false);
         Dispatcher.BeginInvoke(
             (Action)(() =>
             {
-                PlannerCanvas.UpdateLayout();
-                RefreshEdges();
+                RefreshEdges(refreshAnalysis: false);
             }),
             DispatcherPriority.Loaded);
+    }
+
+    private void AddEdgeLayer()
+    {
+        _edgeLayer = new EdgeLayer
+        {
+            Width = PlannerCanvas.Width,
+            Height = PlannerCanvas.Height,
+        };
+        _edgeLayer.EdgeMouseLeftButtonDown += EdgeLayer_MouseLeftButtonDown;
+        PlannerCanvas.Children.Add(_edgeLayer);
+        Canvas.SetLeft(_edgeLayer, 0);
+        Canvas.SetTop(_edgeLayer, 0);
     }
 
     private void AddCommentView(SchemeComment comment)
@@ -858,7 +930,7 @@ public partial class MainWindow : Window
         var titlePanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
         titlePanel.Children.Add(new TextBlock
         {
-            Text = recipe?.BuildingName ?? building?.Name ?? "Unselected machine",
+            Text = recipe?.BuildingName ?? building?.Name ?? UiText.T("Text.UnselectedMachine"),
             Foreground = CardTextBrush(),
             FontSize = CardFontSize(4),
             FontFamily = CardFontFamily(),
@@ -868,7 +940,7 @@ public partial class MainWindow : Window
         titlePanel.Children.Add(new TextBlock
         {
             Text = recipe is null
-                ? "Recipe not selected"
+                ? UiText.T("Text.RecipeNotSelected")
                 : $"{recipe.Output.Name}  {NodeOutputRate(node, recipe):g}/min",
             Foreground = CardTextBrush(0.72),
             FontSize = CardFontSize(),
@@ -895,10 +967,10 @@ public partial class MainWindow : Window
             status.Children.Add(new TextBlock
             {
                 Text = IsNodeLocked(node)
-                    ? "Locked by corporations"
+                    ? UiText.T("Text.LockedByCorporations")
                     : node.OnlyOutput
-                        ? $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  source"
-                        : $"Count {ProductionAnalysisService.EffectiveMachineCount(node)}  {node.Priority}",
+                        ? UiText.Format("Text.CountSource", ProductionAnalysisService.EffectiveMachineCount(node))
+                        : UiText.Format("Text.CountPriority", ProductionAnalysisService.EffectiveMachineCount(node), PriorityDisplay(node.Priority)),
                 Foreground = IsNodeLocked(node) ? new SolidColorBrush(ShortageColor) : CardTextBrush(0.75),
                 FontSize = CardFontSize(-1),
                 FontFamily = CardFontFamily(),
@@ -912,7 +984,7 @@ public partial class MainWindow : Window
         {
             var hint = new TextBlock
             {
-                Text = "Select a recipe in the inspector to activate ports.",
+                Text = UiText.T("Text.SelectRecipeToActivatePorts"),
                 Foreground = CardTextBrush(0.72),
                 FontFamily = CardFontFamily(),
                 FontSize = CardFontSize(),
@@ -934,7 +1006,7 @@ public partial class MainWindow : Window
             if (!node.OnlyOutput)
             {
                 var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
-                inputs.Children.Add(CreateCardSectionLabel("INPUTS"));
+                inputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.InputsUpper")));
                 foreach (var input in recipe.Inputs)
                 {
                     inputs.Children.Add(CreatePortVisual(node, input, "input"));
@@ -954,7 +1026,7 @@ public partial class MainWindow : Window
             }
 
             var output = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 10, 14, 12) };
-            output.Children.Add(CreateCardSectionLabel("OUTPUTS"));
+            output.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
             output.Children.Add(CreatePortVisual(node, recipe.Output, "output"));
 
             Grid.SetColumn(output, 2);
@@ -1056,7 +1128,7 @@ public partial class MainWindow : Window
         var titlePanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
         titlePanel.Children.Add(new TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(node.SourceSchemeName) ? "Blueprint source" : node.SourceSchemeName,
+            Text = string.IsNullOrWhiteSpace(node.SourceSchemeName) ? UiText.T("Text.BlueprintSource") : node.SourceSchemeName,
             Foreground = CardTextBrush(),
             FontSize = CardFontSize(4),
             FontFamily = CardFontFamily(),
@@ -1065,12 +1137,12 @@ public partial class MainWindow : Window
         });
         titlePanel.Children.Add(new TextBlock
         {
-            Text = $"{node.BlueprintOutputs.Count} external output{(node.BlueprintOutputs.Count == 1 ? "" : "s")}",
+            Text = UiText.Format("Text.ExternalOutputsCount", node.BlueprintOutputs.Count),
             Foreground = CardTextBrush(0.72),
             FontSize = CardFontSize(),
             FontFamily = CardFontFamily(),
         });
-        titlePanel.Children.Add(CreateNodeBadge("Blueprint source", OutputPortColor));
+        titlePanel.Children.Add(CreateNodeBadge(UiText.T("Text.BlueprintSource"), OutputPortColor));
         header.Children.Add(titlePanel);
         grid.Children.Add(header);
 
@@ -1079,7 +1151,7 @@ public partial class MainWindow : Window
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(215) });
         var note = new TextBlock
         {
-            Text = "Outputs from an existing saved scheme.",
+            Text = UiText.T("Text.BlueprintSourceDescription"),
             Foreground = CardTextBrush(0.62),
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-1),
@@ -1090,7 +1162,7 @@ public partial class MainWindow : Window
         body.Children.Add(note);
 
         var outputs = new StackPanel { Margin = new Thickness(8, 10, 14, 12), VerticalAlignment = VerticalAlignment.Center };
-        outputs.Children.Add(CreateCardSectionLabel("OUTPUTS"));
+        outputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
         foreach (var output in node.BlueprintOutputs)
         {
             outputs.Children.Add(CreatePortVisual(node, BlueprintPortToRecipePort(output), "output"));
@@ -1216,12 +1288,12 @@ public partial class MainWindow : Window
 
         if (node.OnlyOutput)
         {
-            panel.Children.Add(CreateNodeBadge("Only output", OutputPortColor));
+            panel.Children.Add(CreateNodeBadge(UiText.T("Text.OnlyOutput"), OutputPortColor));
         }
 
         if (node.IsSchemeOutput)
         {
-            panel.Children.Add(CreateNodeBadge("Scheme output", SignalGreenColor));
+            panel.Children.Add(CreateNodeBadge(UiText.T("Text.SchemeOutput"), SignalGreenColor));
         }
 
         return panel;
@@ -1283,12 +1355,12 @@ public partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
         };
         DockPanel.SetDock(power, Dock.Left);
-        power.Text = $"Power  {PlannerMetricService.FormatNodePower(building, machines)}";
+        power.Text = $"{UiText.T("Metric.TotalPower")}  {PlannerMetricService.FormatNodePower(building, machines)}";
         dock.Children.Add(power);
 
         var temperature = new TextBlock
         {
-            Text = $"Temp  {PlannerMetricService.FormatNodeTemperature(building, machines)}",
+            Text = $"{UiText.T("Metric.Temperature")}  {PlannerMetricService.FormatNodeTemperature(building, machines)}",
             Foreground = CardTextBrush(0.6),
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-1),
@@ -1473,6 +1545,7 @@ public partial class MainWindow : Window
     {
         var rate = PortRate(node, port, direction);
         var available = IsPortAvailableForConnection(node, port, direction);
+        var portReference = new PortReference(node.Id, direction, port.ItemId);
         var row = new Grid
         {
             Margin = new Thickness(0, 4, 0, 4),
@@ -1493,7 +1566,7 @@ public partial class MainWindow : Window
             StrokeThickness = 2,
             VerticalAlignment = VerticalAlignment.Center,
             Cursor = available ? Cursors.Hand : Cursors.No,
-            Tag = new PortReference(node.Id, direction, port.ItemId),
+            Tag = portReference,
             Effect = new System.Windows.Media.Effects.DropShadowEffect
             {
                 Color = available
@@ -1508,6 +1581,7 @@ public partial class MainWindow : Window
         {
             dot.PreviewMouseLeftButtonDown += Port_MouseLeftButtonDown;
         }
+        _portViews[portReference] = dot;
 
         var info = new StackPanel
         {
@@ -1562,49 +1636,7 @@ public partial class MainWindow : Window
 
     private void AddEdgeView(SchemeEdge edge)
     {
-        var isValid = IsEdgeValid(edge);
-        var isShort = IsEdgeShort(edge);
-        var path = new Path
-        {
-            Stroke = EdgeVisualBrush(edge, isValid),
-            StrokeThickness = isValid ? 3.5 : 2.5,
-            Tag = edge,
-            Effect = isValid && !isShort
-                ? new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color = OutputPortColor,
-                    BlurRadius = 12,
-                    ShadowDepth = 0,
-                    Opacity = 0.55,
-                }
-                : null,
-        };
-        path.MouseLeftButtonDown += Edge_MouseLeftButtonDown;
-        var hitPath = new Path
-        {
-            Stroke = Brushes.Transparent,
-            StrokeThickness = 16,
-            Tag = edge,
-            Cursor = Cursors.Hand,
-        };
-        hitPath.MouseLeftButtonDown += Edge_MouseLeftButtonDown;
-
-        var label = new TextBlock
-        {
-            Background = new SolidColorBrush(Color.FromArgb(232, 8, 15, 20)),
-            Foreground = isValid && !isShort ? CardTextBrush() : new SolidColorBrush(ShortageColor),
-            Padding = new Thickness(8, 4, 8, 4),
-            FontFamily = CardFontFamily(),
-            FontSize = CardFontSize(-1),
-            RenderTransformOrigin = new Point(0.5, 0.5),
-            Tag = edge,
-        };
-        label.MouseLeftButtonDown += Edge_MouseLeftButtonDown;
-
-        PlannerCanvas.Children.Add(path);
-        PlannerCanvas.Children.Add(hitPath);
-        PlannerCanvas.Children.Add(label);
-        var visual = new EdgeVisual(path, hitPath, label);
+        var visual = new EdgeVisual();
         _edgeViews[edge.Id] = visual;
 
         for (var index = 0; index < edge.RoutePoints.Count; index++)
@@ -1615,11 +1647,24 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RefreshEdges()
+    private void RefreshEdges(
+        IEnumerable<string>? edgeIds = null,
+        bool refreshAnalysis = true,
+        bool updateSelectionVisuals = true)
     {
-        MigrateAndAnalyzeScheme();
+        if (refreshAnalysis)
+        {
+            MigrateAndAnalyzeScheme();
+        }
+
+        var edgeFilter = edgeIds is null ? null : new HashSet<string>(edgeIds, StringComparer.Ordinal);
         foreach (var edge in _scheme.Edges)
         {
+            if (edgeFilter is not null && !edgeFilter.Contains(edge.Id))
+            {
+                continue;
+            }
+
             if (!_edgeViews.TryGetValue(edge.Id, out var visual))
             {
                 continue;
@@ -1629,26 +1674,25 @@ public partial class MainWindow : Window
             var targetPoint = GetPortPoint(edge.TargetNodeId, "input", edge.TargetItemId);
             if (sourcePoint is null || targetPoint is null)
             {
-                visual.Path.Data = Geometry.Empty;
-                visual.HitPath.Data = Geometry.Empty;
-                visual.Label.Text = UiText.T("Text.InvalidConnection");
+                _edgeRenderItems[edge.Id] = CreateInvalidEdgeRenderItem(edge);
                 continue;
             }
 
             var routePoints = CanvasGeometryService.EdgePoints(edge, sourcePoint.Value, targetPoint.Value);
-            var geometry = CanvasGeometryService.CreateRoutedGeometry(routePoints);
-            visual.Path.Data = geometry;
-            visual.HitPath.Data = geometry;
             var isValid = IsEdgeValid(edge);
             var isShort = IsEdgeShort(edge);
-            visual.Path.Stroke = EdgeVisualBrush(edge, isValid);
-            visual.Path.StrokeThickness = isValid ? 3.5 : 2.5;
-            visual.Label.Foreground = isValid && !isShort ? CardTextBrush() : new SolidColorBrush(ShortageColor);
             var labelPlacement = CanvasGeometryService.LabelPlacementAboveLine(routePoints);
-            Canvas.SetLeft(visual.Label, labelPlacement.Position.X);
-            Canvas.SetTop(visual.Label, labelPlacement.Position.Y);
-            visual.Label.RenderTransform = new RotateTransform(labelPlacement.AngleDegrees);
-            visual.Label.Text = EdgeLabel(edge);
+            _edgeRenderItems[edge.Id] = new EdgeRenderItem(
+                edge.Id,
+                routePoints,
+                EdgeLabel(edge),
+                labelPlacement.Position,
+                labelPlacement.AngleDegrees,
+                EdgeStrokeColor(edge, isValid),
+                isValid && !isShort ? BrushColor(CardTextBrush(), Color.FromRgb(244, 240, 232)) : ShortageColor,
+                CardFontFamily(),
+                CardFontSize(-1),
+                isValid);
 
             for (var index = 0; index < visual.RoutePointHandles.Count && index < edge.RoutePoints.Count; index++)
             {
@@ -1658,7 +1702,27 @@ public partial class MainWindow : Window
             }
         }
 
-        UpdateSelectionVisuals();
+        _edgeLayer?.SetEdges(_edgeRenderItems.Values.ToList());
+
+        if (updateSelectionVisuals)
+        {
+            UpdateSelectionVisuals();
+        }
+    }
+
+    private EdgeRenderItem CreateInvalidEdgeRenderItem(SchemeEdge edge)
+    {
+        return new EdgeRenderItem(
+            edge.Id,
+            [],
+            UiText.T("Text.InvalidConnection"),
+            new Point(),
+            0,
+            ShortageColor,
+            ShortageColor,
+            CardFontFamily(),
+            CardFontSize(-1),
+            false);
     }
 
     private void MigrateAndAnalyzeScheme()
@@ -1687,7 +1751,7 @@ public partial class MainWindow : Window
         }
 
         _lastToolboxUnlockSignature = signature;
-        _ = _viewModel.Toolbox.SetSchemeAsync(_scheme);
+        RunUiAsync(() => _viewModel.Toolbox.SetSchemeAsync(_scheme), "MainWindow.RefreshToolboxUnlocks");
     }
 
     private void UpdateProductionAlerts()
@@ -1723,10 +1787,10 @@ public partial class MainWindow : Window
         {
             var outputs = PlannerMetricService.SchemeOutputs(_scheme, _catalog, _calculator);
             MetricSchemeOutputs.Text = outputs.Count == 0
-                ? "No scheme outputs marked"
+                ? UiText.T("Text.NoSchemeOutputsMarked")
                 : string.Join(", ", outputs.Select(output => $"{output.ItemName} {output.RatePerMinute:g}/min"));
             MetricSchemeOutputs.ToolTip = outputs.Count == 0
-                ? "No scheme outputs marked"
+                ? UiText.T("Text.NoSchemeOutputsMarked")
                 : string.Join("\n", outputs.Select(output => $"{output.MachineName}: {output.ItemName} {output.RatePerMinute:g}/min"));
         }
 
@@ -1819,6 +1883,16 @@ public partial class MainWindow : Window
         return EdgeStrokeBrush();
     }
 
+    private Color EdgeStrokeColor(SchemeEdge edge, bool isValid)
+    {
+        return !isValid || IsEdgeShort(edge) ? ShortageColor : OutputPortColor;
+    }
+
+    private static Color BrushColor(Brush brush, Color fallback)
+    {
+        return brush is SolidColorBrush solid ? solid.Color : fallback;
+    }
+
     private bool IsNodeLocked(SchemeNode node)
     {
         return !string.IsNullOrWhiteSpace(node.BuildingId)
@@ -1851,26 +1925,28 @@ public partial class MainWindow : Window
             return null;
         }
 
-        var handle = FindVisualChildren<FrameworkElement>(nodeView)
-            .FirstOrDefault(port => port is Ellipse
-                && port.Tag is PortReference reference
-                && reference.Direction == direction
-                && reference.ItemId == itemId);
+        var node = _scheme.Nodes.FirstOrDefault(item => item.Id == nodeId);
+        if (node is null)
+        {
+            return null;
+        }
+
+        var handle = _portViews.GetValueOrDefault(new PortReference(nodeId, direction, itemId));
         if (handle is null || !handle.IsVisible)
         {
-            var node = _scheme.Nodes.FirstOrDefault(item => item.Id == nodeId);
-            if (node?.OnlyOutput == true && direction == "input")
+            if (node.OnlyOutput && direction == "input")
             {
-                return nodeView.TransformToAncestor(PlannerCanvas)
-                    .Transform(new Point(0, Math.Max(0, nodeView.ActualHeight) / 2));
+                return new Point(
+                    node.X,
+                    node.Y + Math.Max(0, nodeView.ActualHeight) / 2);
             }
 
             return null;
         }
 
-        var point = handle.TransformToAncestor(PlannerCanvas)
+        var localPoint = handle.TransformToAncestor(nodeView)
             .Transform(new Point(handle.ActualWidth / 2, handle.ActualHeight / 2));
-        return point;
+        return new Point(node.X + localPoint.X, node.Y + localPoint.Y);
     }
 
     private void ClearSelection()
@@ -2028,6 +2104,7 @@ public partial class MainWindow : Window
         _groupDragNodeStarts.Clear();
         _groupDragCommentStarts.Clear();
         _groupDragRoutePointStarts.Clear();
+        _groupDragEdgeIds.Clear();
 
         foreach (var commentId in _selectedCommentIds)
         {
@@ -2051,6 +2128,16 @@ public partial class MainWindow : Window
         {
             _groupDragRoutePointStarts[entry.Reference] = new Point(entry.Point.X, entry.Point.Y);
         }
+
+        foreach (var edge in _scheme.Edges)
+        {
+            if (_groupDragNodeStarts.ContainsKey(edge.SourceNodeId)
+                || _groupDragNodeStarts.ContainsKey(edge.TargetNodeId)
+                || _groupDragRoutePointStarts.Keys.Any(reference => reference.EdgeId == edge.Id))
+            {
+                _groupDragEdgeIds.Add(edge.Id);
+            }
+        }
     }
 
     private void ApplyGroupDrag(Point current, Point start)
@@ -2068,7 +2155,7 @@ public partial class MainWindow : Window
 
             comment.X = origin.X + deltaX;
             comment.Y = origin.Y + deltaY;
-            UpdateCommentViewPosition(comment);
+            UpdateCommentDragVisual(comment.Id, deltaX, deltaY);
         }
 
         foreach (var (nodeId, origin) in _groupDragNodeStarts)
@@ -2081,7 +2168,7 @@ public partial class MainWindow : Window
 
             node.X = origin.X + deltaX;
             node.Y = origin.Y + deltaY;
-            UpdateNodeViewPosition(node);
+            UpdateNodeDragVisual(node.Id, deltaX, deltaY);
         }
 
         foreach (var (reference, origin) in _groupDragRoutePointStarts)
@@ -2146,6 +2233,75 @@ public partial class MainWindow : Window
         _groupDragNodeStarts.Clear();
         _groupDragCommentStarts.Clear();
         _groupDragRoutePointStarts.Clear();
+        _groupDragEdgeIds.Clear();
+    }
+
+    private void RefreshDraggedEdges(bool immediate = false)
+    {
+        if (_groupDragEdgeIds.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var edgeId in _groupDragEdgeIds)
+        {
+            _pendingDragEdgeIds.Add(edgeId);
+        }
+
+        if (immediate)
+        {
+            if (_dragEdgeRefreshScheduled)
+            {
+                CompositionTarget.Rendering -= DragEdgeRefresh_Rendering;
+                _dragEdgeRefreshScheduled = false;
+            }
+
+            FlushDraggedEdgeRefresh();
+            return;
+        }
+
+        if (_dragEdgeRefreshScheduled)
+        {
+            return;
+        }
+
+        _dragEdgeRefreshScheduled = true;
+        CompositionTarget.Rendering += DragEdgeRefresh_Rendering;
+    }
+
+    private void DragEdgeRefresh_Rendering(object? sender, EventArgs e)
+    {
+        CompositionTarget.Rendering -= DragEdgeRefresh_Rendering;
+        _dragEdgeRefreshScheduled = false;
+        FlushDraggedEdgeRefresh();
+    }
+
+    private void FlushDraggedEdgeRefresh()
+    {
+        if (_pendingDragEdgeIds.Count == 0)
+        {
+            return;
+        }
+
+        var edgeIds = _pendingDragEdgeIds.ToArray();
+        _pendingDragEdgeIds.Clear();
+        RefreshEdges(edgeIds, refreshAnalysis: false, updateSelectionVisuals: false);
+    }
+
+    private void UpdateNodeDragVisual(string nodeId, double offsetX, double offsetY)
+    {
+        if (_nodeViews.TryGetValue(nodeId, out var view))
+        {
+            view.RenderTransform = new TranslateTransform(offsetX, offsetY);
+        }
+    }
+
+    private void UpdateCommentDragVisual(string commentId, double offsetX, double offsetY)
+    {
+        if (_commentViews.TryGetValue(commentId, out var view))
+        {
+            view.RenderTransform = new TranslateTransform(offsetX, offsetY);
+        }
     }
 
     private void UpdateNodeViewPosition(SchemeNode node)
@@ -2155,9 +2311,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        view.RenderTransform = null;
         Canvas.SetLeft(view, node.X);
         Canvas.SetTop(view, node.Y);
-        view.UpdateLayout();
     }
 
     private void UpdateCommentViewPosition(SchemeComment comment)
@@ -2167,9 +2323,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        view.RenderTransform = null;
         Canvas.SetLeft(view, comment.X);
         Canvas.SetTop(view, comment.Y);
-        view.UpdateLayout();
     }
 
     private void UpdateCommentViewBounds(SchemeComment comment)
@@ -2298,8 +2454,7 @@ public partial class MainWindow : Window
         }
 
         ApplyGroupDrag(e.GetPosition(PlannerCanvas), _dragStartMouse);
-        PlannerCanvas.UpdateLayout();
-        RefreshEdges();
+        RefreshDraggedEdges();
     }
 
     private void Comment_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -2312,8 +2467,7 @@ public partial class MainWindow : Window
         if (_dragComment is not null)
         {
             SnapGroupDrag();
-            PlannerCanvas.UpdateLayout();
-            RefreshEdges();
+            RefreshDraggedEdges(immediate: true);
         }
 
         _dragComment = null;
@@ -2417,8 +2571,7 @@ public partial class MainWindow : Window
 
         var current = e.GetPosition(PlannerCanvas);
         ApplyGroupDrag(current, _dragStartMouse);
-        PlannerCanvas.UpdateLayout();
-        RefreshEdges();
+        RefreshDraggedEdges();
     }
 
     private void Node_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -2430,8 +2583,7 @@ public partial class MainWindow : Window
         if (_dragNode is not null)
         {
             SnapGroupDrag();
-            PlannerCanvas.UpdateLayout();
-            RefreshEdges();
+            RefreshDraggedEdges(immediate: true);
         }
         _dragNode = null;
         ClearGroupDrag();
@@ -2453,6 +2605,27 @@ public partial class MainWindow : Window
             UpdateSelectionVisuals();
             e.Handled = true;
         }
+    }
+
+    private void EdgeLayer_MouseLeftButtonDown(object? sender, EdgeLayerMouseEventArgs e)
+    {
+        var edge = _scheme.Edges.FirstOrDefault(item => item.Id == e.EdgeId);
+        if (edge is null)
+        {
+            return;
+        }
+
+        if (e.OriginalEventArgs.ClickCount == 2)
+        {
+            AddRoutePoint(edge, e.OriginalEventArgs.GetPosition(PlannerCanvas));
+            e.OriginalEventArgs.Handled = true;
+            return;
+        }
+
+        SelectSingleEdge(edge);
+        UpdateInspector();
+        UpdateSelectionVisuals();
+        e.OriginalEventArgs.Handled = true;
     }
 
     private void Edge_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -2529,7 +2702,7 @@ public partial class MainWindow : Window
 
         var current = e.GetPosition(PlannerCanvas);
         ApplyGroupDrag(current, _routePointDrag.StartMouse);
-        RefreshEdges();
+        RefreshDraggedEdges();
     }
 
     private void RoutePoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -2542,7 +2715,7 @@ public partial class MainWindow : Window
         if (_routePointDrag is not null)
         {
             SnapGroupDrag();
-            RefreshEdges();
+            RefreshDraggedEdges(immediate: true);
         }
 
         _routePointDrag = null;
@@ -2558,7 +2731,7 @@ public partial class MainWindow : Window
 
         if (!IsPortReferenceAvailable(port))
         {
-            SetStatus($"This resource {UiText.T("Text.NotAvailableForConnection")}");
+            SetStatus(UiText.Format("Status.ResourceNotAvailableForConnection", UiText.T("Text.NotAvailableForConnection")));
             e.Handled = true;
             return;
         }
@@ -2662,7 +2835,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void PlannerCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void PlannerCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (_connectionDrag is not null)
         {
@@ -2679,7 +2852,7 @@ public partial class MainWindow : Window
             }
 
             _suggestionCanvasPoint = e.GetPosition(PlannerCanvas);
-            await ShowSuggestionsAsync(drag.Port, _suggestionCanvasPoint);
+            RunUiAsync(() => ShowSuggestionsAsync(drag.Port, _suggestionCanvasPoint), "MainWindow.ShowSuggestions");
             return;
         }
 
@@ -2718,7 +2891,7 @@ public partial class MainWindow : Window
             var snappedTopLeft = _layoutService.Snap(rect.TopLeft);
             var comment = new SchemeComment
             {
-                Text = "Comment",
+                Text = UiText.T("Text.Comment"),
                 X = snappedTopLeft.X,
                 Y = snappedTopLeft.Y,
                 Width = Math.Max(140, rect.Width),
@@ -2784,7 +2957,7 @@ public partial class MainWindow : Window
         var target = first.Direction == "input" ? first : second;
         if (!IsPortReferenceAvailable(source) || !IsPortReferenceAvailable(target))
         {
-            SetStatus($"This resource {UiText.T("Text.NotAvailableForConnection")}");
+            SetStatus(UiText.Format("Status.ResourceNotAvailableForConnection", UiText.T("Text.NotAvailableForConnection")));
             return false;
         }
 
@@ -2795,7 +2968,7 @@ public partial class MainWindow : Window
             || targetRecipe is null
             || !targetRecipe.Inputs.Any(input => input.ItemId == source.ItemId))
         {
-            SetStatus("Ports are not compatible.");
+            SetStatus(UiText.T("Status.PortsNotCompatible"));
             return false;
         }
 
@@ -2804,7 +2977,7 @@ public partial class MainWindow : Window
                 && edge.TargetNodeId == target.NodeId
                 && edge.SourceItemId == source.ItemId))
         {
-            SetStatus("Connection already exists.");
+            SetStatus(UiText.T("Status.ConnectionAlreadyExists"));
             return false;
         }
 
@@ -2815,7 +2988,7 @@ public partial class MainWindow : Window
             TargetNodeId = target.NodeId,
             TargetItemId = target.ItemId,
         });
-        SetStatus("Connected machines.");
+        SetStatus(UiText.T("Status.ConnectedMachines"));
         return true;
     }
 
@@ -2846,15 +3019,15 @@ public partial class MainWindow : Window
             }
 
             SetStatus(response.Suggestions.Count == 0
-                ? "No compatible machines found."
-                : $"Found {response.Suggestions.Count} compatible machines.");
+                ? UiText.T("Status.NoCompatibleMachines")
+                : UiText.Format("Status.FoundCompatibleMachines", response.Suggestions.Count));
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            SetStatus($"Could not load suggestions: {ex.Message}");
+            SetStatus(UiText.Format("Status.CouldNotLoadSuggestions", ex.Message));
         }
     }
 
@@ -3114,7 +3287,7 @@ public partial class MainWindow : Window
         MigrateAndAnalyzeScheme();
         RenderCanvas();
         UpdateInspector();
-        SetStatus(_selectedNode.OnlyOutput ? "Node marked as output-only source." : "Node input requirements restored.");
+        SetStatus(_selectedNode.OnlyOutput ? UiText.T("Status.NodeMarkedOutputOnly") : UiText.T("Status.NodeInputsRestored"));
     }
 
     private void SchemeOutputCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -3128,7 +3301,7 @@ public partial class MainWindow : Window
         MigrateAndAnalyzeScheme();
         RenderCanvas();
         UpdateInspector();
-        SetStatus(_selectedNode.IsSchemeOutput ? "Node marked as scheme output." : "Node removed from scheme outputs.");
+        SetStatus(_selectedNode.IsSchemeOutput ? UiText.T("Status.NodeMarkedSchemeOutput") : UiText.T("Status.NodeRemovedSchemeOutputs"));
     }
 
     private void RemoveInvalidEdgesForNode(string nodeId)
@@ -3172,7 +3345,7 @@ public partial class MainWindow : Window
                 if (_selectedNode.NodeType == SchemeNodeType.BlueprintSource)
                 {
                     NodeInspectorPanel.Visibility = Visibility.Visible;
-                    InspectorTitle.Text = string.IsNullOrWhiteSpace(_selectedNode.SourceSchemeName) ? "Blueprint source" : _selectedNode.SourceSchemeName;
+                    InspectorTitle.Text = string.IsNullOrWhiteSpace(_selectedNode.SourceSchemeName) ? UiText.T("Text.BlueprintSource") : _selectedNode.SourceSchemeName;
                     OpenBlueprintSourceButton.Visibility = Visibility.Visible;
                     OpenBlueprintSourceButton.IsEnabled = BlueprintSourceSchemeExists(_selectedNode);
                     InspectorRecipeSearchBox.Text = "";
@@ -3186,11 +3359,11 @@ public partial class MainWindow : Window
                     InspectorMetricsStack.Children.Clear();
                     foreach (var output in _selectedNode.BlueprintOutputs)
                     {
-                        InspectorMetricsStack.Children.Add(BuildMetricRow("Output", output.Name, sub: $"{output.RatePerMinute:g}/min"));
+                        InspectorMetricsStack.Children.Add(BuildMetricRow(UiText.T("Text.Output"), output.Name, sub: $"{output.RatePerMinute:g}/min"));
                     }
 
-                    InspectorReadOnly.Text = "Blueprint source from a saved scheme. It has outputs only and does not consume inputs.";
-                    InspectorInputs.ItemsSource = _selectedNode.BlueprintOutputs.Select(output => $"{output.Name}: {output.RatePerMinute:g}/min available").ToList();
+                    InspectorReadOnly.Text = UiText.T("Text.BlueprintInspectorDescription");
+                    InspectorInputs.ItemsSource = _selectedNode.BlueprintOutputs.Select(output => UiText.Format("Text.OutputAvailableRate", output.Name, output.RatePerMinute)).ToList();
                     InspectorUnlocks.ItemsSource = new List<string> { UiText.T("Text.None") };
                     return;
                 }
@@ -3202,7 +3375,7 @@ public partial class MainWindow : Window
                 NodeInspectorPanel.Visibility = Visibility.Visible;
                 InspectorStatusPanel.Visibility = Visibility.Visible;
                 ShowInspectorTab(_activeInspectorTab);
-                InspectorTitle.Text = recipe?.BuildingName ?? building?.Name ?? "Unselected machine";
+                InspectorTitle.Text = recipe?.BuildingName ?? building?.Name ?? UiText.T("Text.UnselectedMachine");
                 InspectorRecipeList.ItemsSource = _inspectorRecipes;
                 InspectorRecipeList.SelectedItem = recipe;
                 InspectorRecipeSearchBox.Text = recipe?.InspectorDisplayName ?? "";
@@ -3222,7 +3395,7 @@ public partial class MainWindow : Window
 
                 if (recipe is null)
                 {
-                    InspectorReadOnly.Text = "No recipe selected. Ports are disabled.";
+                    InspectorReadOnly.Text = UiText.T("Text.NoRecipeSelected");
                     return;
                 }
 
@@ -3230,10 +3403,10 @@ public partial class MainWindow : Window
                 var outputPerMinute = _calculator.OutputPerMinute(recipe, machines);
                 BuildInspectorMetrics(_selectedNode, recipe, machines, outputPerMinute);
                 InspectorReadOnly.Text = _selectedNode.OnlyOutput
-                    ? $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs are bypassed; output still scales with machine count."
-                    : $"Recipe base: {recipe.Output.QuantityPerMinute:g}/min ({recipe.OriginalRateText}). Inputs scale with machine count.";
+                    ? UiText.Format("Text.RecipeBaseInputsBypassed", recipe.Output.QuantityPerMinute, recipe.OriginalRateText)
+                    : UiText.Format("Text.RecipeBaseInputsScale", recipe.Output.QuantityPerMinute, recipe.OriginalRateText);
                 InspectorInputs.ItemsSource = _selectedNode.OnlyOutput
-                    ? new List<string> { "Inputs bypassed by Only output." }
+                    ? new List<string> { UiText.T("Text.InputsBypassedOnlyOutput") }
                     : recipe.Inputs
                         .Select(input =>
                         {
@@ -3242,12 +3415,13 @@ public partial class MainWindow : Window
                             var delivered = _productionAnalysis.Inputs.TryGetValue(key, out var analysis)
                                 ? analysis.DeliveredPerMinute
                                 : 0;
-                            var prefix = delivered + 0.000001 < required ? "SHORT " : "";
-                            return $"{prefix}{input.Name}: {required:g}/min required, {delivered:g}/min delivered";
+                            return delivered + 0.000001 < required
+                                ? UiText.Format("Text.InputRequirementShort", input.Name, required, delivered)
+                                : UiText.Format("Text.InputRequirement", input.Name, required, delivered);
                         })
                         .ToList();
                 InspectorUnlocks.ItemsSource = recipe.UnlockRequirements.Count == 0
-                    ? new List<string> { "None" }
+                    ? new List<string> { UiText.T("Text.None") }
                     : recipe.UnlockRequirements.Select(item => $"{item.Name}: {item.RequiredQuantity:g}").ToList();
                 return;
             }
@@ -3265,7 +3439,7 @@ public partial class MainWindow : Window
 
             if (_selectedEdge is not null)
             {
-                InspectorTitle.Text = "Connection";
+                InspectorTitle.Text = UiText.T("Text.Connection");
                 ConnectionInspectorPanel.Visibility = Visibility.Visible;
                 ConnectionReadOnly.Text = EdgeDetail(_selectedEdge);
                 return;
@@ -3273,7 +3447,7 @@ public partial class MainWindow : Window
 
             if (HasNoCanvasSelection())
             {
-                InspectorTitle.Text = "Scheme";
+                InspectorTitle.Text = UiText.T("Text.Scheme");
                 InspectorStatusPanel.Visibility = Visibility.Collapsed;
                 SchemeSettingsPanel.Visibility = Visibility.Visible;
                 BuildSchemeSettingsInspector();
@@ -3310,7 +3484,7 @@ public partial class MainWindow : Window
         {
             CorporationSettingsStack.Children.Add(new TextBlock
             {
-                Text = "Corporation data is not available yet.",
+                Text = UiText.T("Text.CorporationDataUnavailable"),
                 Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
                 TextWrapping = TextWrapping.Wrap,
             });
@@ -3333,7 +3507,7 @@ public partial class MainWindow : Window
             });
             textPanel.Children.Add(new TextBlock
             {
-                Text = $"Max level {Math.Max(0, corporation.MaxLevel)}",
+                Text = UiText.Format("Text.MaxLevel", Math.Max(0, corporation.MaxLevel)),
                 Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
                 FontSize = 11,
                 Margin = new Thickness(0, 2, 0, 0),
@@ -3367,7 +3541,7 @@ public partial class MainWindow : Window
         {
             RailTierSettingsStack.Children.Add(new TextBlock
             {
-                Text = "No rail tiers are configured.",
+                Text = UiText.T("Text.NoRailTiersConfigured"),
                 Foreground = (Brush)Application.Current.FindResource("ThemeSecondaryForegroundBrush"),
                 TextWrapping = TextWrapping.Wrap,
             });
@@ -3378,8 +3552,8 @@ public partial class MainWindow : Window
         RailTierSettingsStack.Children.Add(new TextBlock
         {
             Text = maxAvailable is null
-                ? "No rail tiers are currently unlocked."
-                : $"Max available: {maxAvailable.Name} ({maxAvailable.ItemsPerMinute:g}/min)",
+                ? UiText.T("Text.NoRailTiersUnlocked")
+                : UiText.Format("Text.MaxAvailableRail", maxAvailable.Name, maxAvailable.ItemsPerMinute),
             Foreground = maxAvailable is null
                 ? new SolidColorBrush(ShortageColor)
                 : (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
@@ -3396,7 +3570,7 @@ public partial class MainWindow : Window
                 Margin = new Thickness(0, 0, 0, 7),
                 Padding = new Thickness(10, 7, 10, 7),
                 CornerRadius = new CornerRadius(8),
-                ToolTip = unlocked ? "Available for any connection that needs this capacity." : PlannerUnlockService.RailUnlockText(_catalog, tier),
+                ToolTip = unlocked ? UiText.T("Text.RailAvailableTooltip") : PlannerUnlockService.RailUnlockText(_catalog, tier),
                 Background = unlocked
                     ? (Brush)Application.Current.FindResource("StarBlueBrush")
                     : (Brush)Application.Current.FindResource("MutedPanelBrush"),
@@ -3408,8 +3582,8 @@ public partial class MainWindow : Window
             border.Child = new TextBlock
             {
                 Text = unlocked
-                    ? $"{tier.Name}  {tier.ItemsPerMinute:g}/min  available"
-                    : $"{tier.Name}  {tier.ItemsPerMinute:g}/min  locked",
+                    ? UiText.Format("Text.RailTierAvailable", tier.Name, tier.ItemsPerMinute)
+                    : UiText.Format("Text.RailTierLocked", tier.Name, tier.ItemsPerMinute),
                 Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
                 TextWrapping = TextWrapping.Wrap,
             };
@@ -3422,7 +3596,7 @@ public partial class MainWindow : Window
 
             RailTierSettingsStack.Children.Add(new TextBlock
             {
-                Text = $"Requires: {PlannerUnlockService.RailUnlockText(_catalog, tier)}",
+                Text = UiText.Format("Text.Requires", PlannerUnlockService.RailUnlockText(_catalog, tier)),
                 Foreground = new SolidColorBrush(ShortageColor),
                 FontSize = 11,
                 TextWrapping = TextWrapping.Wrap,
@@ -3446,7 +3620,7 @@ public partial class MainWindow : Window
         MigrateAndAnalyzeScheme();
         RenderCanvas();
         UpdateInspector();
-        SetStatus("Corporation levels updated.");
+        SetStatus(UiText.T("Status.CorporationLevelsUpdated"));
     }
 
     private void InspectorTab_Click(object sender, MouseButtonEventArgs e)
@@ -3594,6 +3768,16 @@ public partial class MainWindow : Window
         PriorityBox.SelectedItem = null;
     }
 
+    private static string PriorityDisplay(ProductionPriority priority)
+    {
+        return priority switch
+        {
+            ProductionPriority.High => UiText.T("Priority.High"),
+            ProductionPriority.Low => UiText.T("Priority.Low"),
+            _ => UiText.T("Priority.Mid"),
+        };
+    }
+
     private RecipeInfo? RecipeForNode(SchemeNode? node)
     {
         return PlannerEdgeService.RecipeForNode(_catalog, node);
@@ -3622,8 +3806,9 @@ public partial class MainWindow : Window
         {
             image.Source = new BitmapImage(new Uri(absolute));
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[MainWindow.SetImage] Failed to load image '{absolute}': {ex.Message}");
             image.Source = null;
         }
     }
@@ -3656,8 +3841,9 @@ public partial class MainWindow : Window
         {
             return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value ?? fallback)!);
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[MainWindow.BrushFromString] Invalid color '{value}': {ex.Message}");
             return new SolidColorBrush((Color)ColorConverter.ConvertFromString(fallback)!);
         }
     }
@@ -3675,8 +3861,9 @@ public partial class MainWindow : Window
             var appsUseLightTheme = key?.GetValue("AppsUseLightTheme");
             return appsUseLightTheme is int value && value == 0 ? AppTheme.Dark : AppTheme.Light;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[MainWindow.ResolveTheme] Failed to read Windows theme: {ex.Message}");
             return AppTheme.Dark;
         }
     }
@@ -3685,7 +3872,7 @@ public partial class MainWindow : Window
     {
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.S)
         {
-            _ = SaveCurrentSchemeAsync();
+            RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveShortcut");
             e.Handled = true;
             return;
         }
@@ -3857,12 +4044,12 @@ public partial class MainWindow : Window
         var panel = new StackPanel { Margin = new Thickness(14) };
         var textBox = new TextBox { Text = defaultValue, Margin = new Thickness(0, 0, 0, 12) };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var ok = new Button { Content = "Save", IsDefault = true, MinWidth = 80 };
-        var cancel = new Button { Content = "Cancel", IsCancel = true, MinWidth = 80 };
+        var ok = new Button { Content = UiText.T("Command.Save"), IsDefault = true, MinWidth = 80 };
+        var cancel = new Button { Content = UiText.T("Command.Cancel"), IsCancel = true, MinWidth = 80 };
         ok.Click += (_, _) => dialog.DialogResult = true;
         buttons.Children.Add(ok);
         buttons.Children.Add(cancel);
-        panel.Children.Add(new TextBlock { Text = "Name", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 6) });
+        panel.Children.Add(new TextBlock { Text = UiText.T("Text.Name"), Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 6) });
         panel.Children.Add(textBox);
         panel.Children.Add(buttons);
         dialog.Content = panel;
@@ -3881,8 +4068,9 @@ public partial class MainWindow : Window
             left = System.IO.Path.GetFullPath(left);
             right = System.IO.Path.GetFullPath(right);
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[MainWindow.SamePath] Failed to normalize paths: {ex.Message}");
         }
 
         return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
@@ -3951,16 +4139,6 @@ public partial class MainWindow : Window
 
     private sealed class EdgeVisual
     {
-        public EdgeVisual(Path path, Path hitPath, TextBlock label)
-        {
-            Path = path;
-            HitPath = hitPath;
-            Label = label;
-        }
-
-        public Path Path { get; }
-        public Path HitPath { get; }
-        public TextBlock Label { get; }
         public List<Ellipse> RoutePointHandles { get; } = [];
     }
 }
