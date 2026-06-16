@@ -1283,7 +1283,9 @@ public partial class MainWindow : Window
 
     private FrameworkElement? CreateNodeBadges(SchemeNode node)
     {
-        if (!node.OnlyOutput && !node.IsSchemeOutput)
+        var surplus = NodeSurplus(node);
+        var hasSurplus = surplus > 0.0001;
+        if (!node.OnlyOutput && !node.IsSchemeOutput && !hasSurplus)
         {
             return null;
         }
@@ -1304,7 +1306,36 @@ public partial class MainWindow : Window
             panel.Children.Add(CreateNodeBadge(UiText.T("Text.SchemeOutput"), SignalGreenColor));
         }
 
+        if (hasSurplus)
+        {
+            var amber = ((SolidColorBrush)Application.Current.FindResource("ReactorOrangeBrush")).Color;
+            panel.Children.Add(CreateNodeBadge("▲ " + UiText.Format("Text.Surplus", surplus), amber));
+        }
+
         return panel;
+    }
+
+    // Output the node produces beyond what its downstream consumers actually pull
+    // (0 = fully consumed). Uses the recipe's primary output item.
+    private double NodeSurplus(SchemeNode node)
+    {
+        var recipe = RecipeForNode(node);
+        if (recipe is null)
+        {
+            return 0;
+        }
+
+        var output = NodeOutputRate(node, recipe);
+        if (output <= 0.0001)
+        {
+            return 0;
+        }
+
+        var delivered = _scheme.Edges
+            .Where(edge => string.Equals(edge.SourceNodeId, node.Id, StringComparison.Ordinal)
+                && string.Equals(edge.SourceItemId, recipe.Output.ItemId, StringComparison.Ordinal))
+            .Sum(edge => _productionAnalysis.EdgeDeliveries.GetValueOrDefault(edge.Id));
+        return Math.Max(0, output - delivered);
     }
 
     private FrameworkElement CreateNodeBadge(string text, Color accent)
