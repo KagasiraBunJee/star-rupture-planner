@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 from starlette.applications import Starlette
-from starlette.background import BackgroundTask
-from starlette.responses import FileResponse, JSONResponse, Response
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -89,14 +86,6 @@ async def get_transport_tiers(request) -> Response:
     return json_response(service.get_transport_tiers(lang=request.query_params.get("lang")))
 
 
-async def refresh_dataset(request) -> Response:
-    # This is intentionally synchronous for v1 so callers receive the completed summary.
-    try:
-        return json_response(service.refresh_dataset())
-    except Exception as exc:
-        return json_response({"status": "failed", "error": str(exc)}, status_code=500)
-
-
 def _optional_bool(value: str | None) -> bool | None:
     if value is None:
         return None
@@ -117,7 +106,6 @@ def create_app(cfg: Settings = settings) -> Starlette:
         Route("/api/planner/catalog", get_planner_catalog, methods=["GET"]),
         Route("/api/planner/suggestions", get_planner_suggestions, methods=["GET"]),
         Route("/api/planner/transport-tiers", get_transport_tiers, methods=["GET"]),
-        Route("/api/admin/refresh", refresh_dataset, methods=["POST"]),
         Mount("/assets/items", StaticFiles(directory=str(cfg.item_asset_dir)), name="item-assets"),
         Mount(
             "/assets/buildings",

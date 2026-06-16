@@ -296,6 +296,7 @@ public partial class MainWindow : Window
             if (languageChanged)
             {
                 ApplySettings();
+                _viewModel.RefreshLocalizedText();
                 await _viewModel.ReloadCatalogAsync();
             }
 

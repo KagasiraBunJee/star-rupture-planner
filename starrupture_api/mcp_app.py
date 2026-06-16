@@ -31,13 +31,8 @@ def create_mcp_app(service: ResourceService):
             return {"error": "item_not_found", "item_id": item_id}
 
     @mcp.tool()
-    def refresh_dataset():
-        """Manually refresh the local StarRupture dataset from the source site."""
-        return service.refresh_dataset()
-
-    @mcp.tool()
     def get_dataset_meta():
-        """Return dataset counts and latest refresh status."""
+        """Return local dataset counts and supported languages."""
         return service.get_meta()
 
     @mcp.tool()
