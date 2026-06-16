@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using StarRupturePlanner.Models;
@@ -128,8 +129,9 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
                 })
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[SchemeStore] Failed to read outputs from '{path}': {ex.Message}");
             return [];
         }
     }
@@ -150,8 +152,9 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
             {
                 document = Load(fullPath);
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"[SchemeStore] Failed to load scheme '{fullPath}' while removing references: {ex.Message}");
                 continue;
             }
 

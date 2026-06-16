@@ -279,7 +279,7 @@
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "magic-oil-ore": {
-      "name": "Crude Oil",
+      "name": "Powerium",
       "description": "Raw Material. Can be processed."
     },
     "mars-habitat-base": {
@@ -287,7 +287,7 @@
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "meteor-core": {
-      "name": "Meteor Heart",
+      "name": "Meteorite Heart",
       "description": "Molten Core of a Meteor. Valuable resource and building material."
     },
     "micro-satellite": {
@@ -303,7 +303,7 @@
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "nanofibre": {
-      "name": "Nanofibre",
+      "name": "Nanofiber",
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "nanosyringe": {
@@ -387,7 +387,7 @@
       "description": "Ore Resource"
     },
     "quantum-tranqualizer": {
-      "name": "Quantum Tranqualizer",
+      "name": "Quantum Tranquilizer",
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "quartz-building-material": {
@@ -459,7 +459,7 @@
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "scafolding": {
-      "name": "Scafolding",
+      "name": "Scaffolding",
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "scanner": {
@@ -495,11 +495,11 @@
       "description": "Crafting Material. Used in various recipes. Can be exported."
     },
     "sulphur-ore": {
-      "name": "Sulphur Ore",
+      "name": "Sulfur Ore",
       "description": "Raw Material. Can be processed."
     },
     "sulphuric-acid": {
-      "name": "Sulphuric Acid",
+      "name": "Sulfuric Acid",
       "description": "Crafting Material. Used in various recipes."
     },
     "superconductor": {
@@ -704,18 +704,18 @@
       "description": "An improved version of the Ore Excavator offering higher extraction rates. Can be placed only on Titanium, Wolfram, and Calcium deposits."
     },
     "military-assembler": {
-      "name": "Facturer",
-      "family_name": "Facturer",
+      "name": "Wytwarzacz",
+      "family_name": "Wytwarzacz",
       "description": "Advanced production building. Utilizes high speed machining to make Products."
     },
     "pressurizer": {
-      "name": "Refinery",
-      "family_name": "Refinery",
+      "name": "Pressurizer",
+      "family_name": "Pressurizer",
       "description": "Refines raw Powerium into Products."
     },
     "refinery": {
-      "name": "Pressurizer",
-      "family_name": "Pressurizer",
+      "name": "Refinery",
+      "family_name": "Refinery",
       "description": "Refines raw Helium and Sulphur into Products."
     },
     "smelter": {

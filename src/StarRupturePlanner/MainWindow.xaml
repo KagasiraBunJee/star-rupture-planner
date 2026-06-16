@@ -11,6 +11,7 @@
         Width="1500"
         MinHeight="760"
         MinWidth="1180"
+        Icon="pack://application:,,,/Assets/AppIcon.ico"
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="{DynamicResource AppBackgroundBrush}"
@@ -41,8 +42,13 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="✦" Foreground="{DynamicResource StarBlueBrush}" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     <StackPanel>
-                        <TextBlock Text="{DynamicResource Ui.App.Name}" FontSize="18" FontWeight="SemiBold"/>
-                        <TextBlock Text="{DynamicResource Ui.App.Subtitle}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="12" Margin="0,3,0,0"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource Ui.App.Name}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Border x:Name="AppChannelBadge" Background="{DynamicResource StarBlueBrush}" CornerRadius="5" Padding="7,2" Margin="9,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="AppChannelText" Text="ALPHA" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock x:Name="AppVersionText" Text="{DynamicResource Ui.App.Subtitle}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="12" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" MaxWidth="280"/>
                     </StackPanel>
                 </StackPanel>
 

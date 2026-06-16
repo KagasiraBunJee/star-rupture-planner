@@ -5,6 +5,7 @@ out/
 publish/
 artifacts/
 TestResults/
+export/
 
 # .NET / WPF generated files
 *.user
@@ -34,7 +35,8 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
-
+tools/apply_official_localization.py
+tools/extract_official_resource_names.py
 # Python virtual environments
 .venv/
 venv/

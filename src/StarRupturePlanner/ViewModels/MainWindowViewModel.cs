@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
 
@@ -156,12 +157,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         {
             await _backgroundTaskRunner.RunAsync(() => _schemeStore.Delete(item.FilePath), cancellationToken);
             await RefreshSchemeListAsync(cancellationToken);
-            SetStatus($"Deleted {item.Name}.");
+            SetStatus(UiText.Format("Status.Deleted", item.Name));
             return true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            SetStatus($"Could not delete scheme: {ex.Message}");
+            SetStatus(UiText.Format("Status.CouldNotDeleteScheme", ex.Message));
             return false;
         }
     }
@@ -175,8 +176,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 ? System.IO.File.GetLastWriteTime(path)
                 : DateTime.Now;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[MainWindowViewModel] Failed to inspect last saved time: {ex.Message}");
             when = DateTime.Now;
         }
 

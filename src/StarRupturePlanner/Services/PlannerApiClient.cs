@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using StarRupturePlanner.Models;
@@ -30,8 +31,9 @@ public sealed class PlannerApiClient : IPlannerApiClient
             using var response = await _client.GetAsync("api/meta", cancellationToken);
             return response.IsSuccessStatusCode;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[PlannerApiClient] API availability check failed: {ex.Message}");
             return false;
         }
     }

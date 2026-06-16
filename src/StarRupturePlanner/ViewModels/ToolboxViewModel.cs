@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
 
@@ -38,8 +39,29 @@ public sealed class ToolboxViewModel : ViewModelBase
         {
             if (SetProperty(ref _filterText, value))
             {
-                _ = ApplyFilterAsync();
+                ApplyFilter();
             }
+        }
+    }
+
+    private void ApplyFilter()
+    {
+        _ = ApplyFilterCoreAsync();
+    }
+
+    private async Task ApplyFilterCoreAsync()
+    {
+        try
+        {
+            await ApplyFilterAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.WriteLine("[ToolboxViewModel] Filter update canceled.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ToolboxViewModel] Filter update failed: {ex}");
         }
     }
 

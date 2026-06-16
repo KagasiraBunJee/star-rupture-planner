@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using StarRupturePlanner.Models;
+using StarRupturePlanner.Services;
 
 namespace StarRupturePlanner;
 
@@ -35,18 +37,18 @@ public partial class SettingsWindow : Window
 
         ThemePicker.ItemsSource = new[]
         {
-            new ThemeOption("System", AppTheme.System),
-            new ThemeOption("Dark", AppTheme.Dark),
-            new ThemeOption("Light", AppTheme.Light),
+            new ThemeOption(UiText.T("Text.ThemeSystem"), AppTheme.System),
+            new ThemeOption(UiText.T("Text.ThemeDark"), AppTheme.Dark),
+            new ThemeOption(UiText.T("Text.ThemeLight"), AppTheme.Light),
         };
         ThemePicker.SelectedValue = Settings.Theme;
 
         LanguagePicker.ItemsSource = new[]
         {
-            new LanguageOption("English", PlannerLanguages.English),
-            new LanguageOption("Russian", PlannerLanguages.Russian),
-            new LanguageOption("German", PlannerLanguages.German),
-            new LanguageOption("Ukrainian", PlannerLanguages.Ukrainian),
+            new LanguageOption(UiText.T("Text.LanguageEnglish"), PlannerLanguages.English),
+            new LanguageOption(UiText.T("Text.LanguageRussian"), PlannerLanguages.Russian),
+            new LanguageOption(UiText.T("Text.LanguageGerman"), PlannerLanguages.German),
+            new LanguageOption(UiText.T("Text.LanguageUkrainian"), PlannerLanguages.Ukrainian),
         };
         LanguagePicker.SelectedValue = PlannerLanguages.Normalize(Settings.PlannerLanguage);
 
@@ -77,7 +79,7 @@ public partial class SettingsWindow : Window
         var family = familyPicker.SelectedItem as string;
         if (string.IsNullOrWhiteSpace(family))
         {
-            MessageBox.Show("Select a font family.", "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(UiText.T("Text.SelectFontFamily"), UiText.T("Text.InvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
@@ -86,7 +88,7 @@ public partial class SettingsWindow : Window
             || size < 8
             || size > 32)
         {
-            MessageBox.Show("Font size must be between 8 and 32.", "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(UiText.T("Text.FontSizeRange"), UiText.T("Text.InvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
@@ -94,9 +96,10 @@ public partial class SettingsWindow : Window
         {
             _ = (Color)ColorConverter.ConvertFromString(colorBox.Text)!;
         }
-        catch
+        catch (Exception ex)
         {
-            MessageBox.Show("Color must be a valid WPF color, for example #F4F0E8.", "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Debug.WriteLine($"[SettingsWindow] Invalid WPF color '{colorBox.Text}': {ex.Message}");
+            MessageBox.Show(UiText.T("Text.InvalidWpfColor"), UiText.T("Text.InvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
@@ -131,7 +134,13 @@ public partial class SettingsWindow : Window
         };
     }
 
-    private sealed record ThemeOption(string Label, AppTheme Value);
+    private sealed record ThemeOption(string Label, AppTheme Value)
+    {
+        public override string ToString() => Label;
+    }
 
-    private sealed record LanguageOption(string Label, string Value);
+    private sealed record LanguageOption(string Label, string Value)
+    {
+        public override string ToString() => Label;
+    }
 }

@@ -67,6 +67,13 @@ public interface IBackgroundTaskRunner
     Task<T> RunAsync<T>(Func<T> action, CancellationToken cancellationToken = default);
 }
 
+public interface IAppLogger
+{
+    void Info(string message);
+    void Warn(string message);
+    void Error(string message, Exception? exception = null);
+}
+
 public abstract class DocumentStoreBase<TDocument, TListItem>
 {
     protected DocumentStoreBase(string folderPath)

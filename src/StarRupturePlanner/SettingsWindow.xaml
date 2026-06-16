@@ -6,6 +6,7 @@
         Height="430"
         MinWidth="500"
         MinHeight="390"
+        Icon="pack://application:,,,/Assets/AppIcon.ico"
         WindowStartupLocation="CenterOwner"
         FontFamily="{DynamicResource AppFontFamily}"
         Background="{DynamicResource AppBackgroundBrush}">
