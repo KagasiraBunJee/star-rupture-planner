@@ -309,12 +309,21 @@ public partial class MainWindow : Window
 
     private void ApplySettings()
     {
+        // Apply the theme first so the per-user overrides below can read the active theme.
+        ApplyTheme(ResolveTheme(_settings.Theme));
+
         // Per-user font overrides shadow the theme defaults for the window scope.
         Resources["LeftListFontFamily"] = new FontFamily(SafeFontFamily(_settings.LeftBarListFont.Family));
         Resources["LeftListFontSize"] = _settings.LeftBarListFont.Size;
-        Resources["LeftListForegroundBrush"] = BrushFromString(_settings.LeftBarListFont.Color, "#F4F0E8");
 
-        ApplyTheme(ResolveTheme(_settings.Theme));
+        // Default list text colour follows the theme (dark text in light mode). A user who
+        // customized the left-bar colour away from the default keeps their explicit colour.
+        var configured = _settings.LeftBarListFont.Color;
+        Resources["LeftListForegroundBrush"] =
+            string.IsNullOrWhiteSpace(configured) || string.Equals(configured, "#F4F0E8", StringComparison.OrdinalIgnoreCase)
+                ? ThemeBrush("LeftListForegroundBrush", Color.FromRgb(0xF3, 0xF7, 0xFA))
+                : BrushFromString(configured, "#F4F0E8");
+
         ApplyLanguage(_settings.PlannerLanguage);
         UpdateVersionChrome();
     }
