@@ -13,6 +13,8 @@ The repository has two main parts:
 
 ![Scheme builder canvas](images/scheme_builder.PNG)
 
+Node suggestion helper:
+
 ![Node suggestion list](images/node_suggestion_list.png)
 
 | Resource and machine selector | Corporation level settings |
