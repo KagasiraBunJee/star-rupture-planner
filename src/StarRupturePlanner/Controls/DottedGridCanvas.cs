@@ -149,27 +149,13 @@ public sealed class DottedGridCanvas : Canvas
         var minY = (0 - OffsetY) / zoom;
         var maxY = (viewportHeight - OffsetY) / zoom;
 
-        // One extra cell of margin so dots never pop in at the edges.
+        // One extra cell of margin so dots never pop in at the edges. Columns/rows may be
+        // negative — the grid tiles infinitely in every direction, only ever drawing the
+        // cells that fall inside the current viewport.
         var startColumn = (int)Math.Floor(minX / spacing) - 1;
         var endColumn = (int)Math.Ceiling(maxX / spacing) + 1;
         var startRow = (int)Math.Floor(minY / spacing) - 1;
         var endRow = (int)Math.Ceiling(maxY / spacing) + 1;
-
-        // Keep the grid within the (very large) interactive canvas extent so dots and
-        // the hit-testable area stay aligned.
-        var extentWidth = ActualWidth > 0 ? ActualWidth : Width;
-        var extentHeight = ActualHeight > 0 ? ActualHeight : Height;
-        if (extentWidth > 0)
-        {
-            startColumn = Math.Max(0, startColumn);
-            endColumn = Math.Min((int)Math.Ceiling(extentWidth / spacing), endColumn);
-        }
-
-        if (extentHeight > 0)
-        {
-            startRow = Math.Max(0, startRow);
-            endRow = Math.Min((int)Math.Ceiling(extentHeight / spacing), endRow);
-        }
 
         for (var column = startColumn; column <= endColumn; column++)
         {
