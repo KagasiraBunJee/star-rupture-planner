@@ -1897,7 +1897,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        var scale = CanvasScale.ScaleX;
         double cardWidth = 470;
         double cardHeight = 130;
         if (_nodeViews.TryGetValue(node.Id, out var view))
@@ -1913,23 +1912,53 @@ public partial class MainWindow : Window
             }
         }
 
+        // Focus at 100% zoom with the node centered in the viewport (screen = world*1 + translate).
         var centerX = node.X + cardWidth / 2;
         var centerY = node.Y + cardHeight / 2;
-        AnimateCanvasTranslate(
-            viewportWidth / 2 - centerX * scale,
-            viewportHeight / 2 - centerY * scale);
+        AnimateCanvasView(1.0, viewportWidth / 2 - centerX, viewportHeight / 2 - centerY);
     }
 
-    // Smoothly glides the canvas from its current offset to the target.
-    private void AnimateCanvasTranslate(double targetX, double targetY)
+    private void ResetZoom_Click(object sender, RoutedEventArgs e) => ResetZoom();
+
+    // Animate back to 100% zoom, keeping whatever is currently at the viewport center centered.
+    private void ResetZoom()
+    {
+        var viewportWidth = CanvasFrame.ActualWidth;
+        var viewportHeight = CanvasFrame.ActualHeight;
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return;
+        }
+
+        var scale = CanvasScale.ScaleX <= 0 ? 1 : CanvasScale.ScaleX;
+        var worldCenterX = (viewportWidth / 2 - CanvasTranslate.X) / scale;
+        var worldCenterY = (viewportHeight / 2 - CanvasTranslate.Y) / scale;
+        AnimateCanvasView(1.0, viewportWidth / 2 - worldCenterX, viewportHeight / 2 - worldCenterY);
+    }
+
+    // Smoothly glides the canvas zoom and offset to the targets.
+    private void AnimateCanvasView(double targetScale, double targetX, double targetY)
     {
         var duration = new Duration(TimeSpan.FromMilliseconds(320));
         var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var animateScaleX = new DoubleAnimation(targetScale, duration) { EasingFunction = ease };
+        var animateScaleY = new DoubleAnimation(targetScale, duration) { EasingFunction = ease };
         var animateX = new DoubleAnimation(targetX, duration) { EasingFunction = ease };
         var animateY = new DoubleAnimation(targetY, duration) { EasingFunction = ease };
 
-        // On completion, drop the animation and write the concrete value so manual
-        // pan/zoom can move the canvas again afterwards.
+        // On completion, drop each animation and write the concrete value so manual
+        // pan/zoom can take over again afterwards.
+        animateScaleX.Completed += (_, _) =>
+        {
+            CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            CanvasScale.ScaleX = targetScale;
+            UpdateZoomText();
+        };
+        animateScaleY.Completed += (_, _) =>
+        {
+            CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            CanvasScale.ScaleY = targetScale;
+        };
         animateX.Completed += (_, _) =>
         {
             CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
@@ -1941,20 +1970,29 @@ public partial class MainWindow : Window
             CanvasTranslate.Y = targetY;
         };
 
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, animateScaleX);
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, animateScaleY);
         CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, animateX);
         CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, animateY);
     }
 
-    // Freezes any in-flight focus animation at its current position so a manual
+    // Freezes any in-flight focus/zoom animation at its current state so a manual
     // pan/zoom takes over without snapping.
     private void StopCanvasTranslateAnimation()
     {
+        var scaleX = CanvasScale.ScaleX;
+        var scaleY = CanvasScale.ScaleY;
         var currentX = CanvasTranslate.X;
         var currentY = CanvasTranslate.Y;
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        CanvasScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         CanvasTranslate.BeginAnimation(TranslateTransform.XProperty, null);
         CanvasTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        CanvasScale.ScaleX = scaleX;
+        CanvasScale.ScaleY = scaleY;
         CanvasTranslate.X = currentX;
         CanvasTranslate.Y = currentY;
+        UpdateZoomText();
     }
 
     private void SurplusPills_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

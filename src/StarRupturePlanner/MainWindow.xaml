@@ -477,6 +477,7 @@
                         <TextBlock Text="{DynamicResource Ui.Metric.Canvas}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
                         <TextBlock x:Name="ZoomText" Text="100%" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
+                    <Button Content="⟲" FontSize="15" Width="34" MinHeight="30" Padding="0" Margin="6,0,0,0" VerticalAlignment="Center" Click="ResetZoom_Click" ToolTip="Reset zoom to 100%"/>
                 </StackPanel>
             </Grid>
         </Border>
