@@ -237,6 +237,34 @@
                                 </DockPanel>
                             </Border>
                         </Popup>
+
+                        <Border x:Name="SurplusPillsBar"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center"
+                                Margin="0,12,0,0"
+                                MaxWidth="900"
+                                Panel.ZIndex="20"
+                                Background="{DynamicResource PanelBrush}"
+                                BorderBrush="{DynamicResource GraphiteLineBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="10,6"
+                                Visibility="Collapsed">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left"
+                                           Text="{DynamicResource Ui.Label.Surplus}"
+                                           Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0"/>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              PreviewMouseWheel="SurplusPills_PreviewMouseWheel">
+                                    <StackPanel x:Name="SurplusPills" Orientation="Horizontal"/>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
