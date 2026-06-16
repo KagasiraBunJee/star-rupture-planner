@@ -120,8 +120,15 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public void NewScheme()
     {
         Scheme = new SchemeDocument { Name = "Untitled" };
-        LastSavedText = UiText.T("Status.NotSavedYet");
+        RefreshLocalizedText();
         SetStatus(UiText.T("Status.NewEmptyScheme"));
+    }
+
+    public void RefreshLocalizedText()
+    {
+        LastSavedText = string.IsNullOrWhiteSpace(Scheme.FilePath)
+            ? UiText.T("Status.NotSavedYet")
+            : FormatLastSaved(Scheme.FilePath);
     }
 
     public async Task OpenSchemeAsync(SchemeListItem item, CancellationToken cancellationToken = default)

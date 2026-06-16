@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -117,16 +116,6 @@ CREATE TABLE IF NOT EXISTS corporation_item_rewards (
     PRIMARY KEY (corporation_id, level, item_id)
 );
 
-CREATE TABLE IF NOT EXISTS refresh_runs (
-    run_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    status TEXT NOT NULL,
-    started_at TEXT NOT NULL,
-    finished_at TEXT,
-    item_count INTEGER NOT NULL DEFAULT 0,
-    building_count INTEGER NOT NULL DEFAULT 0,
-    recipe_count INTEGER NOT NULL DEFAULT 0,
-    warnings_json TEXT NOT NULL DEFAULT '[]'
-);
 """
 
 
@@ -162,57 +151,3 @@ def ensure_column(conn: sqlite3.Connection, table: str, column: str, definition:
     if column not in columns:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
-
-def reset_dataset(conn: sqlite3.Connection) -> None:
-    for table in [
-        "corporation_item_rewards",
-        "corporation_building_rewards",
-        "corporation_levels",
-        "corporations",
-        "item_usages",
-        "item_unlock_usages",
-        "recipe_unlock_requirements",
-        "recipe_inputs",
-        "recipes",
-        "buildings",
-        "items",
-    ]:
-        conn.execute(f"DELETE FROM {table}")
-
-
-def begin_refresh(conn: sqlite3.Connection, started_at: str) -> int:
-    cur = conn.execute(
-        "INSERT INTO refresh_runs (status, started_at) VALUES (?, ?)",
-        ("running", started_at),
-    )
-    return int(cur.lastrowid)
-
-
-def finish_refresh(
-    conn: sqlite3.Connection,
-    run_id: int,
-    *,
-    status: str,
-    finished_at: str,
-    item_count: int,
-    building_count: int,
-    recipe_count: int,
-    warnings: list[str],
-) -> None:
-    conn.execute(
-        """
-        UPDATE refresh_runs
-        SET status = ?, finished_at = ?, item_count = ?, building_count = ?,
-            recipe_count = ?, warnings_json = ?
-        WHERE run_id = ?
-        """,
-        (
-            status,
-            finished_at,
-            item_count,
-            building_count,
-            recipe_count,
-            json.dumps(warnings, ensure_ascii=False),
-            run_id,
-        ),
-    )

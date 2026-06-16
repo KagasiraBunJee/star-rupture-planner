@@ -6,7 +6,6 @@ from pathlib import Path
 
 from starrupture_api.config import Settings, settings
 from starrupture_api.service import ResourceService
-from starrupture_api.scraper import StarRuptureScraper
 
 
 class PlannerServiceTests(unittest.TestCase):
@@ -135,61 +134,6 @@ class PlannerServiceTests(unittest.TestCase):
         payload = self.service.search_items("стрижень", lang="uk")
 
         self.assertTrue(any(item["item_id"] == "titanium-rod" for item in payload["items"]))
-
-    def test_building_normalization_keeps_power_and_temperature(self) -> None:
-        scraper = StarRuptureScraper(settings)
-        building = scraper._normalize_building(
-            {
-                "id": "test-building",
-                "name": "Test Building",
-                "url": "/buildings/test-building",
-                "icon": None,
-                "category": "crafting",
-                "power": -12,
-                "temperature": 7,
-            }
-        )
-
-        self.assertEqual(building["power"], -12)
-        self.assertEqual(building["temperature"], 7)
-
-    def test_corporation_ref_resolver_resolves_training_rewards(self) -> None:
-        scraper = StarRuptureScraper(settings)
-        root = {
-            "corporations": [
-                {
-                    "id": "source",
-                    "levels": [
-                        {
-                            "rewards": {
-                                "buildings": [
-                                    {"id": "smelter", "name": "Smelter"},
-                                ],
-                            },
-                        },
-                    ],
-                },
-                {
-                    "id": "target",
-                    "levels": [
-                        {
-                            "rewards": {
-                                "buildings": [
-                                    "$1d:1:props:corporations:0:levels:0:rewards:buildings:0",
-                                ],
-                            },
-                        },
-                    ],
-                },
-            ],
-        }
-
-        resolved = scraper._resolve_shared_refs(root["corporations"], root)
-
-        self.assertEqual(
-            resolved[1]["levels"][0]["rewards"]["buildings"][0]["id"],
-            "smelter",
-        )
 
 
 if __name__ == "__main__":

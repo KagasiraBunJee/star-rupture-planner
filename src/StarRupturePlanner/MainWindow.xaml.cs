@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private static readonly Color OutputPortColor = Color.FromRgb(24, 160, 255);
     private static readonly Color SignalGreenColor = Color.FromRgb(99, 214, 77);
     private static readonly Color ShortageColor = Color.FromRgb(255, 72, 72);
+    private static readonly Color ReactorOrangeColor = Color.FromRgb(0xFF, 0x8A, 0x00);
     private static readonly Color LockedPortColor = Color.FromRgb(255, 72, 72);
     private static readonly Color PanelGlassColor = Color.FromRgb(16, 24, 32);
     private static readonly Color GraphiteLineColor = Color.FromRgb(38, 52, 61);
@@ -295,6 +296,7 @@ public partial class MainWindow : Window
             if (languageChanged)
             {
                 ApplySettings();
+                _viewModel.RefreshLocalizedText();
                 await _viewModel.ReloadCatalogAsync();
             }
 
@@ -923,7 +925,14 @@ public partial class MainWindow : Window
         };
         var image = new Image { Width = 50, Height = 50, Stretch = Stretch.Uniform };
         SetImage(image, recipe?.BuildingImageUrl ?? building?.ImageUrl);
-        imageFrame.Child = image;
+        var imageHost = new Grid();
+        imageHost.Children.Add(image);
+        var machineCount = ProductionAnalysisService.EffectiveMachineCount(node);
+        if (machineCount > 1)
+        {
+            imageHost.Children.Add(CreateCountBadge(machineCount));
+        }
+        imageFrame.Child = imageHost;
         DockPanel.SetDock(imageFrame, Dock.Left);
         header.Children.Add(imageFrame);
         var titlePanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
@@ -1315,6 +1324,33 @@ public partial class MainWindow : Window
                 FontFamily = CardFontFamily(),
                 FontSize = CardFontSize(-2),
                 FontWeight = FontWeights.SemiBold,
+            },
+        };
+    }
+
+    // Glanceable "xN" multiplier shown over the machine image when count > 1.
+    private FrameworkElement CreateCountBadge(int count)
+    {
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, -3, -3),
+            Background = new SolidColorBrush(ReactorOrangeColor),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(13, 24, 32)),
+            BorderThickness = new Thickness(1.5),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(5, 0, 5, 1),
+            MinWidth = 18,
+            Child = new TextBlock
+            {
+                Text = $"×{count}",
+                Foreground = Brushes.White,
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-1),
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
             },
         };
     }
