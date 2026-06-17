@@ -1,4 +1,5 @@
 name: WPF Release
+run-name: Star Rupture planner release
 
 on:
   push:
@@ -258,7 +259,7 @@ jobs:
           $ErrorActionPreference = "Stop"
 
           $tag = "${{ steps.package.outputs.release_version }}"
-          $title = "StarRupture Planner $tag"
+          $title = "Star Rupture planner release $tag"
           $zipPath = "${{ steps.package.outputs.zip_path }}"
           $hashPath = "${{ steps.package.outputs.hash_path }}"
           $installerPath = "${{ steps.package.outputs.installer_path }}"

@@ -184,7 +184,6 @@ def filter_app_pull_requests(pull_requests: list[dict[str, Any]], token: str) ->
             continue
         if is_non_app_subject(title) and not body.strip():
             continue
-        pull_request["changed_paths"] = paths[:40]
         app_pull_requests.append(pull_request)
     return app_pull_requests
 
@@ -205,7 +204,6 @@ def build_context(tag: str, previous_tag: str | None, commits: list[CommitInfo],
                 "author": commit.author,
                 "date": commit.date,
                 "subject": commit.subject,
-                "changed_paths": commit.paths[:40],
             }
             for commit in commits
         ],
@@ -234,10 +232,17 @@ def call_ollama(context: dict[str, Any]) -> str:
         - Use only the provided app commits and pull request descriptions.
         - Do not invent features, fixes, dates, links, or contributors.
         - Ignore CI, GitHub Actions, release automation, workflow, secret, script, and repository maintenance details.
+        - Do not mention implementation details, source file names, class names, view names, resource dictionary names, JSON/XAML file names, refactors, splits, or internal architecture.
+        - Convert internal wording into high-level user outcomes.
+        - Bad: "CanvasView was refactored"; good: "Canvas navigation and selection feel smoother."
+        - Bad: "added Strings.de.xaml"; good: "Added German localization."
+        - Bad: "updated LightTheme.xaml and ControlStyles.xaml"; good: "Improved light theme readability and control styling."
+        - Bad: "AlertsBarView was added"; good: "Alerts are easier to scan and can focus the affected machine."
         - If the provided context has no user-visible app changes, say that this release has no user-facing app changes.
         - Mention that downloads include the Windows installer, the manual extraction zip, and SHA256 checksums.
         - Do not mention a portable self-extracting EXE.
-        - Prefer sections named Highlights, Changes, Fixes, Packaging, and Downloads when relevant.
+        - Prefer sections named Highlights, Improvements, Fixes, Packaging, and Downloads when relevant.
+        - Keep Changes/Improvements bullets high-level; do not create a section that lists internal development tasks.
         - Keep it concise and useful for users.
 
         Release context JSON:
@@ -252,7 +257,7 @@ def call_ollama(context: dict[str, Any]) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "You write accurate, concise user-facing release notes for a desktop application.",
+                "content": "You write accurate, concise user-facing release notes for a desktop app. You never expose implementation details unless they directly affect users.",
             },
             {"role": "user", "content": prompt},
         ],
