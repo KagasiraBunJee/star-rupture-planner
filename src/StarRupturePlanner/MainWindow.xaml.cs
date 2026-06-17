@@ -134,6 +134,10 @@ public partial class MainWindow : Window
         _alertsBarViewModel = new AlertsBarViewModel(_session, _calculator);
         AlertsBar.DataContext = _alertsBarViewModel;
         _session.ResetZoomRequested += (_, _) => ResetZoom();
+        CommandBar.NewRequested += (_, _) => NewScheme();
+        CommandBar.OpenFolderRequested += ChooseFolder_Click;
+        CommandBar.SaveRequested += (_, _) => RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveScheme");
+        CommandBar.SettingsRequested += Settings_Click;
         ApplySettings();
 
         Loaded += MainWindow_Loaded;
@@ -216,33 +220,10 @@ public partial class MainWindow : Window
         _session.CurrentSettings = _settings;
     }
 
-    private void NewScheme_Click(object sender, RoutedEventArgs e) => NewScheme();
-
-    private void TopSearchBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (TopSearchPlaceholder is not null)
-        {
-            TopSearchPlaceholder.Visibility = string.IsNullOrEmpty(TopSearchBox.Text)
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-        }
-    }
-
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-
-    private void MaxRestoreButton_Click(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
-
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
         var maximized = WindowState == WindowState.Maximized;
-        MaxRestoreButton.Content = maximized ? "\uE923" : "\uE922";
-        MaxRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
 
         // A borderless (WindowStyle=None) window overhangs the work area by the
         // resize-border + padded-border thickness on every side when maximized;
@@ -273,7 +254,7 @@ public partial class MainWindow : Window
         UpdateInspector();
     }
 
-    private void ChooseFolder_Click(object sender, RoutedEventArgs e)
+    private void ChooseFolder_Click(object? sender, EventArgs e)
     {
         var dialog = new OpenFolderDialog
         {
@@ -289,7 +270,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e) =>
+    private void Settings_Click(object? sender, EventArgs e) =>
         RunUiAsync(async () =>
         {
             var previousLanguage = PlannerLanguages.Normalize(_settings.PlannerLanguage);
@@ -336,8 +317,7 @@ public partial class MainWindow : Window
     private void UpdateVersionChrome()
     {
         Title = AppVersionInfo.WindowTitle(UiText.T("App.Title"));
-        AppChannelText.Text = AppVersionInfo.ChannelLabel;
-        AppVersionText.Text = AppVersionInfo.Subtitle(UiText.T("App.Subtitle"));
+        CommandBar.RefreshChrome();
     }
 
     private static void ApplyTheme(AppTheme theme)
@@ -546,9 +526,6 @@ public partial class MainWindow : Window
             RunUiAsync(() => OpenSchemeListItemAsync(item), "MainWindow.OpenSchemeFromMouseUp");
         }
     }
-
-    private void SaveScheme_Click(object sender, RoutedEventArgs e) =>
-        RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveScheme");
 
     private async Task SaveCurrentSchemeAsync()
     {
@@ -4056,8 +4033,7 @@ public partial class MainWindow : Window
 
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
         {
-            TopSearchBox.Focus();
-            TopSearchBox.SelectAll();
+            CommandBar.FocusSearch();
             e.Handled = true;
             return;
         }
