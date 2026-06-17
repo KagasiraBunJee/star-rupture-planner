@@ -1,0 +1,155 @@
+<UserControl x:Class="StarRupturePlanner.Views.InspectorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:services="clr-namespace:StarRupturePlanner.Services"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Border x:Name="RightPanel" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="14">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Background="{DynamicResource MutedPanelBrush}" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="76"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="64" Height="64" Background="#121E28" BorderBrush="#2B3A44" BorderThickness="1" CornerRadius="9">
+                            <Image x:Name="InspectorImage" Width="56" Height="56" Source="{x:Static services:BlueprintPlaceholderIcon.Image}" Stretch="Uniform"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="InspectorTitle" Text="{DynamicResource Ui.Inspector.NoSelection}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource ThemeForegroundBrush}" TextWrapping="Wrap"/>
+                            <StackPanel x:Name="InspectorStatusPanel" Orientation="Horizontal" Margin="0,6,0,0">
+                                <Ellipse Width="10" Height="10" Fill="{DynamicResource SignalGreenBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                <TextBlock Text="{DynamicResource Ui.Inspector.Operational}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="{DynamicResource Ui.Inspector.Title}" Style="{StaticResource PanelTitle}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <Border x:Name="InspectorTabDetails" Tag="Details" Background="Transparent" Cursor="Hand" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="0,0,0,2" Padding="10,0,10,7" MouseLeftButtonUp="InspectorTab_Click">
+                        <TextBlock x:Name="InspectorTabDetailsText" Text="{DynamicResource Ui.Inspector.Details}" Foreground="{DynamicResource StarBlueBrush}" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border x:Name="InspectorTabStatistics" Tag="Statistics" Background="Transparent" Cursor="Hand" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="10,0,10,7" Margin="8,0,0,0" MouseLeftButtonUp="InspectorTab_Click">
+                        <TextBlock x:Name="InspectorTabStatisticsText" Text="{DynamicResource Ui.Inspector.Statistics}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                    </Border>
+                    <Border x:Name="InspectorTabModifications" Tag="Modifications" Background="Transparent" Cursor="Hand" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="10,0,10,7" Margin="8,0,0,0" MouseLeftButtonUp="InspectorTab_Click">
+                        <TextBlock x:Name="InspectorTabModificationsText" Text="{DynamicResource Ui.Inspector.Modifications}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel x:Name="SchemeSettingsPanel" Visibility="Collapsed">
+                    <TextBlock Text="{DynamicResource Ui.Inspector.SchemeSettings}" Style="{StaticResource PanelTitle}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{DynamicResource Ui.Inspector.Corporations}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                    <StackPanel x:Name="CorporationSettingsStack"/>
+
+                    <Border Height="1" Background="{DynamicResource MutedBorderBrush}" Margin="0,14,0,12"/>
+                    <TextBlock Text="{DynamicResource Ui.Inspector.RailTier}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                    <StackPanel x:Name="RailTierSettingsStack"/>
+                </StackPanel>
+
+                <StackPanel x:Name="NodeInspectorPanel">
+                    <StackPanel x:Name="InspectorDetailsPanel">
+                        <Label Content="{DynamicResource Ui.Inspector.Output}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TargetOutputBox" Grid.Column="0" TextChanged="TargetOutputBox_TextChanged"/>
+                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                <Button x:Name="OutputStepUp" Content="▲" Padding="6,0" MinHeight="15" FontSize="9" Click="OutputStepUp_Click"/>
+                                <Button x:Name="OutputStepDown" Content="▼" Padding="6,0" MinHeight="15" FontSize="9" Margin="0,2,0,0" Click="OutputStepDown_Click"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="🔒" IsEnabled="False" Margin="6,0,0,0" ToolTip="Lock count (coming soon)"/>
+                        </Grid>
+
+                        <Label Content="{DynamicResource Ui.Inspector.Recipe}"/>
+                        <Grid>
+                            <TextBox x:Name="InspectorRecipeSearchBox"
+                                     PreviewMouseLeftButtonDown="InspectorRecipeSearchBox_PreviewMouseLeftButtonDown"
+                                     GotKeyboardFocus="InspectorRecipeSearchBox_GotKeyboardFocus"
+                                     LostKeyboardFocus="InspectorRecipePicker_LostKeyboardFocus"
+                                     TextChanged="InspectorRecipeSearchBox_TextChanged"/>
+                            <Popup x:Name="InspectorRecipePopup"
+                                   PlacementTarget="{Binding ElementName=InspectorRecipeSearchBox}"
+                                   Placement="Bottom"
+                                   Width="{Binding ActualWidth, ElementName=InspectorRecipeSearchBox}"
+                                   StaysOpen="True"
+                                   Closed="InspectorRecipePopup_Closed">
+                                <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="1" MaxHeight="320" CornerRadius="8">
+                                    <ListBox x:Name="InspectorRecipeList"
+                                             DisplayMemberPath="InspectorDisplayName"
+                                             SelectionChanged="InspectorRecipeList_SelectionChanged"
+                                             LostKeyboardFocus="InspectorRecipePicker_LostKeyboardFocus"
+                                             BorderThickness="0"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <StackPanel Margin="0,12,0,0">
+                            <Button x:Name="OpenBlueprintSourceButton"
+                                    Content="Open scheme"
+                                    Visibility="Collapsed"
+                                    Click="OpenBlueprintSourceButton_Click"/>
+                            <CheckBox x:Name="OnlyOutputCheckBox"
+                                      Content="Only output"
+                                      Margin="0,8,0,0"
+                                      Checked="OnlyOutputCheckBox_Changed"
+                                      Unchecked="OnlyOutputCheckBox_Changed"/>
+                            <CheckBox x:Name="SchemeOutputCheckBox"
+                                      Content="Is Scheme output"
+                                      Margin="0,8,0,0"
+                                      Checked="SchemeOutputCheckBox_Changed"
+                                      Unchecked="SchemeOutputCheckBox_Changed"/>
+                        </StackPanel>
+
+                        <Border Height="1" Background="{DynamicResource MutedBorderBrush}" Margin="0,14,0,4"/>
+                        <StackPanel x:Name="InspectorMetricsStack" Margin="0,4,0,0"/>
+
+                        <Label Content="{DynamicResource Ui.Inspector.Priority}"/>
+                        <ComboBox x:Name="PriorityBox"
+                                  SelectionChanged="PriorityBox_SelectionChanged">
+                            <ComboBoxItem Content="{DynamicResource Ui.Priority.High}" Tag="High"/>
+                            <ComboBoxItem Content="{DynamicResource Ui.Priority.Mid}" Tag="Mid"/>
+                            <ComboBoxItem Content="{DynamicResource Ui.Priority.Low}" Tag="Low"/>
+                        </ComboBox>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" IsEnabled="False" Margin="0,0,4,0" ToolTip="Lock count (coming soon)">
+                                <StackPanel Orientation="Horizontal"><TextBlock Text="🔒" Margin="0,0,6,0"/><TextBlock Text="{DynamicResource Ui.Inspector.LockCount}"/></StackPanel>
+                            </Button>
+                            <Button Grid.Column="1" IsEnabled="False" Margin="4,0,0,0" Background="{DynamicResource StarBlueBrush}" ToolTip="Auto-optimize (coming soon)">
+                                <StackPanel Orientation="Horizontal"><TextBlock Text="▦" Margin="0,0,6,0"/><TextBlock Text="{DynamicResource Ui.Inspector.Optimize}"/></StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock x:Name="InspectorReadOnly" TextWrapping="Wrap" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="12" Margin="0,10,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="InspectorStatisticsPanel" Visibility="Collapsed">
+                        <Label Content="{DynamicResource Ui.Inspector.InputRequirements}"/>
+                        <ItemsControl x:Name="InspectorInputs"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="InspectorModificationsPanel" Visibility="Collapsed">
+                        <Label Content="{DynamicResource Ui.Inspector.UnlockRequirements}"/>
+                        <ItemsControl x:Name="InspectorUnlocks"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel x:Name="ConnectionInspectorPanel">
+                    <Label Content="{DynamicResource Ui.Inspector.SelectedConnection}"/>
+                    <TextBlock x:Name="ConnectionReadOnly" TextWrapping="Wrap" Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>
