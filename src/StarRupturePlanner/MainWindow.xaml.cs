@@ -1,15 +1,9 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
-using System.Windows.Threading;
 using Microsoft.Win32;
-using StarRupturePlanner.Controls;
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
 using StarRupturePlanner.ViewModels;
@@ -521,16 +515,4 @@ public partial class MainWindow : Window
     }
 
     private static bool SamePath(string? left, string? right) => PathUtil.SamePath(left, right);
-
-    private static T? FindAncestor<T>(DependencyObject? current)
-        where T : DependencyObject
-        => WpfVisualTreeHelpers.FindAncestor<T>(current);
-
-    private static bool IsDescendantOf(DependencyObject? current, DependencyObject ancestor)
-        => WpfVisualTreeHelpers.IsDescendantOf(current, ancestor);
-
-    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject current)
-        where T : DependencyObject
-        => WpfVisualTreeHelpers.FindVisualChildren<T>(current);
-
 }

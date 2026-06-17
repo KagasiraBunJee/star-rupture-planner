@@ -91,6 +91,12 @@ public partial class CanvasView : UserControl
     public CanvasView()
     {
         InitializeComponent();
+        Unloaded += (_, _) =>
+        {
+            _suggestionCancellation?.Cancel();
+            _suggestionCancellation?.Dispose();
+            _suggestionCancellation = null;
+        };
     }
 
     public void Initialize(
