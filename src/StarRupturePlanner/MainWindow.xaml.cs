@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     private readonly IAppSettingsStore _settingsStore;
     private readonly IPlannerCalculator _calculator;
     private readonly ICanvasLayoutService _layoutService;
+    private readonly ISchemeSession _session;
     private readonly MainWindowViewModel _viewModel;
     private readonly PlannerCanvasViewModel _canvasViewModel;
     private readonly InspectorViewModel _inspectorViewModel;
@@ -99,7 +100,8 @@ public partial class MainWindow : Window
         IAppSettingsStore settingsStore,
         IPlannerCalculator calculator,
         ICanvasLayoutService layoutService,
-        IBackgroundTaskRunner backgroundTaskRunner)
+        IBackgroundTaskRunner backgroundTaskRunner,
+        ISchemeSession session)
     {
         InitializeComponent();
 
@@ -109,6 +111,7 @@ public partial class MainWindow : Window
         _settingsStore = settingsStore;
         _calculator = calculator;
         _layoutService = layoutService;
+        _session = session;
         var uiDispatcher = new WpfUiDispatcher(Dispatcher);
         _viewModel = new MainWindowViewModel(
             _apiClient,
@@ -123,6 +126,8 @@ public partial class MainWindow : Window
         GridInputLayer.GridSize = _layoutService.GridSize;
         _settings = _viewModel.Settings;
         _scheme = _viewModel.Scheme;
+        _session.CurrentSettings = _settings;
+        _session.CurrentScheme = _scheme;
         ApplySettings();
 
         Loaded += MainWindow_Loaded;
@@ -200,6 +205,9 @@ public partial class MainWindow : Window
         _canvasViewModel.Catalog = _catalog;
         _canvasViewModel.Scheme = _scheme;
         _canvasViewModel.Settings = _settings;
+        _session.CurrentCatalog = _catalog;
+        _session.CurrentScheme = _scheme;
+        _session.CurrentSettings = _settings;
     }
 
     private void NewScheme_Click(object sender, RoutedEventArgs e) => NewScheme();
@@ -1808,6 +1816,7 @@ public partial class MainWindow : Window
         }
 
         _productionAnalysis = ProductionAnalysisService.Analyze(_scheme, _catalog, _calculator);
+        _session.ProductionAnalysis = _productionAnalysis;
         UpdateProductionAlerts();
         UpdateSurplusPills();
         RefreshToolboxUnlocksIfNeeded();
@@ -4242,6 +4251,7 @@ public partial class MainWindow : Window
     {
         _lastStatus = status;
         _viewModel.SetStatus(status);
+        _session.Status = _viewModel.Status;
     }
 
     private void BeginToolboxDrag<T>(
@@ -4362,54 +4372,14 @@ public partial class MainWindow : Window
 
     private static T? FindAncestor<T>(DependencyObject? current)
         where T : DependencyObject
-    {
-        while (current is not null)
-        {
-            if (current is T match)
-            {
-                return match;
-            }
-
-            current = VisualTreeHelper.GetParent(current);
-        }
-
-        return null;
-    }
+        => WpfVisualTreeHelpers.FindAncestor<T>(current);
 
     private static bool IsDescendantOf(DependencyObject? current, DependencyObject ancestor)
-    {
-        while (current is not null)
-        {
-            if (ReferenceEquals(current, ancestor))
-            {
-                return true;
-            }
-
-            current = current is Visual
-                ? VisualTreeHelper.GetParent(current)
-                : LogicalTreeHelper.GetParent(current);
-        }
-
-        return false;
-    }
+        => WpfVisualTreeHelpers.IsDescendantOf(current, ancestor);
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject current)
         where T : DependencyObject
-    {
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(current); i++)
-        {
-            var child = VisualTreeHelper.GetChild(current, i);
-            if (child is T match)
-            {
-                yield return match;
-            }
-
-            foreach (var descendant in FindVisualChildren<T>(child))
-            {
-                yield return descendant;
-            }
-        }
-    }
+        => WpfVisualTreeHelpers.FindVisualChildren<T>(current);
 
     private sealed record PortReference(string NodeId, string Direction, string ItemId);
 
