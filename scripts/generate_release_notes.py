@@ -16,6 +16,21 @@ from typing import Any
 MAX_COMMITS = 80
 MAX_PULL_REQUESTS = 30
 MAX_BODY_CHARS = 1800
+NON_APP_PATH_PREFIXES = (
+    ".github/",
+    ".vscode/",
+    "scripts/",
+)
+NON_APP_PATH_PARTS = (
+    "/workflows/",
+)
+NON_APP_SUBJECT_KEYWORDS = (
+    "workflow",
+    "github action",
+    "ci",
+    "release automation",
+    "release notes",
+)
 
 
 @dataclass(frozen=True)
@@ -24,6 +39,7 @@ class CommitInfo:
     author: str
     date: str
     subject: str
+    paths: tuple[str, ...]
 
 
 def run_git(args: list[str], *, check: bool = True) -> str:
@@ -73,8 +89,32 @@ def collect_commits(previous_tag: str | None) -> list[CommitInfo]:
         parts = record.split("\x1f")
         if len(parts) != 4:
             continue
-        commits.append(CommitInfo(sha=parts[0], author=parts[1], date=parts[2], subject=parts[3]))
+        paths_output = run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", parts[0]], check=False)
+        paths = tuple(path.strip().replace("\\", "/") for path in paths_output.splitlines() if path.strip())
+        commits.append(CommitInfo(sha=parts[0], author=parts[1], date=parts[2], subject=parts[3], paths=paths))
     return commits
+
+
+def is_non_app_path(path: str) -> bool:
+    normalized = path.strip().replace("\\", "/").lower()
+    return normalized.startswith(NON_APP_PATH_PREFIXES) or any(part in normalized for part in NON_APP_PATH_PARTS)
+
+
+def is_non_app_subject(subject: str) -> bool:
+    normalized = subject.strip().lower()
+    return any(keyword in normalized for keyword in NON_APP_SUBJECT_KEYWORDS)
+
+
+def is_app_commit(commit: CommitInfo) -> bool:
+    if commit.paths and all(is_non_app_path(path) for path in commit.paths):
+        return False
+    if is_non_app_subject(commit.subject) and not commit.paths:
+        return False
+    return True
+
+
+def filter_app_commits(commits: list[CommitInfo]) -> list[CommitInfo]:
+    return [commit for commit in commits if is_app_commit(commit)]
 
 
 def github_json(path: str, token: str) -> Any:
@@ -132,6 +172,23 @@ def collect_pull_requests(commits: list[CommitInfo], token: str) -> list[dict[st
     return list(pull_requests.values())
 
 
+def filter_app_pull_requests(pull_requests: list[dict[str, Any]], token: str) -> list[dict[str, Any]]:
+    app_pull_requests: list[dict[str, Any]] = []
+    for pull_request in pull_requests:
+        number = pull_request["number"]
+        files = github_json(f"pulls/{number}/files?per_page=100", token)
+        paths = tuple(file_info.get("filename", "") for file_info in files)
+        title = pull_request.get("title", "")
+        body = pull_request.get("body", "")
+        if paths and all(is_non_app_path(path) for path in paths):
+            continue
+        if is_non_app_subject(title) and not body.strip():
+            continue
+        pull_request["changed_paths"] = paths[:40]
+        app_pull_requests.append(pull_request)
+    return app_pull_requests
+
+
 def build_context(tag: str, previous_tag: str | None, commits: list[CommitInfo], pull_requests: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "project": "StarRupture Planner",
@@ -148,6 +205,7 @@ def build_context(tag: str, previous_tag: str | None, commits: list[CommitInfo],
                 "author": commit.author,
                 "date": commit.date,
                 "subject": commit.subject,
+                "changed_paths": commit.paths[:40],
             }
             for commit in commits
         ],
@@ -172,8 +230,11 @@ def call_ollama(context: dict[str, Any]) -> str:
         Write GitHub release notes in Markdown for this release.
 
         Requirements:
-        - Use only the provided commits and pull request descriptions.
+        - Write only about user-visible app, data, planner, local API, localization, installer, or packaging outcomes.
+        - Use only the provided app commits and pull request descriptions.
         - Do not invent features, fixes, dates, links, or contributors.
+        - Ignore CI, GitHub Actions, release automation, workflow, secret, script, and repository maintenance details.
+        - If the provided context has no user-visible app changes, say that this release has no user-facing app changes.
         - Mention that downloads include the Windows installer, the manual extraction zip, and SHA256 checksums.
         - Do not mention a portable self-extracting EXE.
         - Prefer sections named Highlights, Changes, Fixes, Packaging, and Downloads when relevant.
@@ -191,7 +252,7 @@ def call_ollama(context: dict[str, Any]) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "You write accurate, concise GitHub release notes from repository metadata.",
+                "content": "You write accurate, concise user-facing release notes for a desktop application.",
             },
             {"role": "user", "content": prompt},
         ],
@@ -234,8 +295,10 @@ def main() -> int:
 
     previous_tag = find_previous_tag(args.tag)
     commits = collect_commits(previous_tag)
-    pull_requests = collect_pull_requests(commits, token)
-    context = build_context(args.tag, previous_tag, commits, pull_requests)
+    app_commits = filter_app_commits(commits)
+    pull_requests = collect_pull_requests(app_commits, token)
+    app_pull_requests = filter_app_pull_requests(pull_requests, token)
+    context = build_context(args.tag, previous_tag, app_commits, app_pull_requests)
     notes = call_ollama(context)
 
     output_path = Path(args.output)

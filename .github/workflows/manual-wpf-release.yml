@@ -15,11 +15,6 @@ on:
         required: true
         default: true
         type: boolean
-      draft:
-        description: "Create the GitHub Release as a draft"
-        required: true
-        default: true
-        type: boolean
       prerelease:
         description: "Mark the GitHub Release as a prerelease"
         required: true
@@ -295,9 +290,7 @@ jobs:
             $notesPath
           )
 
-          if ("${{ inputs.draft }}" -eq "true") {
-            $releaseArgs += "--draft"
-          }
+          $releaseArgs += "--draft"
 
           if ("${{ inputs.prerelease }}" -eq "true") {
             $releaseArgs += "--prerelease"
