@@ -14,7 +14,7 @@
                             <ColumnDefinition Width="76"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border Width="64" Height="64" Background="#121E28" BorderBrush="#2B3A44" BorderThickness="1" CornerRadius="9">
+                        <Border Width="64" Height="64" Background="{DynamicResource NodeCardImageBrush}" BorderBrush="{DynamicResource NodeCardImageBorderBrush}" BorderThickness="1" CornerRadius="9">
                             <Image x:Name="InspectorImage" Width="56" Height="56" Source="{x:Static services:BlueprintPlaceholderIcon.Image}" Stretch="Uniform"/>
                         </Border>
                         <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">

@@ -156,8 +156,8 @@ public partial class CanvasView
         {
             Width = Math.Max(140, comment.Width),
             Height = Math.Max(82, comment.Height),
-            Background = new SolidColorBrush(Color.FromArgb(72, 10, 30, 42)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(190, 34, 83, 113)),
+            Background = ThemeBrush("CommentBackgroundBrush", Color.FromArgb(72, 10, 30, 42)),
+            BorderBrush = ThemeBrush("CommentBorderBrush", Color.FromArgb(190, 34, 83, 113)),
             BorderThickness = new Thickness(1.5),
             CornerRadius = new CornerRadius(7),
             Tag = comment,
@@ -177,9 +177,9 @@ public partial class CanvasView
         var title = new TextBox
         {
             Text = comment.Text,
-            Background = new SolidColorBrush(Color.FromArgb(190, 14, 34, 48)),
+            Background = ThemeBrush("CommentTitleBackgroundBrush", Color.FromArgb(190, 14, 34, 48)),
             BorderThickness = new Thickness(0),
-            Foreground = new SolidColorBrush(Color.FromRgb(230, 246, 255)),
+            Foreground = ThemeBrush("CommentForegroundBrush", Color.FromRgb(230, 246, 255)),
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
             Padding = new Thickness(12, 4, 12, 4),
@@ -191,7 +191,7 @@ public partial class CanvasView
 
         var body = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(48, 10, 18, 24)),
+            Background = ThemeBrush("CommentBodyBackgroundBrush", Color.FromArgb(48, 10, 18, 24)),
         };
         Grid.SetRow(body, 1);
         grid.Children.Add(body);
@@ -230,7 +230,7 @@ public partial class CanvasView
                 Y1 = 18,
                 X2 = 18,
                 Y2 = 18 - offset,
-                Stroke = new SolidColorBrush(Color.FromArgb(210, 225, 225, 225)),
+                Stroke = ThemeBrush("CommentForegroundBrush", Color.FromArgb(210, 225, 225, 225)),
                 StrokeThickness = 1.4,
                 IsHitTestVisible = false,
             };
@@ -258,11 +258,11 @@ public partial class CanvasView
             Width = 470,
             MinHeight = 112,
             Background = new LinearGradientBrush(
-                Color.FromArgb(242, 17, 27, 35),
-                Color.FromArgb(232, 7, 15, 20),
+                ThemeColor("NodeCardTopBrush", Color.FromArgb(242, 17, 27, 35)),
+                ThemeColor("NodeCardBottomBrush", Color.FromArgb(232, 7, 15, 20)),
                 new Point(0, 0),
                 new Point(1, 1)),
-            BorderBrush = new SolidColorBrush(GraphiteLineColor),
+            BorderBrush = ThemeBrush("NodeCardBorderBrush", GraphiteLineColor),
             BorderThickness = new Thickness(1.5),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(0),
@@ -307,7 +307,7 @@ public partial class CanvasView
             Margin = new Thickness(0),
             Background = new LinearGradientBrush(
                 Color.FromArgb(118, accentColor.R, accentColor.G, accentColor.B),
-                Color.FromArgb(20, 16, 24, 32),
+                Color.FromArgb(0, accentColor.R, accentColor.G, accentColor.B),
                 new Point(0, 0),
                 new Point(1, 0)),
         };
@@ -317,8 +317,8 @@ public partial class CanvasView
             Width = 58,
             Height = 58,
             Margin = new Thickness(12, 10, 12, 10),
-            Background = new SolidColorBrush(Color.FromRgb(13, 24, 32)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(42, 60, 70)),
+            Background = ThemeBrush("NodeCardImageBrush", Color.FromRgb(13, 24, 32)),
+            BorderBrush = ThemeBrush("NodeCardImageBorderBrush", Color.FromRgb(42, 60, 70)),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(7),
         };
@@ -422,7 +422,7 @@ public partial class CanvasView
                 var divider = new Border
                 {
                     Width = 1,
-                    Background = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
+                    Background = ThemeBrush("NodeCardDividerBrush", Color.FromArgb(120, 38, 52, 61)),
                     HorizontalAlignment = HorizontalAlignment.Center,
                 };
 
@@ -466,11 +466,11 @@ public partial class CanvasView
             Width = 470,
             MinHeight = 112,
             Background = new LinearGradientBrush(
-                Color.FromArgb(242, 12, 26, 36),
-                Color.FromArgb(232, 5, 12, 18),
+                ThemeColor("NodeCardTopBrush", Color.FromArgb(242, 12, 26, 36)),
+                ThemeColor("NodeCardBottomBrush", Color.FromArgb(232, 5, 12, 18)),
                 new Point(0, 0),
                 new Point(1, 1)),
-            BorderBrush = new SolidColorBrush(GraphiteLineColor),
+            BorderBrush = ThemeBrush("NodeCardBorderBrush", GraphiteLineColor),
             BorderThickness = new Thickness(1.5),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(0),
@@ -504,7 +504,7 @@ public partial class CanvasView
             LastChildFill = true,
             Background = new LinearGradientBrush(
                 Color.FromArgb(125, 10, 132, 255),
-                Color.FromArgb(20, 16, 24, 32),
+                Color.FromArgb(0, 10, 132, 255),
                 new Point(0, 0),
                 new Point(1, 0)),
         };
@@ -515,8 +515,8 @@ public partial class CanvasView
             Width = 58,
             Height = 58,
             Margin = new Thickness(12, 10, 12, 10),
-            Background = new SolidColorBrush(Color.FromRgb(13, 24, 32)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(42, 60, 70)),
+            Background = ThemeBrush("NodeCardImageBrush", Color.FromRgb(13, 24, 32)),
+            BorderBrush = ThemeBrush("NodeCardImageBorderBrush", Color.FromRgb(42, 60, 70)),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(7),
             Child = new TextBlock
@@ -618,7 +618,7 @@ public partial class CanvasView
     {
         border.BorderBrush = selected
             ? new SolidColorBrush(OutputPortColor)
-            : new SolidColorBrush(Color.FromArgb(170, 95, 105, 112));
+            : ThemeBrush("CommentBorderBrush", Color.FromArgb(170, 95, 105, 112));
         border.BorderThickness = selected ? new Thickness(2.5) : new Thickness(1.5);
         border.Effect = selected
             ? new System.Windows.Media.Effects.DropShadowEffect
@@ -661,7 +661,7 @@ public partial class CanvasView
                 var selected = _selectedRoutePoints.Contains(reference);
                 handle.Width = selected ? 16 : 12;
                 handle.Height = selected ? 16 : 12;
-                handle.Stroke = selected ? new SolidColorBrush(OutputPortColor) : new SolidColorBrush(Color.FromRgb(5, 12, 17));
+                handle.Stroke = selected ? new SolidColorBrush(OutputPortColor) : ThemeBrush("NodeCardTopBrush", Color.FromRgb(5, 12, 17));
                 handle.StrokeThickness = selected ? 3 : 1.5;
             }
         }
@@ -810,7 +810,7 @@ public partial class CanvasView
     {
         var footer = new Border
         {
-            BorderBrush = new SolidColorBrush(Color.FromArgb(120, 38, 52, 61)),
+            BorderBrush = ThemeBrush("NodeCardDividerBrush", Color.FromArgb(120, 38, 52, 61)),
             BorderThickness = new Thickness(0, 1, 0, 0),
             Padding = new Thickness(14, 7, 14, 8),
         };
@@ -1022,7 +1022,7 @@ public partial class CanvasView
             Width = 15,
             Height = 15,
             Fill = available ? PortBrush(direction) : new SolidColorBrush(LockedPortColor),
-            Stroke = new SolidColorBrush(Color.FromRgb(5, 12, 17)),
+            Stroke = ThemeBrush("NodeCardTopBrush", Color.FromRgb(5, 12, 17)),
             StrokeThickness = 2,
             VerticalAlignment = VerticalAlignment.Center,
             Cursor = available ? Cursors.Hand : Cursors.No,
@@ -1053,8 +1053,8 @@ public partial class CanvasView
         {
             Width = 22,
             Height = 22,
-            Background = new SolidColorBrush(Color.FromRgb(9, 18, 24)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(30, 45, 55)),
+            Background = ThemeBrush("NodeCardImageBrush", Color.FromRgb(9, 18, 24)),
+            BorderBrush = ThemeBrush("NodeCardImageBorderBrush", Color.FromRgb(30, 45, 55)),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
         };
@@ -1924,7 +1924,7 @@ public partial class CanvasView
             Width = 12,
             Height = 12,
             Fill = new SolidColorBrush(OutputPortColor),
-            Stroke = new SolidColorBrush(Color.FromRgb(5, 12, 17)),
+            Stroke = ThemeBrush("NodeCardTopBrush", Color.FromRgb(5, 12, 17)),
             StrokeThickness = 1.5,
             Tag = new RoutePointReference(edge.Id, routePointIndex),
             Cursor = Cursors.SizeAll,
@@ -2699,9 +2699,13 @@ public partial class CanvasView
 
     private Brush CardTextBrush(double opacity = 1)
     {
-        var brush = BrushFromString(_settings.CanvasCardFont.Color, "#F4F0E8");
-        brush.Opacity = opacity;
-        return brush;
+        // Default card text follows the active theme (dark text in light theme). A user who
+        // customized the canvas-card colour away from the default keeps their explicit colour.
+        var configured = _settings.CanvasCardFont.Color;
+        var color = string.IsNullOrWhiteSpace(configured) || string.Equals(configured, "#F4F0E8", StringComparison.OrdinalIgnoreCase)
+            ? ThemeColor("NodeCardTextBrush", Color.FromRgb(0xF4, 0xF0, 0xE8))
+            : BrushFromString(configured, "#F4F0E8").Color;
+        return new SolidColorBrush(color) { Opacity = opacity };
     }
 
     public void DeleteSelection()

@@ -50,7 +50,7 @@
                                    IsHitTestVisible="False">
                         </TextBlock>
                     </Grid>
-                    <Border Grid.Column="2" VerticalAlignment="Center" Height="22" BorderBrush="#24313B" BorderThickness="1" CornerRadius="5" Padding="8,0">
+                    <Border Grid.Column="2" VerticalAlignment="Center" Height="22" BorderBrush="{DynamicResource MutedBorderBrush}" BorderThickness="1" CornerRadius="5" Padding="8,0">
                         <TextBlock Text="Ctrl+K" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
                     </Border>
                 </Grid>

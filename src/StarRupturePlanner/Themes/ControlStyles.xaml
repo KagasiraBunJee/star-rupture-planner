@@ -290,11 +290,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ItemChrome" Property="Background" Value="#172633"/>
-                            <Setter TargetName="ItemChrome" Property="BorderBrush" Value="#2B5167"/>
+                            <Setter TargetName="ItemChrome" Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+                            <Setter TargetName="ItemChrome" Property="BorderBrush" Value="{DynamicResource ListItemHoverBorderBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="ItemChrome" Property="Background" Value="#10253A"/>
+                            <Setter TargetName="ItemChrome" Property="Background" Value="{DynamicResource ListItemSelectedBrush}"/>
                             <Setter TargetName="ItemChrome" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -314,8 +314,8 @@
             </Grid.ColumnDefinitions>
             <Border Width="34"
                     Height="34"
-                    Background="#121E28"
-                    BorderBrush="#263A48"
+                    Background="{DynamicResource NodeCardImageBrush}"
+                    BorderBrush="{DynamicResource NodeCardImageBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="6">
                 <Image Width="28"
@@ -455,7 +455,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#101E28" BorderBrush="#263A48" BorderThickness="1" CornerRadius="6" Padding="5,3" Margin="0,0,5,5" ToolTip="{Binding DisplayName}">
+                                <Border Background="{DynamicResource NodeCardImageBrush}" BorderBrush="{DynamicResource NodeCardImageBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="5,3" Margin="0,0,5,5" ToolTip="{Binding DisplayName}">
                                     <StackPanel Orientation="Horizontal">
                                         <Image Width="18" Height="18" Source="{Binding ImageUrl, Converter={StaticResource PlaceholderImageSourceConverter}}" Stretch="Uniform" Margin="0,0,5,0"/>
                                         <TextBlock Text="{Binding RateText}" Foreground="{DynamicResource StarBlueBrush}" FontSize="11" VerticalAlignment="Center"/>
@@ -474,11 +474,11 @@
         </Border>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter TargetName="Card" Property="Background" Value="#0F1F2A"/>
-                <Setter TargetName="Card" Property="BorderBrush" Value="#2B5167"/>
+                <Setter TargetName="Card" Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource ListItemHoverBorderBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter TargetName="Card" Property="Background" Value="#10253A"/>
+                <Setter TargetName="Card" Property="Background" Value="{DynamicResource ListItemSelectedBrush}"/>
                 <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
                 <Setter TargetName="Card" Property="BorderThickness" Value="1.5"/>
             </DataTrigger>
@@ -492,7 +492,7 @@
                     <ColumnDefinition Width="42"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="34" Height="34" Background="#121E28" BorderBrush="#263A48" BorderThickness="1" CornerRadius="6">
+                <Border Width="34" Height="34" Background="{DynamicResource NodeCardImageBrush}" BorderBrush="{DynamicResource NodeCardImageBorderBrush}" BorderThickness="1" CornerRadius="6">
                     <Image Width="28" Height="28" Source="{Binding ResourceImageUrl, Converter={StaticResource PlaceholderImageSourceConverter}}" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" Margin="9,0,0,0">
@@ -507,11 +507,11 @@
         </Border>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter TargetName="Card" Property="Background" Value="#0F1F2A"/>
-                <Setter TargetName="Card" Property="BorderBrush" Value="#2B5167"/>
+                <Setter TargetName="Card" Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource ListItemHoverBorderBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter TargetName="Card" Property="Background" Value="#10253A"/>
+                <Setter TargetName="Card" Property="Background" Value="{DynamicResource ListItemSelectedBrush}"/>
                 <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
                 <Setter TargetName="Card" Property="BorderThickness" Value="1.5"/>
             </DataTrigger>
@@ -525,7 +525,7 @@
                     <ColumnDefinition Width="42"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="34" Height="34" Background="#121E28" BorderBrush="#263A48" BorderThickness="1" CornerRadius="6">
+                <Border Width="34" Height="34" Background="{DynamicResource NodeCardImageBrush}" BorderBrush="{DynamicResource NodeCardImageBorderBrush}" BorderThickness="1" CornerRadius="6">
                     <Image Width="28" Height="28" Source="{Binding ImageUrl, Converter={StaticResource PlaceholderImageSourceConverter}}" Stretch="Uniform"/>
                 </Border>
                 <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{DynamicResource LeftListForegroundBrush}" FontFamily="{DynamicResource LeftListFontFamily}" FontSize="{DynamicResource LeftListFontSize}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="9,0,0,0"/>
@@ -533,11 +533,11 @@
         </Border>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter TargetName="Card" Property="Background" Value="#0F1F2A"/>
-                <Setter TargetName="Card" Property="BorderBrush" Value="#2B5167"/>
+                <Setter TargetName="Card" Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource ListItemHoverBorderBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter TargetName="Card" Property="Background" Value="#10253A"/>
+                <Setter TargetName="Card" Property="Background" Value="{DynamicResource ListItemSelectedBrush}"/>
                 <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource StarBlueBrush}"/>
                 <Setter TargetName="Card" Property="BorderThickness" Value="1.5"/>
             </DataTrigger>

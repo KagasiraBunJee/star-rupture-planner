@@ -9,7 +9,7 @@
             <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                 <TextBlock Text="{DynamicResource Ui.Nav.Navigation}" Style="{StaticResource PanelTitle}"/>
                 <StackPanel>
-                    <Border Background="#122233" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="3,0,0,0" CornerRadius="7" Padding="12,9" Margin="0,0,0,6">
+                    <Border Background="{DynamicResource NavActiveBackgroundBrush}" BorderBrush="{DynamicResource StarBlueBrush}" BorderThickness="3,0,0,0" CornerRadius="7" Padding="12,9" Margin="0,0,0,6">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="▤" Foreground="{DynamicResource StarBlueBrush}" Margin="0,0,10,0"/>
                             <TextBlock Text="{DynamicResource Ui.Nav.Production}" FontWeight="SemiBold"/>

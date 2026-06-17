@@ -13,6 +13,28 @@
     <SolidColorBrush x:Key="MutedPanelBrush" Color="#0B141B"/>
     <SolidColorBrush x:Key="MutedBorderBrush" Color="#1D2A34"/>
 
+    <!-- Canvas node cards -->
+    <SolidColorBrush x:Key="NodeCardTopBrush" Color="#F2111B23"/>
+    <SolidColorBrush x:Key="NodeCardBottomBrush" Color="#E8070F14"/>
+    <SolidColorBrush x:Key="NodeCardBorderBrush" Color="#26343D"/>
+    <SolidColorBrush x:Key="NodeCardImageBrush" Color="#0D1820"/>
+    <SolidColorBrush x:Key="NodeCardImageBorderBrush" Color="#2A3C46"/>
+    <SolidColorBrush x:Key="NodeCardDividerBrush" Color="#78263439"/>
+    <SolidColorBrush x:Key="NodeCardTextBrush" Color="#F4F0E8"/>
+
+    <!-- Canvas comments -->
+    <SolidColorBrush x:Key="CommentBackgroundBrush" Color="#480A1E2A"/>
+    <SolidColorBrush x:Key="CommentBorderBrush" Color="#BE225371"/>
+    <SolidColorBrush x:Key="CommentTitleBackgroundBrush" Color="#BE0E2230"/>
+    <SolidColorBrush x:Key="CommentBodyBackgroundBrush" Color="#300A1218"/>
+    <SolidColorBrush x:Key="CommentForegroundBrush" Color="#E6F6FF"/>
+
+    <!-- Navigation + list items -->
+    <SolidColorBrush x:Key="NavActiveBackgroundBrush" Color="#122233"/>
+    <SolidColorBrush x:Key="ListItemHoverBrush" Color="#0F1F2A"/>
+    <SolidColorBrush x:Key="ListItemHoverBorderBrush" Color="#2B5167"/>
+    <SolidColorBrush x:Key="ListItemSelectedBrush" Color="#10253A"/>
+
     <!-- Controls -->
     <SolidColorBrush x:Key="ControlBrush" Color="#121C24"/>
     <SolidColorBrush x:Key="ControlHoverBrush" Color="#172633"/>

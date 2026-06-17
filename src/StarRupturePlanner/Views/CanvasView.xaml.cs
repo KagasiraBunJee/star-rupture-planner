@@ -191,6 +191,10 @@ public partial class CanvasView : UserControl
     private static SolidColorBrush BrushFromString(string? value, string fallback)
         => UiBrushHelpers.BrushFromString(value, fallback);
 
+    private static Color ThemeColor(string resourceKey, Color fallback) => UiBrushHelpers.ThemeColor(resourceKey, fallback);
+
+    private static SolidColorBrush ThemeBrush(string resourceKey, Color fallback) => UiBrushHelpers.ThemeBrush(resourceKey, fallback);
+
     private void RunUiAsync(Func<Task> operation, string context)
     {
         _ = RunUiAsyncCore(operation, context);

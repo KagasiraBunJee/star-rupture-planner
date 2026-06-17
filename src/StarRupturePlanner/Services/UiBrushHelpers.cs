@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Media;
 
 namespace StarRupturePlanner.Services;
@@ -8,6 +9,13 @@ public static class UiBrushHelpers
 {
     public static string SafeFontFamily(string value)
         => string.IsNullOrWhiteSpace(value) ? "Segoe UI" : value;
+
+    /// <summary>Resolves a theme brush's colour from the merged resource dictionaries (theme-aware).</summary>
+    public static Color ThemeColor(string resourceKey, Color fallback)
+        => Application.Current?.TryFindResource(resourceKey) is SolidColorBrush brush ? brush.Color : fallback;
+
+    public static SolidColorBrush ThemeBrush(string resourceKey, Color fallback)
+        => new(ThemeColor(resourceKey, fallback));
 
     public static SolidColorBrush BrushFromString(string? value, string fallback)
     {
