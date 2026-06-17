@@ -100,6 +100,8 @@ public sealed class SchemeSession : ISchemeSession
     public event EventHandler? SelectionChanged;
     public event EventHandler<FocusNodeRequestedEventArgs>? FocusNodeRequested;
     public event EventHandler? ResetZoomRequested;
+    public event EventHandler? CanvasRenderRequested;
+    public event EventHandler<string>? StatusRequested;
 
     public void NotifySelectionChanged() => SelectionChanged?.Invoke(this, EventArgs.Empty);
 
@@ -112,6 +114,10 @@ public sealed class SchemeSession : ISchemeSession
     }
 
     public void RequestResetZoom() => ResetZoomRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RequestCanvasRender() => CanvasRenderRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RequestStatus(string message) => StatusRequested?.Invoke(this, message);
 
     private void SetRef<T>(ref T field, T value, EventHandler? handler)
         where T : class

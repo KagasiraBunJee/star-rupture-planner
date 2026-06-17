@@ -128,6 +128,8 @@ public partial class MainWindow : Window
         _alertsBarViewModel = new AlertsBarViewModel(_session, _calculator);
         AlertsBar.DataContext = _alertsBarViewModel;
         _session.ResetZoomRequested += (_, _) => ResetZoom();
+        _session.CanvasRenderRequested += (_, _) => RenderCanvas();
+        _session.StatusRequested += (_, message) => SetStatus(message);
         CommandBar.NewRequested += (_, _) => NewScheme();
         CommandBar.OpenFolderRequested += ChooseFolder_Click;
         CommandBar.SaveRequested += (_, _) => RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveScheme");
@@ -3836,25 +3838,7 @@ public partial class MainWindow : Window
         return PlannerEdgeService.RecipesForNode(_catalog, node);
     }
 
-    private void SetImage(Image image, string? assetUrl)
-    {
-        var absolute = _apiClient.ToAbsoluteAssetUrl(assetUrl);
-        if (string.IsNullOrWhiteSpace(absolute))
-        {
-            image.Source = BlueprintPlaceholderIcon.Image;
-            return;
-        }
-
-        try
-        {
-            image.Source = BlueprintPlaceholderIcon.FromUrl(absolute);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[MainWindow.SetImage] Failed to load image '{absolute}': {ex.Message}");
-            image.Source = BlueprintPlaceholderIcon.Image;
-        }
-    }
+    private void SetImage(Image image, string? assetUrl) => UiImageLoader.SetImage(_apiClient, image, assetUrl);
 
     private FontFamily CardFontFamily()
     {
@@ -4029,25 +4013,7 @@ public partial class MainWindow : Window
         return dialog.ShowDialog() == true ? textBox.Text : null;
     }
 
-    private static bool SamePath(string? left, string? right)
-    {
-        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
-        {
-            return false;
-        }
-
-        try
-        {
-            left = System.IO.Path.GetFullPath(left);
-            right = System.IO.Path.GetFullPath(right);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[MainWindow.SamePath] Failed to normalize paths: {ex.Message}");
-        }
-
-        return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool SamePath(string? left, string? right) => PathUtil.SamePath(left, right);
 
     private static T? FindAncestor<T>(DependencyObject? current)
         where T : DependencyObject
