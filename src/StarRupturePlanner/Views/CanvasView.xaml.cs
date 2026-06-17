@@ -115,6 +115,22 @@ public partial class CanvasView : UserControl
         GridInputLayer.GridSize = _layoutService.GridSize;
         _session.CanvasRenderRequested += (_, _) => RenderCanvas();
         _session.ResetZoomRequested += (_, _) => ResetZoom();
+        _session.FocusNodeRequested += (_, e) => FocusNodeById(e.NodeId);
+    }
+
+    // Select and center a node by id (used when an alert/bottleneck chip is clicked).
+    private void FocusNodeById(string nodeId)
+    {
+        var node = _scheme.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null)
+        {
+            return;
+        }
+
+        SelectSingleNode(node);
+        UpdateInspector();
+        UpdateSelectionVisuals();
+        FocusNode(node);
     }
 
     // ----- Shell-facing surface -----

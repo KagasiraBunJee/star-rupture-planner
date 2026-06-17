@@ -35,6 +35,18 @@
                                         Padding="10,5"
                                         Margin="0,0,8,0"
                                         ToolTip="{Binding Message}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsClickable}" Value="True">
+                                                    <Setter Property="Cursor" Value="Hand"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick" Command="{Binding FocusCommand}"/>
+                                    </Border.InputBindings>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding Glyph}" Foreground="{Binding GlyphBrush}" Margin="0,0,7,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="{Binding Message}" Foreground="{DynamicResource ThemeForegroundBrush}" MaxWidth="240" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>

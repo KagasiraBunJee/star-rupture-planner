@@ -50,5 +50,35 @@
         </Grid>
 
         <views:AlertsBarView x:Name="AlertsBar" Grid.Row="2"/>
+
+        <!-- Full-window loading overlay shown while the catalog (resources/machines) loads. -->
+        <Grid x:Name="LoadingOverlay" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="100"
+              Background="#D6080C11" Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid Width="60" Height="60" HorizontalAlignment="Center">
+                    <Ellipse Width="60" Height="60" Stroke="{DynamicResource GraphiteLineBrush}" StrokeThickness="6" Opacity="0.5"/>
+                    <Ellipse Width="60" Height="60" Stroke="{DynamicResource StarBlueBrush}" StrokeThickness="6"
+                             StrokeDashArray="8,24" StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform>
+                            <RotateTransform x:Name="LoadingSpinnerRotate" Angle="0"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                </Grid>
+                <TextBlock Text="Loading…" Foreground="{DynamicResource ThemeForegroundBrush}"
+                           FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+            </StackPanel>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="LoadingSpinnerRotate"
+                                             Storyboard.TargetProperty="Angle"
+                                             From="0" To="360" Duration="0:0:1"
+                                             RepeatBehavior="Forever"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Grid.Triggers>
+        </Grid>
     </Grid>
 </Window>

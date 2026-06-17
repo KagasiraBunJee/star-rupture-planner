@@ -127,9 +127,17 @@ public partial class MainWindow : Window
     private void MainWindow_Loaded(object sender, RoutedEventArgs e) =>
         RunUiAsync(async () =>
         {
-            await RefreshSchemeListAsync();
-            NewScheme();
-            await InitializeApiAsync();
+            LoadingOverlay.Visibility = Visibility.Visible;
+            try
+            {
+                await RefreshSchemeListAsync();
+                NewScheme();
+                await InitializeApiAsync();
+            }
+            finally
+            {
+                LoadingOverlay.Visibility = Visibility.Collapsed;
+            }
         }, "MainWindow.Loaded");
 
     private async Task InitializeApiAsync()

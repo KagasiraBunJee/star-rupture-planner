@@ -128,9 +128,14 @@ public sealed class AlertsBarViewModel : ViewModelBase
         }
 
         // Show every alert; the row scrolls horizontally to reveal the rest.
+        // Production alerts carry a node id, so the chip can focus that node when clicked.
         foreach (var alert in analysis.Alerts)
         {
-            Alerts.Add(new AlertChipItem(alert.Message, "⚠", UiPalette.Shortage));
+            var nodeId = alert.NodeId;
+            var focusCommand = string.IsNullOrEmpty(nodeId)
+                ? null
+                : new RelayCommand(() => _session.RequestFocusNode(nodeId));
+            Alerts.Add(new AlertChipItem(alert.Message, "⚠", UiPalette.Shortage, nodeId, focusCommand));
         }
 
         foreach (var alert in lockedAlerts)
@@ -145,10 +150,12 @@ public sealed class AlertsBarViewModel : ViewModelBase
 /// <summary>One chip in the alerts row, with brushes precomputed from its accent color.</summary>
 public sealed class AlertChipItem
 {
-    public AlertChipItem(string message, string glyph, Color accent)
+    public AlertChipItem(string message, string glyph, Color accent, string? nodeId = null, ICommand? focusCommand = null)
     {
         Message = message;
         Glyph = glyph;
+        NodeId = nodeId;
+        FocusCommand = focusCommand;
         BackgroundBrush = new SolidColorBrush(Color.FromArgb(30, accent.R, accent.G, accent.B));
         BorderBrush = new SolidColorBrush(Color.FromArgb(150, accent.R, accent.G, accent.B));
         GlyphBrush = new SolidColorBrush(accent);
@@ -156,6 +163,9 @@ public sealed class AlertChipItem
 
     public string Message { get; }
     public string Glyph { get; }
+    public string? NodeId { get; }
+    public ICommand? FocusCommand { get; }
+    public bool IsClickable => FocusCommand is not null;
     public Brush BackgroundBrush { get; }
     public Brush BorderBrush { get; }
     public Brush GlyphBrush { get; }
