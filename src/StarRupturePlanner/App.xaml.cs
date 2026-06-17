@@ -26,6 +26,7 @@ public partial class App : Application
         IPlannerCalculator calculator = new PlannerCalculator();
         ICanvasLayoutService layoutService = new CanvasLayoutService();
         IBackgroundTaskRunner backgroundTaskRunner = new BackgroundTaskRunner();
+        ISchemeSession session = new SchemeSession();
 
         MainWindow mainWindow = new(
             apiClient,
@@ -34,7 +35,8 @@ public partial class App : Application
             settingsStore,
             calculator,
             layoutService,
-            backgroundTaskRunner);
+            backgroundTaskRunner,
+            session);
         MainWindow = mainWindow;
         mainWindow.Show();
     }
