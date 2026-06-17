@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import sys
 
 import uvicorn
 
@@ -10,7 +12,22 @@ from .http_app import create_app
 from .service import ResourceService
 
 
+_standard_stream_sinks = []
+
+
+def ensure_standard_streams() -> None:
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8", buffering=1)
+        _standard_stream_sinks.append(sys.stdout)
+
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8", buffering=1)
+        _standard_stream_sinks.append(sys.stderr)
+
+
 def main() -> None:
+    ensure_standard_streams()
+
     parser = argparse.ArgumentParser(description="StarRupture resource API and MCP server")
     subparsers = parser.add_subparsers(dest="command")
 
