@@ -31,7 +31,7 @@ Node suggestion helper:
 | --- | --- |
 | ![Resource and machine selector](images/resource_machine_selector.PNG) | ![Corporation level settings](images/corporation_level_settings.PNG) |
 
-## Requirements
+## Requirements For Development
 
 - Windows for the WPF desktop app.
 - .NET 8 SDK for building and running `StarRupturePlanner`.
