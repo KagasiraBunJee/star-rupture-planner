@@ -76,12 +76,6 @@ public partial class MainWindow : Window
     private ConnectionDrag? _connectionDrag;
     private CancellationTokenSource? _suggestionCancellation;
     private Point _suggestionCanvasPoint;
-    private Point? _schemeDragStart;
-    private SchemeListItem? _schemeDragItem;
-    private Point? _resourceDragStart;
-    private ResourceToolboxItem? _resourceDragItem;
-    private Point? _machineDragStart;
-    private MachineToolboxItem? _machineDragItem;
     private readonly Dictionary<string, Point> _groupDragNodeStarts = [];
     private readonly Dictionary<string, Point> _groupDragCommentStarts = [];
     private readonly Dictionary<RoutePointReference, Point> _groupDragRoutePointStarts = [];
@@ -138,6 +132,10 @@ public partial class MainWindow : Window
         CommandBar.OpenFolderRequested += ChooseFolder_Click;
         CommandBar.SaveRequested += (_, _) => RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveScheme");
         CommandBar.SettingsRequested += Settings_Click;
+        ToolboxPanel.SchemeOpenRequested += (_, item) => RunUiAsync(() => OpenSchemeListItemAsync(item), "MainWindow.OpenScheme");
+        ToolboxPanel.SchemeDeleteRequested += (_, item) => DeleteSchemeFromToolbox(item);
+        ToolboxPanel.ResourceActivated += (_, item) => AddRecipeNode(item.Recipe, _layoutService.Snap(new Point(260, 180)));
+        ToolboxPanel.MachineActivated += (_, item) => AddMachineNode(item.Building, _layoutService.Snap(new Point(260, 180)));
         ApplySettings();
 
         Loaded += MainWindow_Loaded;
@@ -359,22 +357,6 @@ public partial class MainWindow : Window
         merged.Insert(insertIndex, new ResourceDictionary { Source = languageUri });
     }
 
-    private void SchemesList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
-        RunUiAsync(async () =>
-        {
-            if (_schemeDragItem is not null)
-            {
-                return;
-            }
-
-            if (SchemesList.SelectedItem is not SchemeListItem item)
-            {
-                return;
-            }
-
-            await OpenSchemeListItemAsync(item);
-        }, "MainWindow.SchemeSelection");
-
     private async Task OpenSchemeListItemAsync(SchemeListItem item)
     {
         await _viewModel.OpenSchemeAsync(item);
@@ -429,17 +411,7 @@ public partial class MainWindow : Window
             string.Equals(item.Name, node.SourceSchemeName, StringComparison.CurrentCultureIgnoreCase));
     }
 
-    private void SchemesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        var button = FindAncestor<Button>(e.OriginalSource as DependencyObject);
-        if (button?.Tag as string != "DeleteScheme" || button.DataContext is not SchemeListItem item)
-        {
-            BeginToolboxDrag(SchemesList, e, out _schemeDragStart, out _schemeDragItem);
-            return;
-        }
-
-        e.Handled = true;
-
+    private void DeleteSchemeFromToolbox(SchemeListItem item) =>
         RunUiAsync(async () =>
         {
             var result = MessageBox.Show(
@@ -477,7 +449,6 @@ public partial class MainWindow : Window
             UpdateInspector();
             SetStatus(UiText.Format("Status.Deleted", item.Name));
         }, "MainWindow.DeleteScheme");
-    }
 
     private void RemoveBlueprintReferencesFromCurrentScheme(SchemeListItem deletedScheme)
     {
@@ -507,26 +478,6 @@ public partial class MainWindow : Window
                 && string.Equals(node.SourceSchemeName, scheme.Name, StringComparison.CurrentCultureIgnoreCase));
     }
 
-    private void SchemesList_PreviewMouseMove(object sender, MouseEventArgs e)
-    {
-        if (ShouldStartToolboxDrag(SchemesList, e, _schemeDragStart, _schemeDragItem))
-        {
-            var item = _schemeDragItem;
-            ClearSchemeToolboxDrag();
-            DragDrop.DoDragDrop(SchemesList, new DataObject(typeof(SchemeListItem), item!), DragDropEffects.Copy);
-        }
-    }
-
-    private void SchemesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        var item = _schemeDragItem;
-        ClearSchemeToolboxDrag();
-        if (item is not null && Equals(SchemesList.SelectedItem, item))
-        {
-            RunUiAsync(() => OpenSchemeListItemAsync(item), "MainWindow.OpenSchemeFromMouseUp");
-        }
-    }
-
     private async Task SaveCurrentSchemeAsync()
     {
         if (_scheme.FilePath is null && _scheme.Name == "Untitled")
@@ -546,68 +497,6 @@ public partial class MainWindow : Window
         MigrateAndAnalyzeScheme();
         await _viewModel.SaveSchemeAsync();
         await RefreshSchemeListAsync();
-    }
-
-    private void ResourcesList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (!TryGetListItem(ResourcesList, e.OriginalSource as DependencyObject, out ResourceToolboxItem? item))
-        {
-            return;
-        }
-
-        var position = _layoutService.Snap(new Point(260, 180));
-        AddRecipeNode(item!.Recipe, position);
-    }
-
-    private void ResourcesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        BeginToolboxDrag(ResourcesList, e, out _resourceDragStart, out _resourceDragItem);
-    }
-
-    private void ResourcesList_PreviewMouseMove(object sender, MouseEventArgs e)
-    {
-        if (ShouldStartToolboxDrag(ResourcesList, e, _resourceDragStart, _resourceDragItem))
-        {
-            var item = _resourceDragItem;
-            ClearResourceToolboxDrag();
-            DragDrop.DoDragDrop(ResourcesList, new DataObject(typeof(ResourceToolboxItem), item!), DragDropEffects.Copy);
-        }
-    }
-
-    private void ResourcesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        ClearResourceToolboxDrag();
-    }
-
-    private void MachinesList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (!TryGetListItem(MachinesList, e.OriginalSource as DependencyObject, out MachineToolboxItem? item))
-        {
-            return;
-        }
-
-        var position = _layoutService.Snap(new Point(260, 180));
-        AddMachineNode(item!.Building, position);
-    }
-
-    private void MachinesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        BeginToolboxDrag(MachinesList, e, out _machineDragStart, out _machineDragItem);
-    }
-
-    private void MachinesList_PreviewMouseMove(object sender, MouseEventArgs e)
-    {
-        if (ShouldStartToolboxDrag(MachinesList, e, _machineDragStart, _machineDragItem))
-        {
-            var item = _machineDragItem;
-            ClearMachineToolboxDrag();
-            DragDrop.DoDragDrop(MachinesList, new DataObject(typeof(MachineToolboxItem), item!), DragDropEffects.Copy);
-        }
-    }
-
-    private void MachinesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        ClearMachineToolboxDrag();
     }
 
     private void PlannerCanvas_DragOver(object sender, DragEventArgs e)
@@ -4112,76 +4001,6 @@ public partial class MainWindow : Window
         _lastStatus = status;
         _viewModel.SetStatus(status);
         _session.Status = _viewModel.Status;
-    }
-
-    private void BeginToolboxDrag<T>(
-        ListBox listBox,
-        MouseButtonEventArgs e,
-        out Point? dragStart,
-        out T? dragItem)
-        where T : class
-    {
-        dragStart = null;
-        dragItem = null;
-
-        if (!TryGetListItem(listBox, e.OriginalSource as DependencyObject, out T? item))
-        {
-            return;
-        }
-
-        dragStart = e.GetPosition(listBox);
-        dragItem = item;
-    }
-
-    private static bool ShouldStartToolboxDrag<T>(ListBox listBox, MouseEventArgs e, Point? dragStart, T? dragItem)
-        where T : class
-    {
-        if (e.LeftButton != MouseButtonState.Pressed || dragStart is not Point start || dragItem is null)
-        {
-            return false;
-        }
-
-        var current = e.GetPosition(listBox);
-        return Math.Abs(current.X - start.X) >= SystemParameters.MinimumHorizontalDragDistance
-            || Math.Abs(current.Y - start.Y) >= SystemParameters.MinimumVerticalDragDistance;
-    }
-
-    private void ClearResourceToolboxDrag()
-    {
-        _resourceDragStart = null;
-        _resourceDragItem = null;
-    }
-
-    private void ClearSchemeToolboxDrag()
-    {
-        _schemeDragStart = null;
-        _schemeDragItem = null;
-    }
-
-    private void ClearMachineToolboxDrag()
-    {
-        _machineDragStart = null;
-        _machineDragItem = null;
-    }
-
-    private static bool TryGetListItem<T>(ListBox listBox, DependencyObject? source, out T? item)
-        where T : class
-    {
-        item = null;
-
-        if (source is null || FindAncestor<ScrollBar>(source) is not null)
-        {
-            return false;
-        }
-
-        var container = FindAncestor<ListBoxItem>(source);
-        if (container is null || !ReferenceEquals(ItemsControl.ItemsControlFromItemContainer(container), listBox))
-        {
-            return false;
-        }
-
-        item = container.DataContext as T;
-        return item is not null;
     }
 
     private static string? PromptForName(string title, string defaultValue)
