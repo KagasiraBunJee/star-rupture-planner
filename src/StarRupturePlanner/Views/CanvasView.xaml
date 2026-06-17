@@ -11,6 +11,7 @@
                  content layer, so pan/zoom/select work whether the cursor is over empty grid
                  or over a node. Node/edge clicks mark the event handled so they take priority. -->
             <Grid x:Name="CanvasViewport" ClipToBounds="True"
+                  Focusable="True"
                   AllowDrop="True"
                   DragOver="PlannerCanvas_DragOver"
                   Drop="PlannerCanvas_Drop"
