@@ -1,0 +1,106 @@
+<UserControl x:Class="StarRupturePlanner.Views.CanvasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:StarRupturePlanner.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Grid x:Name="CenterPanel" Margin="10,0" Background="{DynamicResource CenterBackgroundBrush}">
+        <Border x:Name="CanvasFrame" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" Background="{DynamicResource CanvasBrush}" CornerRadius="12">
+            <!-- Canvas-level input is handled here, the common ancestor of the grid and the
+                 content layer, so pan/zoom/select work whether the cursor is over empty grid
+                 or over a node. Node/edge clicks mark the event handled so they take priority. -->
+            <Grid x:Name="CanvasViewport" ClipToBounds="True"
+                  AllowDrop="True"
+                  DragOver="PlannerCanvas_DragOver"
+                  Drop="PlannerCanvas_Drop"
+                  MouseDown="PlannerCanvas_MouseDown"
+                  MouseLeftButtonDown="PlannerCanvas_MouseLeftButtonDown"
+                  MouseLeftButtonUp="PlannerCanvas_MouseLeftButtonUp"
+                  MouseMove="PlannerCanvas_MouseMove"
+                  MouseRightButtonDown="PlannerCanvas_MouseRightButtonDown"
+                  MouseRightButtonUp="PlannerCanvas_MouseRightButtonUp"
+                  MouseUp="PlannerCanvas_MouseUp"
+                  MouseWheel="PlannerCanvas_MouseWheel">
+                <!-- Screen-space infinite grid (not transformed). Empty-area clicks land on
+                     this layer (it provides the canvas backdrop); events bubble to the viewport. -->
+                <controls:DottedGridCanvas x:Name="GridInputLayer"
+                                            GridSize="24"
+                                            Background="{DynamicResource CanvasBrush}"
+                                            DotBrush="{DynamicResource CanvasDotBrush}"
+                                            MajorDotBrush="{DynamicResource CanvasMajorDotBrush}"
+                                            OffsetX="{Binding X, ElementName=CanvasTranslate}"
+                                            OffsetY="{Binding Y, ElementName=CanvasTranslate}"
+                                            Zoom="{Binding ScaleX, ElementName=CanvasScale}"/>
+
+                <!-- Transformed content layer (transparent so empty areas fall through to the
+                     grid/input layer). Nodes may live at any coordinate, including negative. -->
+                <Canvas x:Name="PlannerCanvas"
+                        Width="200000"
+                        Height="200000"
+                        Background="{x:Null}">
+                    <Canvas.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform x:Name="CanvasScale" ScaleX="1" ScaleY="1"/>
+                            <TranslateTransform x:Name="CanvasTranslate" X="0" Y="0"/>
+                        </TransformGroup>
+                    </Canvas.RenderTransform>
+                </Canvas>
+                <Popup x:Name="SuggestionPopup"
+                       AllowsTransparency="True"
+                       Placement="Relative"
+                       PlacementTarget="{Binding ElementName=CanvasFrame}"
+                       PopupAnimation="Fade"
+                       StaysOpen="False">
+                    <Border x:Name="SuggestionPopupChrome"
+                            Background="{DynamicResource PanelBrush}"
+                            BorderBrush="{DynamicResource StarBlueBrush}"
+                            BorderThickness="1"
+                            Width="330"
+                            MaxHeight="360"
+                            CornerRadius="8"
+                            SnapsToDevicePixels="True"
+                            SizeChanged="SuggestionPopupChrome_SizeChanged">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="{DynamicResource Ui.Popup.ConnectCompatible}" FontWeight="SemiBold" Margin="12" Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                            <ListBox x:Name="SuggestionList"
+                                     ItemTemplate="{StaticResource SuggestionRecipeTemplate}"
+                                     ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
+                                     SelectionChanged="SuggestionList_SelectionChanged"
+                                     Background="Transparent"
+                                     BorderThickness="0"/>
+                        </DockPanel>
+                    </Border>
+                </Popup>
+
+                <Border x:Name="SurplusPillsBar"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Center"
+                        Margin="0,12,0,0"
+                        MaxWidth="900"
+                        Panel.ZIndex="20"
+                        Background="{DynamicResource PanelBrush}"
+                        BorderBrush="{DynamicResource GraphiteLineBrush}"
+                        BorderThickness="1"
+                        CornerRadius="9"
+                        Padding="10,6"
+                        Visibility="Collapsed">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left"
+                                   Text="{DynamicResource Ui.Label.Surplus}"
+                                   Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"/>
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      PreviewMouseWheel="SurplusPills_PreviewMouseWheel">
+                            <StackPanel x:Name="SurplusPills" Orientation="Horizontal"/>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
