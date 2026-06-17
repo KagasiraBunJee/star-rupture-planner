@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:StarRupturePlanner.Controls"
         xmlns:services="clr-namespace:StarRupturePlanner.Services"
+        xmlns:views="clr-namespace:StarRupturePlanner.Views"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -431,55 +432,6 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2" Margin="12,8,12,10" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource GraphiteLineBrush}" BorderThickness="1" CornerRadius="12" Padding="14,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource Ui.Alerts.Title}" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                        <TextBlock x:Name="StatusText" Text="{Binding Status}" Foreground="{DynamicResource StatusForegroundBrush}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="620"/>
-                    </StackPanel>
-                    <ScrollViewer x:Name="AlertsScroller"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  Margin="0,7,0,0"
-                                  PreviewMouseWheel="AlertsScroller_PreviewMouseWheel">
-                        <StackPanel x:Name="AlertsChips" Orientation="Horizontal"/>
-                    </ScrollViewer>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <StackPanel Margin="14,0" MaxWidth="260">
-                        <TextBlock Text="Scheme Outputs" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock x:Name="MetricSchemeOutputs" Text="No scheme outputs marked" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                    <StackPanel Margin="14,0">
-                        <TextBlock Text="{DynamicResource Ui.Metric.TotalPower}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock x:Name="MetricPower" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                    </StackPanel>
-                    <StackPanel Margin="14,0">
-                        <TextBlock Text="{DynamicResource Ui.Metric.Temperature}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock x:Name="MetricTemperature" Text="-" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                    </StackPanel>
-                    <StackPanel Margin="14,0">
-                        <TextBlock Text="{DynamicResource Ui.Metric.Efficiency}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock Text="—" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                    </StackPanel>
-                    <StackPanel Margin="14,0">
-                        <TextBlock Text="{DynamicResource Ui.Metric.Machines}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock x:Name="MetricMachines" Text="0" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                    </StackPanel>
-                    <Border Width="1" Background="{DynamicResource MutedBorderBrush}" Margin="8,4" VerticalAlignment="Stretch"/>
-                    <StackPanel Margin="14,0,4,0">
-                        <TextBlock Text="{DynamicResource Ui.Metric.Canvas}" Foreground="{DynamicResource ThemeSecondaryForegroundBrush}" FontSize="11"/>
-                        <TextBlock x:Name="ZoomText" Text="100%" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                    </StackPanel>
-                    <Button Content="⟲" FontSize="15" Width="34" MinHeight="30" Padding="0" Margin="6,0,0,0" VerticalAlignment="Center" Click="ResetZoom_Click" ToolTip="Reset zoom to 100%"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+        <views:AlertsBarView x:Name="AlertsBar" Grid.Row="2"/>
     </Grid>
 </Window>

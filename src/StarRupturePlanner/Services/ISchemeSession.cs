@@ -33,12 +33,16 @@ public interface ISchemeSession
     event EventHandler? ZoomChanged;
     event EventHandler? SelectionChanged;
     event EventHandler<FocusNodeRequestedEventArgs>? FocusNodeRequested;
+    event EventHandler? ResetZoomRequested;
 
     /// <summary>Raise <see cref="SelectionChanged"/> after the selection sets / single selections change.</summary>
     void NotifySelectionChanged();
 
     /// <summary>Ask the canvas to bring a node into view (used by the alerts/surplus bar).</summary>
     void RequestFocusNode(string nodeId);
+
+    /// <summary>Ask the canvas to animate back to 100% zoom (used by the alerts/metrics bar).</summary>
+    void RequestResetZoom();
 }
 
 public sealed class FocusNodeRequestedEventArgs(string nodeId) : EventArgs

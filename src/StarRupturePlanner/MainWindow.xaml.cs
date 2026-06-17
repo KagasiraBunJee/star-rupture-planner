@@ -19,14 +19,15 @@ namespace StarRupturePlanner;
 
 public partial class MainWindow : Window
 {
-    private static readonly Color InputPortColor = Color.FromRgb(10, 132, 255);
-    private static readonly Color OutputPortColor = Color.FromRgb(24, 160, 255);
-    private static readonly Color SignalGreenColor = Color.FromRgb(99, 214, 77);
-    private static readonly Color ShortageColor = Color.FromRgb(255, 72, 72);
-    private static readonly Color ReactorOrangeColor = Color.FromRgb(0xFF, 0x8A, 0x00);
-    private static readonly Color LockedPortColor = Color.FromRgb(255, 72, 72);
-    private static readonly Color PanelGlassColor = Color.FromRgb(16, 24, 32);
-    private static readonly Color GraphiteLineColor = Color.FromRgb(38, 52, 61);
+    // Sourced from the shared UiPalette so the canvas, cards and alerts bar agree on accents.
+    private static readonly Color InputPortColor = UiPalette.InputPort;
+    private static readonly Color OutputPortColor = UiPalette.OutputPort;
+    private static readonly Color SignalGreenColor = UiPalette.SignalGreen;
+    private static readonly Color ShortageColor = UiPalette.Shortage;
+    private static readonly Color ReactorOrangeColor = UiPalette.ReactorOrange;
+    private static readonly Color LockedPortColor = UiPalette.LockedPort;
+    private static readonly Color PanelGlassColor = UiPalette.PanelGlass;
+    private static readonly Color GraphiteLineColor = UiPalette.GraphiteLine;
 
     private readonly IPlannerApiClient _apiClient;
     private readonly IApiProcessManager _apiProcessManager;
@@ -38,6 +39,7 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _viewModel;
     private readonly PlannerCanvasViewModel _canvasViewModel;
     private readonly InspectorViewModel _inspectorViewModel;
+    private readonly AlertsBarViewModel _alertsBarViewModel;
     private readonly Dictionary<string, FrameworkElement> _nodeViews = [];
     private readonly Dictionary<string, EdgeVisual> _edgeViews = [];
     private readonly Dictionary<string, FrameworkElement> _commentViews = [];
@@ -128,6 +130,10 @@ public partial class MainWindow : Window
         _scheme = _viewModel.Scheme;
         _session.CurrentSettings = _settings;
         _session.CurrentScheme = _scheme;
+        _session.Status = _viewModel.Status;
+        _alertsBarViewModel = new AlertsBarViewModel(_session, _calculator);
+        AlertsBar.DataContext = _alertsBarViewModel;
+        _session.ResetZoomRequested += (_, _) => ResetZoom();
         ApplySettings();
 
         Loaded += MainWindow_Loaded;
@@ -1530,20 +1536,7 @@ public partial class MainWindow : Window
 
     // Derived "fed" ratio: how much of the node's input demand is delivered (1.0 if no inputs).
     private (double Ratio, bool IsShort) NodeFeedRatio(SchemeNode node)
-    {
-        var inputs = _productionAnalysis.Inputs.Values
-            .Where(i => string.Equals(i.NodeId, node.Id, StringComparison.Ordinal) && i.RequiredPerMinute > 0)
-            .ToList();
-        if (inputs.Count == 0)
-        {
-            return (1.0, false);
-        }
-
-        var ratio = inputs.Min(i => Math.Min(1.0, i.DeliveredPerMinute / i.RequiredPerMinute));
-        var isShort = inputs.Any(i => _productionAnalysis.ShortInputs.Contains(
-            ProductionInputKey.For(node.Id, i.ItemId)));
-        return (ratio, isShort);
-    }
+        => PlannerNodeMetrics.FeedRatio(_productionAnalysis, node);
 
     private double NodeOutputRate(SchemeNode node, RecipeInfo recipe)
     {
@@ -1817,7 +1810,6 @@ public partial class MainWindow : Window
 
         _productionAnalysis = ProductionAnalysisService.Analyze(_scheme, _catalog, _calculator);
         _session.ProductionAnalysis = _productionAnalysis;
-        UpdateProductionAlerts();
         UpdateSurplusPills();
         RefreshToolboxUnlocksIfNeeded();
     }
@@ -1927,8 +1919,6 @@ public partial class MainWindow : Window
         AnimateCanvasView(1.0, viewportWidth / 2 - centerX, viewportHeight / 2 - centerY);
     }
 
-    private void ResetZoom_Click(object sender, RoutedEventArgs e) => ResetZoom();
-
     // Animate back to 100% zoom, keeping whatever is currently at the viewport center centered.
     private void ResetZoom()
     {
@@ -2028,110 +2018,6 @@ public partial class MainWindow : Window
 
         _lastToolboxUnlockSignature = signature;
         RunUiAsync(() => _viewModel.Toolbox.SetSchemeAsync(_scheme), "MainWindow.RefreshToolboxUnlocks");
-    }
-
-    private void UpdateProductionAlerts()
-    {
-        if (AlertsChips is null)
-        {
-            return;
-        }
-
-        if (MetricMachines is not null)
-        {
-            var total = _scheme.Nodes.Count(node => RecipeForNode(node) is not null);
-            var starved = _scheme.Nodes.Count(node => RecipeForNode(node) is not null && NodeFeedRatio(node).IsShort);
-            MetricMachines.Text = total == 0 ? "0" : $"{total - starved}/{total}";
-        }
-
-        var totals = PlannerMetricService.CalculateTotals(_scheme, _catalog);
-        if (MetricPower is not null)
-        {
-            MetricPower.Text = totals.PowerGeneration > 0
-                ? $"{totals.PowerConsumption:g} kW / +{totals.PowerGeneration:g} kW"
-                : $"{totals.PowerConsumption:g} kW";
-        }
-
-        if (MetricTemperature is not null)
-        {
-            MetricTemperature.Text = totals.Temperature > 0
-                ? $"+{totals.Temperature:g} {UiText.T("Text.Temp")}"
-                : $"{totals.Temperature:g} {UiText.T("Text.Temp")}";
-        }
-
-        if (MetricSchemeOutputs is not null)
-        {
-            var outputs = PlannerMetricService.SchemeOutputs(_scheme, _catalog, _calculator);
-            MetricSchemeOutputs.Text = outputs.Count == 0
-                ? UiText.T("Text.NoSchemeOutputsMarked")
-                : string.Join(", ", outputs.Select(output => $"{output.ItemName} {output.RatePerMinute:g}/min"));
-            MetricSchemeOutputs.ToolTip = outputs.Count == 0
-                ? UiText.T("Text.NoSchemeOutputsMarked")
-                : string.Join("\n", outputs.Select(output => $"{output.MachineName}: {output.ItemName} {output.RatePerMinute:g}/min"));
-        }
-
-        AlertsChips.Children.Clear();
-        var lockedAlerts = PlannerUnlockService.LockedNodeAlerts(_catalog, _scheme);
-        if (_productionAnalysis.Alerts.Count == 0 && lockedAlerts.Count == 0)
-        {
-            AlertsChips.Children.Add(BuildAlertChip(UiText.T("Text.NoProductionShortages"), SignalGreenColor, "✓"));
-            return;
-        }
-
-        // Show every alert; the row scrolls horizontally to reveal the rest.
-        foreach (var alert in _productionAnalysis.Alerts)
-        {
-            AlertsChips.Children.Add(BuildAlertChip(alert.Message, ShortageColor, "⚠"));
-        }
-
-        foreach (var alert in lockedAlerts)
-        {
-            AlertsChips.Children.Add(BuildAlertChip(alert, ShortageColor, "вљ "));
-        }
-
-        AlertsScroller?.ScrollToHorizontalOffset(0);
-    }
-
-    private void AlertsScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-    {
-        if (sender is ScrollViewer scroller)
-        {
-            scroller.ScrollToHorizontalOffset(scroller.HorizontalOffset - e.Delta);
-            e.Handled = true;
-        }
-    }
-
-    private FrameworkElement BuildAlertChip(string message, Color accent, string glyph)
-    {
-        var border = new Border
-        {
-            Background = new SolidColorBrush(Color.FromArgb(30, accent.R, accent.G, accent.B)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(150, accent.R, accent.G, accent.B)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(7),
-            Padding = new Thickness(10, 5, 10, 5),
-            Margin = new Thickness(0, 0, 8, 0),
-            ToolTip = message,
-        };
-
-        var panel = new StackPanel { Orientation = Orientation.Horizontal };
-        panel.Children.Add(new TextBlock
-        {
-            Text = glyph,
-            Foreground = new SolidColorBrush(accent),
-            Margin = new Thickness(0, 0, 7, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        panel.Children.Add(new TextBlock
-        {
-            Text = message,
-            Foreground = (Brush)Application.Current.FindResource("ThemeForegroundBrush"),
-            MaxWidth = 240,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        border.Child = panel;
-        return border;
     }
 
     private string EdgeLabel(SchemeEdge edge)
@@ -3233,10 +3119,8 @@ public partial class MainWindow : Window
 
     private void UpdateZoomText()
     {
-        if (ZoomText is not null)
-        {
-            ZoomText.Text = $"{CanvasScale.ScaleX * 100:0}%";
-        }
+        // The zoom readout now lives in the alerts bar; publish the value via the session.
+        _session.Zoom = CanvasScale.ScaleX;
     }
 
     private bool TryCreateEdge(PortReference first, PortReference second)
