@@ -4,6 +4,12 @@ Convenient production planner for StarRupture. It helps keep supply chains, prod
 
 Currently the project ships as a Windows desktop planner with a bundled local API. The API also exposes an MCP server so AI agents can connect to the same production data. Later, the plan is to let MCP-connected agents help create and edit production schemes directly in the app.
 
+## Download The App
+
+Most users should download the Windows installer from the [StarRupture Planner releases page](https://github.com/KagasiraBunJee/star-rupture-planner/releases).
+
+Open the latest release and download the `StarRupturePlanner-...-Setup.exe` file. The installer includes the desktop app, local API, data files, localization, and cached images, so Python is not required.
+
 The repository has two main parts:
 
 - `starrupture_api/`: Python data service that reads/writes the local SQLite dataset, exposes HTTP JSON endpoints, and mounts an MCP SSE server.
@@ -12,6 +18,10 @@ The repository has two main parts:
 ## Screenshots
 
 ![Scheme builder canvas](images/scheme_builder.PNG)
+
+Canvas comment sections:
+
+![Canvas comment sections](images/comment_sections.PNG)
 
 Node suggestion helper:
 
