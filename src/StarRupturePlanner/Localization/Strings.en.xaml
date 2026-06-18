@@ -57,6 +57,9 @@
     <sys:String x:Key="Ui.Settings.InGame">In game</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Theme</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Planner language</sys:String>
+    <sys:String x:Key="Ui.Settings.Api">Local API</sys:String>
+    <sys:String x:Key="Ui.Settings.Port">Port</sys:String>
+    <sys:String x:Key="Ui.Settings.ApiPortNote">Default is 8010. Change this if another local app already uses that port.</sys:String>
     <sys:String x:Key="Ui.Settings.CanvasFont">Canvas card font</sys:String>
     <sys:String x:Key="Ui.Settings.LeftFont">Left bar list font</sys:String>
     <sys:String x:Key="Ui.Settings.Family">Family</sys:String>
@@ -141,7 +144,9 @@
     <sys:String x:Key="Ui.Text.LanguageUkrainian">Ukrainian</sys:String>
     <sys:String x:Key="Ui.Text.SelectFontFamily">Select a font family.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidSettings">Invalid settings</sys:String>
+    <sys:String x:Key="Ui.Text.ApiStartup">API startup</sys:String>
     <sys:String x:Key="Ui.Text.FontSizeRange">Font size must be between 8 and 32.</sys:String>
+    <sys:String x:Key="Ui.Text.ApiPortRange">API port must be a number from 1 to 65535.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidWpfColor">Color must be a valid WPF color, for example #F4F0E8.</sys:String>
     <sys:String x:Key="Ui.Text.ChooseSchemeFolder">Choose StarRupture scheme folder</sys:String>
     <sys:String x:Key="Ui.Status.StartingApi">Starting local API...</sys:String>

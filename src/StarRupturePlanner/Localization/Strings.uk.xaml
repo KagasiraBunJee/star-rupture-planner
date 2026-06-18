@@ -57,6 +57,9 @@
     <sys:String x:Key="Ui.Settings.InGame">У грі</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Тема</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Мова планувальника</sys:String>
+    <sys:String x:Key="Ui.Settings.Api">Локальний API</sys:String>
+    <sys:String x:Key="Ui.Settings.Port">Порт</sys:String>
+    <sys:String x:Key="Ui.Settings.ApiPortNote">Типово 8010. Змініть, якщо цей порт уже зайнятий іншою локальною програмою.</sys:String>
     <sys:String x:Key="Ui.Settings.CanvasFont">Шрифт карток</sys:String>
     <sys:String x:Key="Ui.Settings.LeftFont">Шрифт лівої панелі</sys:String>
     <sys:String x:Key="Ui.Settings.Family">Сімейство</sys:String>
@@ -93,6 +96,8 @@
     <sys:String x:Key="Ui.Text.Issues">ПРОБЛЕМИ</sys:String>
     <sys:String x:Key="Ui.Text.NotAvailableForConnection">недоступно для з'єднання за поточних рівнів корпорацій.</sys:String>
     <sys:String x:Key="Ui.Text.Temp">темп.</sys:String>
+    <sys:String x:Key="Ui.Text.ApiStartup">Запуск API</sys:String>
+    <sys:String x:Key="Ui.Text.ApiPortRange">Порт API має бути числом від 1 до 65535.</sys:String>
     <sys:String x:Key="Ui.Status.StartingApi">Запуск локального API...</sys:String>
     <sys:String x:Key="Ui.Status.LoadedRecipes">Завантажено рецептів: {0}.</sys:String>
     <sys:String x:Key="Ui.Status.ApiStartupFailed">Помилка запуску API: {0}</sys:String>

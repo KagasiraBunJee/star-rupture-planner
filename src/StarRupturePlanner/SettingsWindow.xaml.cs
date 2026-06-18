@@ -52,12 +52,14 @@ public partial class SettingsWindow : Window
         };
         LanguagePicker.SelectedValue = PlannerLanguages.Normalize(Settings.PlannerLanguage);
 
+        ApiPortBox.Text = AppSettings.NormalizeApiPort(Settings.ApiPort).ToString(CultureInfo.InvariantCulture);
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         if (!TryReadFont(CanvasFontFamilyPicker, CanvasFontSizeBox, CanvasFontColorBox, out var canvasFont)
-            || !TryReadFont(LeftFontFamilyPicker, LeftFontSizeBox, LeftFontColorBox, out var leftFont))
+            || !TryReadFont(LeftFontFamilyPicker, LeftFontSizeBox, LeftFontColorBox, out var leftFont)
+            || !TryReadPort(out var apiPort))
         {
             return;
         }
@@ -66,7 +68,20 @@ public partial class SettingsWindow : Window
         Settings.LeftBarListFont = leftFont;
         Settings.Theme = ThemePicker.SelectedValue is AppTheme theme ? theme : AppTheme.System;
         Settings.PlannerLanguage = LanguagePicker.SelectedValue as string ?? PlannerLanguages.English;
+        Settings.ApiPort = apiPort;
         DialogResult = true;
+    }
+
+    private bool TryReadPort(out int apiPort)
+    {
+        if (!int.TryParse(ApiPortBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out apiPort)
+            || apiPort is < 1 or > 65535)
+        {
+            MessageBox.Show(UiText.T("Text.ApiPortRange"), UiText.T("Text.InvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
     }
 
     private static bool TryReadFont(
@@ -118,6 +133,7 @@ public partial class SettingsWindow : Window
         {
             Theme = settings.Theme,
             PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage),
+            ApiPort = AppSettings.NormalizeApiPort(settings.ApiPort),
             CurrentRailTierId = settings.CurrentRailTierId,
             CanvasCardFont = new FontSettings
             {

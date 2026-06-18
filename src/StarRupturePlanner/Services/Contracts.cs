@@ -8,6 +8,7 @@ public interface IPlannerApiClient
 {
     Uri BaseUri { get; }
     string PlannerLanguage { get; set; }
+    void ConfigurePort(int port);
     Task<bool> IsApiAvailableAsync(CancellationToken cancellationToken = default);
     Task<PlannerCatalog> GetCatalogAsync(CancellationToken cancellationToken = default);
     Task<SuggestionResponse> GetSuggestionsAsync(string direction, string itemId, CancellationToken cancellationToken = default);
@@ -17,6 +18,7 @@ public interface IPlannerApiClient
 public interface IApiProcessManager : IDisposable
 {
     Task<string> EnsureStartedAsync(CancellationToken cancellationToken = default);
+    void StopStartedProcess();
 }
 
 public interface ISchemeStore

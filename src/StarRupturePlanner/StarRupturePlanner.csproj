@@ -10,14 +10,14 @@
     <AssemblyName>StarRupturePlanner</AssemblyName>
     <RootNamespace>StarRupturePlanner</RootNamespace>
     <Product>StarRupture Planner Alpha</Product>
-    <Description>StarRupture 0.2.7 production planner desktop alpha</Description>
+    <Description>StarRupture 0.2.8 production planner desktop alpha</Description>
     <Company>StarRupture Planner</Company>
     <Authors>StarRupture Planner contributors</Authors>
-    <VersionPrefix>0.4.0</VersionPrefix>
+    <VersionPrefix>0.4.1</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
     <Version>$(VersionPrefix)-$(VersionSuffix)</Version>
-    <AssemblyVersion>0.4.0.0</AssemblyVersion>
-    <FileVersion>0.4.0.0</FileVersion>
+    <AssemblyVersion>0.4.1.0</AssemblyVersion>
+    <FileVersion>0.4.1.0</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version/tag, for example v0.2.7-alpha"
+        description: "Release version/tag, for example v0.4.1-alpha"
         required: true
         type: string
       create_github_release:
@@ -29,7 +29,9 @@ permissions:
 env:
   DOTNET_VERSION: "8.0.x"
   PYTHON_VERSION: "3.12"
+  SOLUTION_PATH: "StarRupturePlanner.sln"
   PROJECT_PATH: "src/StarRupturePlanner/StarRupturePlanner.csproj"
+  API_PROJECT_PATH: "src/StarRupturePlanner.Api/StarRupturePlanner.Api.csproj"
   TEST_PROJECT_PATH: "tests/StarRupturePlanner.Tests/StarRupturePlanner.Tests.csproj"
   INSTALLER_SCRIPT: "installer/StarRupturePlanner.iss"
   RUNTIME_ID: "win-x64"
@@ -55,17 +57,14 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Python build tools
-        run: python -m pip install --upgrade pip pyinstaller uvicorn starlette "mcp[cli]"
-
       - name: Install packaging tools
         run: choco install innosetup --no-progress -y
 
       - name: Restore
-        run: dotnet restore $env:PROJECT_PATH
+        run: dotnet restore $env:SOLUTION_PATH
 
       - name: Build
-        run: dotnet build $env:PROJECT_PATH -c Release --no-restore
+        run: dotnet build $env:SOLUTION_PATH -c Release --no-restore
 
       - name: Run planner tests
         run: dotnet run --project $env:TEST_PROJECT_PATH -c Release
@@ -108,7 +107,7 @@ jobs:
           $zipPath = Join-Path $env:RUNNER_TEMP "$packageName.zip"
           $hashPath = Join-Path $env:RUNNER_TEMP "$packageName.zip.sha256"
           $installerDir = Join-Path $env:RUNNER_TEMP "installer"
-          $installerName = "$packageName-Setup"
+          $installerName = "$packageName-Installer"
           $installerPath = Join-Path $installerDir "$installerName.exe"
           $installerHashPath = Join-Path $env:RUNNER_TEMP "$installerName.exe.sha256"
           $notesPath = Join-Path $env:RUNNER_TEMP "release-notes.md"
@@ -135,27 +134,22 @@ jobs:
             exit $LASTEXITCODE
           }
 
-          python -m PyInstaller `
-            --onefile `
-            --clean `
-            --noconsole `
-            --name StarRuptureApi `
-            --distpath $apiRoot `
-            --workpath (Join-Path $env:RUNNER_TEMP "pyinstaller-work") `
-            --specpath (Join-Path $env:RUNNER_TEMP "pyinstaller-spec") `
-            --collect-all mcp `
-            --collect-all starlette `
-            --collect-all uvicorn `
-            --hidden-import uvicorn.loops.auto `
-            --hidden-import uvicorn.protocols.http.auto `
-            --hidden-import uvicorn.protocols.websockets.auto `
-            --hidden-import uvicorn.lifespan.on `
-            "starrupture_api/launcher.py"
+          dotnet publish $env:API_PROJECT_PATH `
+            -c Release `
+            -r $env:RUNTIME_ID `
+            --self-contained `
+            -p:Version=$appVersion `
+            -p:AssemblyVersion=$assemblyVersion `
+            -p:FileVersion=$assemblyVersion `
+            -p:InformationalVersion=$appVersion `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $apiRoot
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
-          if (-not (Test-Path -LiteralPath (Join-Path $apiRoot "StarRuptureApi.exe"))) {
-            throw "API executable was not created at $(Join-Path $apiRoot "StarRuptureApi.exe")"
+          if (-not (Test-Path -LiteralPath (Join-Path $apiRoot "StarRupturePlanner.Api.exe"))) {
+            throw "API executable was not created at $(Join-Path $apiRoot "StarRupturePlanner.Api.exe")"
           }
 
           Copy-Item -LiteralPath "data" -Destination $packageRoot -Recurse -Force
@@ -173,12 +167,12 @@ jobs:
           All app downloads contain:
 
           - the self-contained Windows x64 WPF desktop app
-          - bundled api\StarRuptureApi.exe local API server
+          - bundled api\StarRupturePlanner.Api.exe local API and MCP server
           - the local data folder with SQLite data, localization, transport tiers, and cached assets
 
           Notes:
 
-          - Built for StarRupture 0.2.7.
+          - Built for StarRupture 0.2.8.
           - Desktop app version: $appVersion.
           - Windows is required for the desktop app.
           - No Python installation is required for the release package.

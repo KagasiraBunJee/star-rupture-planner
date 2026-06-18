@@ -143,6 +143,16 @@ public partial class MainWindow : Window
     private async Task InitializeApiAsync()
     {
         await _viewModel.InitializeAsync();
+        if (!string.IsNullOrWhiteSpace(_viewModel.LastApiStartupError))
+        {
+            MessageBox.Show(
+                this,
+                _viewModel.LastApiStartupError,
+                UiText.T("Text.ApiStartup"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
         SyncFromViewModel();
         CanvasPanel.Render();
         UpdateInspector();
@@ -214,6 +224,7 @@ public partial class MainWindow : Window
         RunUiAsync(async () =>
         {
             var previousLanguage = PlannerLanguages.Normalize(_settings.PlannerLanguage);
+            var previousPort = AppSettings.NormalizeApiPort(_settings.ApiPort);
             var window = new SettingsWindow(_settings)
             {
                 Owner = this,
@@ -229,11 +240,21 @@ public partial class MainWindow : Window
                 previousLanguage,
                 PlannerLanguages.Normalize(_settings.PlannerLanguage),
                 StringComparison.Ordinal);
-            if (languageChanged)
+            var portChanged = previousPort != AppSettings.NormalizeApiPort(_settings.ApiPort);
+            if (languageChanged || portChanged)
             {
                 ApplySettings();
                 _viewModel.RefreshLocalizedText();
                 await _viewModel.ReloadCatalogAsync();
+                if (!string.IsNullOrWhiteSpace(_viewModel.LastApiStartupError))
+                {
+                    MessageBox.Show(
+                        this,
+                        _viewModel.LastApiStartupError,
+                        UiText.T("Text.ApiStartup"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
 
             SyncFromViewModel();
