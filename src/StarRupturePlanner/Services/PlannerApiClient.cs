@@ -7,28 +7,36 @@ namespace StarRupturePlanner.Services;
 
 public sealed class PlannerApiClient : IPlannerApiClient
 {
+    public const int DefaultPort = 8010;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
     private readonly HttpClient _client;
+    private Uri _baseUri;
 
-    public Uri BaseUri { get; }
+    public Uri BaseUri => _baseUri;
 
     public string PlannerLanguage { get; set; } = PlannerLanguages.English;
 
-    public PlannerApiClient(string baseUrl = "http://127.0.0.1:8010")
+    public PlannerApiClient(int port = DefaultPort)
     {
-        BaseUri = new Uri(baseUrl.TrimEnd('/') + "/");
-        _client = new HttpClient { BaseAddress = BaseUri, Timeout = TimeSpan.FromSeconds(8) };
+        _baseUri = BuildBaseUri(port);
+        _client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+    }
+
+    public void ConfigurePort(int port)
+    {
+        _baseUri = BuildBaseUri(AppSettings.NormalizeApiPort(port));
     }
 
     public async Task<bool> IsApiAvailableAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            using var response = await _client.GetAsync("api/meta", cancellationToken);
+            using var response = await _client.GetAsync(new Uri(BaseUri, "api/meta"), cancellationToken);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -58,7 +66,7 @@ public sealed class PlannerApiClient : IPlannerApiClient
 
     private async Task<T?> GetJsonAsync<T>(string url, CancellationToken cancellationToken)
     {
-        using var stream = await _client.GetStreamAsync(url, cancellationToken);
+        using var stream = await _client.GetStreamAsync(new Uri(BaseUri, url), cancellationToken);
         return await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions, cancellationToken);
     }
 
@@ -76,4 +84,6 @@ public sealed class PlannerApiClient : IPlannerApiClient
 
         return new Uri(BaseUri, assetUrl.TrimStart('/')).ToString();
     }
+
+    private static Uri BuildBaseUri(int port) => new($"http://127.0.0.1:{AppSettings.NormalizeApiPort(port)}/");
 }

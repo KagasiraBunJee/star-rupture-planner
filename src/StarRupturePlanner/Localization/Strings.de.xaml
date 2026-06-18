@@ -57,6 +57,9 @@
     <sys:String x:Key="Ui.Settings.InGame">Im Spiel</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Design</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Planersprache</sys:String>
+    <sys:String x:Key="Ui.Settings.Api">Lokale API</sys:String>
+    <sys:String x:Key="Ui.Settings.Port">Port</sys:String>
+    <sys:String x:Key="Ui.Settings.ApiPortNote">Standard ist 8010. Ändere dies, wenn eine andere lokale App diesen Port bereits verwendet.</sys:String>
     <sys:String x:Key="Ui.Settings.CanvasFont">Schrift der Karten</sys:String>
     <sys:String x:Key="Ui.Settings.LeftFont">Schrift der linken Liste</sys:String>
     <sys:String x:Key="Ui.Settings.Family">Familie</sys:String>
@@ -93,6 +96,8 @@
     <sys:String x:Key="Ui.Text.Issues">PROBLEME</sys:String>
     <sys:String x:Key="Ui.Text.NotAvailableForConnection">ist mit den aktuellen Konzernstufen nicht für Verbindungen verfügbar.</sys:String>
     <sys:String x:Key="Ui.Text.Temp">Temp.</sys:String>
+    <sys:String x:Key="Ui.Text.ApiStartup">API-Start</sys:String>
+    <sys:String x:Key="Ui.Text.ApiPortRange">Der API-Port muss eine Zahl von 1 bis 65535 sein.</sys:String>
     <sys:String x:Key="Ui.Status.StartingApi">Lokale API wird gestartet...</sys:String>
     <sys:String x:Key="Ui.Status.LoadedRecipes">{0} Rezepte geladen.</sys:String>
     <sys:String x:Key="Ui.Status.ApiStartupFailed">API-Start fehlgeschlagen: {0}</sys:String>

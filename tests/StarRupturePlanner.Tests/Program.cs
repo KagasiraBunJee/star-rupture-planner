@@ -1,6 +1,8 @@
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
 using StarRupturePlanner.ViewModels;
+using StarRupturePlanner.Api;
+using DotNetResourceService = StarRupturePlanner.Api.ResourceService;
 
 var tests = new (string Name, Action Body)[]
 {
@@ -45,8 +47,16 @@ var tests = new (string Name, Action Body)[]
     ("Scheme metrics scale by machine count", SchemeMetricsScaleByMachineCount),
     ("Temperature counts for placed machine without recipe", TemperatureCountsForPlacedMachineWithoutRecipe),
     ("Missing building metrics are ignored", MissingBuildingMetricsAreIgnored),
-    ("API root discovery finds repo", ApiRootDiscoveryFindsRepo),
-    ("Bundled API discovery finds release executable", BundledApiDiscoveryFindsReleaseExecutable),
+    ("Source API project discovery finds .NET project", SourceApiProjectDiscoveryFindsDotNetProject),
+    ("Bundled API discovery finds .NET executable", BundledApiDiscoveryFindsDotNetExecutable),
+    ("Bundled API discovery ignores legacy Python executable", BundledApiDiscoveryIgnoresLegacyPythonExecutable),
+    ("API port discovery increments past busy port", ApiPortDiscoveryIncrementsPastBusyPort),
+    ("DotNet API settings parse port override", DotNetApiSettingsParsePortOverride),
+    ("Planner API client configures port", PlannerApiClientConfiguresPort),
+    ("DotNet API HTTP endpoints and MCP are open", DotNetApiHttpEndpointsAndMcpAreOpen),
+    ("DotNet API meta matches dataset", DotNetApiMetaMatchesDataset),
+    ("DotNet API planner catalog contains graph ready recipes", DotNetApiPlannerCatalogContainsGraphReadyRecipes),
+    ("DotNet API localized search matches Ukrainian name", DotNetApiLocalizedSearchMatchesUkrainianName),
     ("App version info marks alpha build", AppVersionInfoMarksAlphaBuild),
 };
 
@@ -97,7 +107,7 @@ static void AppVersionInfoMarksAlphaBuild()
     AssertTrue(AppVersionInfo.DisplayVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase));
     AssertTrue(AppVersionInfo.IsAlpha);
     AssertEqual("ALPHA", AppVersionInfo.ChannelLabel);
-    AssertEqual("0.2.7", AppVersionInfo.SupportedGameVersion);
+    AssertEqual("0.2.8", AppVersionInfo.SupportedGameVersion);
 }
 
 static RecipeInfo SourceRecipe(double outputPerMinute)
@@ -756,6 +766,7 @@ static void AppSettingsSerializationRoundTrips()
     {
         Theme = AppTheme.Light,
         PlannerLanguage = PlannerLanguages.Ukrainian,
+        ApiPort = 8020,
         CurrentRailTierId = "rail-2",
         CanvasCardFont = new FontSettings { Family = "Segoe UI", Size = 14, Color = "#112233" },
         LeftBarListFont = new FontSettings { Family = "Consolas", Size = 11, Color = "#445566" },
@@ -764,6 +775,7 @@ static void AppSettingsSerializationRoundTrips()
     var loaded = store.Load();
     AssertEqual(AppTheme.Light, loaded.Theme);
     AssertEqual(PlannerLanguages.Ukrainian, loaded.PlannerLanguage);
+    AssertEqual(8020, loaded.ApiPort);
     AssertEqual("rail-2", loaded.CurrentRailTierId);
     AssertEqual("Segoe UI", loaded.CanvasCardFont.Family);
     AssertEqual(14d, loaded.CanvasCardFont.Size);
@@ -1327,20 +1339,30 @@ static void TemperatureCountsForPlacedMachineWithoutRecipe()
     AssertEqual(15d, totals.Temperature);
 }
 
-static void ApiRootDiscoveryFindsRepo()
+static void SourceApiProjectDiscoveryFindsDotNetProject()
 {
     var root = LocalApiProcessManager.FindRepoRoot(Environment.CurrentDirectory);
-    AssertTrue(root is not null && Directory.Exists(Path.Combine(root, "starrupture_api")));
+    var apiProject = LocalApiProcessManager.FindSourceApiProject(Environment.CurrentDirectory);
+
+    if (root is null || apiProject is null)
+    {
+        throw new InvalidOperationException("Expected source API project to be discoverable.");
+    }
+
+    AssertTrue(File.Exists(apiProject));
+    AssertTrue(apiProject.EndsWith(
+        Path.Combine("src", "StarRupturePlanner.Api", "StarRupturePlanner.Api.csproj"),
+        StringComparison.OrdinalIgnoreCase));
 }
 
-static void BundledApiDiscoveryFindsReleaseExecutable()
+static void BundledApiDiscoveryFindsDotNetExecutable()
 {
     var temp = Path.Combine(Path.GetTempPath(), "sr-planner-api-" + Guid.NewGuid().ToString("N"));
     var nested = Path.Combine(temp, "app", "nested");
     var apiDir = Path.Combine(temp, "app", "api");
     Directory.CreateDirectory(nested);
     Directory.CreateDirectory(apiDir);
-    var apiPath = Path.Combine(apiDir, "StarRuptureApi.exe");
+    var apiPath = Path.Combine(apiDir, "StarRupturePlanner.Api.exe");
     File.WriteAllText(apiPath, "");
 
     try
@@ -1351,6 +1373,274 @@ static void BundledApiDiscoveryFindsReleaseExecutable()
     {
         Directory.Delete(temp, recursive: true);
     }
+}
+
+static void BundledApiDiscoveryIgnoresLegacyPythonExecutable()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-api-" + Guid.NewGuid().ToString("N"));
+    var nested = Path.Combine(temp, "app", "nested");
+    var apiDir = Path.Combine(temp, "app", "api");
+    Directory.CreateDirectory(nested);
+    Directory.CreateDirectory(apiDir);
+    var legacyApiPath = Path.Combine(apiDir, "StarRuptureApi.exe");
+    File.WriteAllText(legacyApiPath, "");
+
+    try
+    {
+        AssertNull(LocalApiProcessManager.FindBundledApiExecutable(nested));
+    }
+    finally
+    {
+        Directory.Delete(temp, recursive: true);
+    }
+}
+
+static void ApiPortDiscoveryIncrementsPastBusyPort()
+{
+    using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+    listener.Start();
+    var busyPort = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+
+    var availablePort = LocalApiProcessManager.FindAvailablePort(busyPort);
+
+    AssertTrue(availablePort > busyPort);
+    using var verifier = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, availablePort);
+    verifier.Start();
+}
+
+static void DotNetApiSettingsParsePortOverride()
+{
+    AssertEqual(8010, ApiSettings.ParsePort(Array.Empty<string>()));
+    AssertEqual(8020, ApiSettings.ParsePort(["--port", "8020"]));
+    AssertEqual(8030, ApiSettings.ParsePort(["--port=8030"]));
+    AssertEqual(8040, ApiSettings.ParsePort(["-p", "8040"]));
+    AssertThrows<ArgumentOutOfRangeException>(() => ApiSettings.ParsePort(["--port", "0"]));
+    AssertThrows<ArgumentException>(() => ApiSettings.ParsePort(["--port"]));
+}
+
+static void PlannerApiClientConfiguresPort()
+{
+    var client = new PlannerApiClient();
+
+    AssertEqual(8010, client.BaseUri.Port);
+    client.ConfigurePort(8020);
+
+    AssertEqual(8020, client.BaseUri.Port);
+    AssertEqual("http://127.0.0.1:8020/assets/items/rotor.png", client.ToAbsoluteAssetUrl("/assets/items/rotor.png"));
+}
+
+static void DotNetApiHttpEndpointsAndMcpAreOpen()
+{
+    DotNetApiHttpEndpointsAndMcpAreOpenAsync().GetAwaiter().GetResult();
+}
+
+static async Task DotNetApiHttpEndpointsAndMcpAreOpenAsync()
+{
+    var port = LocalApiProcessManager.FindAvailablePort(49152);
+    var process = StartDotNetApiProcess(port);
+
+    try
+    {
+        using var client = new HttpClient
+        {
+            BaseAddress = new Uri($"http://127.0.0.1:{port}/"),
+            Timeout = TimeSpan.FromSeconds(5),
+        };
+
+        await WaitForApiAsync(client, process);
+
+        using var meta = await GetJsonDocumentAsync(client, "api/meta");
+        AssertEqual("0.2.8", meta.RootElement.GetProperty("game_version").GetString());
+        AssertEqual(135, meta.RootElement.GetProperty("counts").GetProperty("items").GetInt32());
+
+        using var item = await GetJsonDocumentAsync(client, "api/items/rotor?lang=en");
+        AssertEqual("rotor", item.RootElement.GetProperty("item").GetProperty("item_id").GetString());
+
+        using var catalog = await GetJsonDocumentAsync(client, "api/planner/catalog?lang=uk");
+        AssertEqual("uk", catalog.RootElement.GetProperty("meta").GetProperty("language").GetString());
+        AssertTrue(catalog.RootElement.GetProperty("recipes").GetArrayLength() >= 100);
+
+        using var assetResponse = await client.GetAsync("assets/items/rotor.png");
+        AssertTrue(assetResponse.IsSuccessStatusCode);
+        AssertTrue(assetResponse.Content.Headers.ContentLength is null or > 0);
+
+        using var request = new HttpRequestMessage(HttpMethod.Options, "mcp");
+        request.Headers.TryAddWithoutValidation("Origin", "http://localhost:3000");
+        request.Headers.TryAddWithoutValidation("Access-Control-Request-Method", "POST");
+        request.Headers.TryAddWithoutValidation("Access-Control-Request-Headers", "content-type");
+        using var mcpResponse = await client.SendAsync(request);
+
+        AssertEqual(System.Net.HttpStatusCode.NoContent, mcpResponse.StatusCode);
+        AssertEqual("http://localhost:3000", HeaderValue(mcpResponse, "Access-Control-Allow-Origin"));
+        AssertTrue(HeaderValue(mcpResponse, "Access-Control-Allow-Methods").Contains("POST", StringComparison.OrdinalIgnoreCase));
+    }
+    finally
+    {
+        StopProcess(process);
+    }
+}
+
+static void DotNetApiMetaMatchesDataset()
+{
+    var service = DotNetApiService();
+    var meta = service.GetMeta();
+    var counts = AsDictionary(meta["counts"]);
+
+    AssertEqual("0.2.8", meta["game_version"]);
+    AssertEqual(135L, counts["items"]);
+    AssertTrue(Convert.ToInt64(counts["buildings"]) >= 20);
+    AssertTrue(Convert.ToInt64(counts["recipes"]) >= 100);
+}
+
+static void DotNetApiPlannerCatalogContainsGraphReadyRecipes()
+{
+    var service = DotNetApiService();
+    var catalog = service.GetPlannerCatalog();
+    var recipes = AsList(catalog["recipes"]);
+    var recipe = recipes
+        .Select(AsDictionary)
+        .First(entry =>
+            string.Equals(Convert.ToString(entry["building_name"]), "Fabricator", StringComparison.Ordinal)
+            && string.Equals(Convert.ToString(entry["recipe_id"]), "titanium-rod", StringComparison.Ordinal));
+    var output = AsDictionary(recipe["output"]);
+    var inputs = AsList(recipe["inputs"]).Select(AsDictionary).ToList();
+
+    AssertEqual("titanium-rod", output["item_id"]);
+    AssertEqual(30L, output["quantity_per_minute"]);
+    AssertEqual("titanium-bar", inputs[0]["item_id"]);
+    AssertEqual(30L, inputs[0]["quantity_per_minute"]);
+    AssertTrue(Convert.ToString(recipe["building_image_url"])?.StartsWith("/assets/buildings/", StringComparison.Ordinal) == true);
+}
+
+static void DotNetApiLocalizedSearchMatchesUkrainianName()
+{
+    var service = DotNetApiService();
+    var catalog = service.GetPlannerCatalog("uk");
+    var recipes = AsList(catalog["recipes"]).Select(AsDictionary);
+    var recipe = recipes.First(entry => string.Equals(Convert.ToString(entry["recipe_id"]), "titanium-rod", StringComparison.Ordinal));
+    var output = AsDictionary(recipe["output"]);
+    var localizedName = Convert.ToString(output["name"]) ?? "";
+    var payload = service.SearchItems(localizedName, lang: "uk");
+    var items = AsList(payload["items"]).Select(AsDictionary);
+
+    AssertTrue(items.Any(item => string.Equals(Convert.ToString(item["item_id"]), "titanium-rod", StringComparison.Ordinal)));
+}
+
+static DotNetResourceService DotNetApiService()
+{
+    var settings = new ApiSettings();
+    return new DotNetResourceService(settings, new LocalizationStore(settings));
+}
+
+static System.Diagnostics.Process StartDotNetApiProcess(int port)
+{
+    var apiAssemblyPath = typeof(ApiSettings).Assembly.Location;
+    if (string.IsNullOrWhiteSpace(apiAssemblyPath) || !File.Exists(apiAssemblyPath))
+    {
+        throw new InvalidOperationException("Could not locate StarRupturePlanner.Api assembly.");
+    }
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        WorkingDirectory = LocalApiProcessManager.FindRepoRoot(Environment.CurrentDirectory) ?? Environment.CurrentDirectory,
+        CreateNoWindow = true,
+        UseShellExecute = false,
+        RedirectStandardError = true,
+        RedirectStandardOutput = true,
+    };
+    startInfo.ArgumentList.Add(apiAssemblyPath);
+    startInfo.ArgumentList.Add("--port");
+    startInfo.ArgumentList.Add(port.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    return System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Could not start StarRupturePlanner.Api process.");
+}
+
+static async Task WaitForApiAsync(HttpClient client, System.Diagnostics.Process process)
+{
+    for (var attempt = 0; attempt < 40; attempt++)
+    {
+        if (process.HasExited)
+        {
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"API process exited early. stdout: {output} stderr: {error}");
+        }
+
+        try
+        {
+            using var response = await client.GetAsync("api/meta");
+            if (response.IsSuccessStatusCode)
+            {
+                return;
+            }
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
+
+        await Task.Delay(250);
+    }
+
+    throw new InvalidOperationException("API process did not respond before timeout.");
+}
+
+static async Task<System.Text.Json.JsonDocument> GetJsonDocumentAsync(HttpClient client, string url)
+{
+    using var response = await client.GetAsync(url);
+    var body = await response.Content.ReadAsStringAsync();
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new InvalidOperationException($"{url} returned {(int)response.StatusCode}: {body}");
+    }
+
+    return System.Text.Json.JsonDocument.Parse(body);
+}
+
+static string HeaderValue(HttpResponseMessage response, string name)
+{
+    return response.Headers.TryGetValues(name, out var values)
+        ? string.Join(",", values)
+        : "";
+}
+
+static void StopProcess(System.Diagnostics.Process process)
+{
+    try
+    {
+        if (!process.HasExited)
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit(3000);
+        }
+    }
+    finally
+    {
+        process.Dispose();
+    }
+}
+
+static IReadOnlyDictionary<string, object?> AsDictionary(object? value) =>
+    value as IReadOnlyDictionary<string, object?>
+    ?? throw new InvalidOperationException($"Expected dictionary, got {value?.GetType().Name ?? "null"}.");
+
+static IReadOnlyList<object?> AsList(object? value)
+{
+    if (value is IReadOnlyList<object?> objectList)
+    {
+        return objectList;
+    }
+
+    if (value is System.Collections.IEnumerable enumerable and not string)
+    {
+        return enumerable.Cast<object?>().ToList();
+    }
+
+    throw new InvalidOperationException($"Expected list, got {value?.GetType().Name ?? "null"}.");
 }
 
 static void AssertTrue(bool condition)
@@ -1442,6 +1732,10 @@ sealed class TestApiProcessManager : IApiProcessManager
 {
     public Task<string> EnsureStartedAsync(CancellationToken cancellationToken = default) => Task.FromResult("API ready.");
 
+    public void StopStartedProcess()
+    {
+    }
+
     public void Dispose()
     {
     }
@@ -1449,9 +1743,14 @@ sealed class TestApiProcessManager : IApiProcessManager
 
 sealed class TestPlannerApiClient : IPlannerApiClient
 {
-    public Uri BaseUri { get; } = new("http://localhost/");
+    public Uri BaseUri { get; private set; } = new("http://localhost/");
 
     public string PlannerLanguage { get; set; } = "en";
+
+    public void ConfigurePort(int port)
+    {
+        BaseUri = new Uri($"http://127.0.0.1:{AppSettings.NormalizeApiPort(port)}/");
+    }
 
     public Task<bool> IsApiAvailableAsync(CancellationToken cancellationToken = default) => Task.FromResult(true);
 

@@ -194,7 +194,7 @@ def build_context(tag: str, previous_tag: str | None, commits: list[CommitInfo],
         "tag": tag,
         "previous_tag": previous_tag,
         "download_assets": [
-            "Windows installer: StarRupturePlanner-<tag>-win-x64-Setup.exe",
+            "Windows installer: StarRupturePlanner-<tag>-win-x64-Installer.exe",
             "Manual extraction archive: StarRupturePlanner-<tag>-win-x64.zip",
             "SHA256 checksum files for downloads",
         ],

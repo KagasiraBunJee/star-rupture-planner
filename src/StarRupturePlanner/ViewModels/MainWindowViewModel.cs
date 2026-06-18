@@ -16,6 +16,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private SchemeDocument _scheme = new();
     private AppSettings _settings = new();
     private string _status = "";
+    private string? _lastApiStartupError;
     private string _schemeFolderPath = "";
     private string _lastSavedText = UiText.T("Status.NotSavedYet");
     private CancellationTokenSource? _startupCancellation;
@@ -35,9 +36,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _settingsStore = settingsStore;
         _uiDispatcher = uiDispatcher;
         _backgroundTaskRunner = backgroundTaskRunner;
-        Toolbox = new ToolboxViewModel(apiClient, uiDispatcher, backgroundTaskRunner);
         Settings = _settingsStore.Load();
+        Settings.ApiPort = AppSettings.NormalizeApiPort(Settings.ApiPort);
+        _apiClient.ConfigurePort(Settings.ApiPort);
         _apiClient.PlannerLanguage = Settings.PlannerLanguage;
+        Toolbox = new ToolboxViewModel(apiClient, uiDispatcher, backgroundTaskRunner);
         SchemeFolderPath = _schemeStore.FolderPath;
         NewScheme();
     }
@@ -80,6 +83,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _lastSavedText, value);
     }
 
+    public string? LastApiStartupError
+    {
+        get => _lastApiStartupError;
+        private set => SetProperty(ref _lastApiStartupError, value);
+    }
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         _startupCancellation?.Cancel();
@@ -89,9 +98,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
+            LastApiStartupError = null;
             SetStatus(UiText.T("Status.StartingApi"));
+            _apiClient.ConfigurePort(Settings.ApiPort);
             _apiClient.PlannerLanguage = Settings.PlannerLanguage;
             var apiStatus = await _apiProcessManager.EnsureStartedAsync(token);
+            SaveResolvedApiPortIfChanged();
             var catalog = await _apiClient.GetCatalogAsync(token);
             await _uiDispatcher.InvokeAsync(() => Catalog = catalog, token);
             await Toolbox.SetCatalogAsync(catalog, token);
@@ -102,6 +114,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
+            LastApiStartupError = UiText.Format("Status.ApiStartupFailed", ex.Message);
             SetStatus(UiText.Format("Status.ApiStartupFailed", ex.Message));
         }
     }
@@ -203,8 +216,16 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void SaveSettings(AppSettings settings)
     {
+        var previousPort = AppSettings.NormalizeApiPort(Settings.ApiPort);
         settings.PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage);
+        settings.ApiPort = AppSettings.NormalizeApiPort(settings.ApiPort);
         Settings = settings;
+        if (previousPort != Settings.ApiPort)
+        {
+            _apiProcessManager.StopStartedProcess();
+        }
+
+        _apiClient.ConfigurePort(Settings.ApiPort);
         _apiClient.PlannerLanguage = Settings.PlannerLanguage;
         _settingsStore.Save(Settings);
         SetStatus(UiText.T("Status.SettingsSaved"));
@@ -214,9 +235,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            LastApiStartupError = null;
             SetStatus(UiText.T("Status.ReloadingLanguage"));
+            _apiClient.ConfigurePort(Settings.ApiPort);
             _apiClient.PlannerLanguage = Settings.PlannerLanguage;
             await _apiProcessManager.EnsureStartedAsync(cancellationToken);
+            SaveResolvedApiPortIfChanged();
             var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
             await _uiDispatcher.InvokeAsync(() => Catalog = catalog, cancellationToken);
             await Toolbox.SetCatalogAsync(catalog, cancellationToken);
@@ -227,6 +251,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
+            LastApiStartupError = UiText.Format("Status.ApiStartupFailed", ex.Message);
             SetStatus(UiText.Format("Status.CouldNotReloadLanguage", ex.Message));
         }
     }
@@ -236,6 +261,18 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         Status = Catalog.TransportTiers.Missing && !string.IsNullOrWhiteSpace(Catalog.TransportTiers.Message)
             ? $"{status} {Catalog.TransportTiers.Message}"
             : status;
+    }
+
+    private void SaveResolvedApiPortIfChanged()
+    {
+        var resolvedPort = AppSettings.NormalizeApiPort(_apiClient.BaseUri.Port);
+        if (Settings.ApiPort == resolvedPort)
+        {
+            return;
+        }
+
+        Settings.ApiPort = resolvedPort;
+        _settingsStore.Save(Settings);
     }
 
     public void Dispose()

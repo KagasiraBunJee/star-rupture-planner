@@ -6,7 +6,7 @@ public static class AppVersionInfo
 {
     private const string AlphaLabel = "ALPHA";
 
-    public const string SupportedGameVersion = "0.2.7";
+    public const string SupportedGameVersion = "0.2.8";
 
     public static string InformationalVersion { get; } = ResolveInformationalVersion();
 
@@ -31,7 +31,7 @@ public static class AppVersionInfo
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 
         return string.IsNullOrWhiteSpace(attribute?.InformationalVersion)
-            ? "0.2.7-alpha"
+            ? "0.4.1-alpha"
             : attribute.InformationalVersion;
     }
 }

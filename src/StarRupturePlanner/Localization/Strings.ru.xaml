@@ -57,6 +57,9 @@
     <sys:String x:Key="Ui.Settings.InGame">В игре</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Тема</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Язык планировщика</sys:String>
+    <sys:String x:Key="Ui.Settings.Api">Локальный API</sys:String>
+    <sys:String x:Key="Ui.Settings.Port">Порт</sys:String>
+    <sys:String x:Key="Ui.Settings.ApiPortNote">По умолчанию 8010. Измените, если этот порт уже занят другим локальным приложением.</sys:String>
     <sys:String x:Key="Ui.Settings.CanvasFont">Шрифт карточек</sys:String>
     <sys:String x:Key="Ui.Settings.LeftFont">Шрифт левой панели</sys:String>
     <sys:String x:Key="Ui.Settings.Family">Семейство</sys:String>
@@ -141,7 +144,9 @@
     <sys:String x:Key="Ui.Text.LanguageUkrainian">Украинский</sys:String>
     <sys:String x:Key="Ui.Text.SelectFontFamily">Выберите семейство шрифта.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidSettings">Некорректные настройки</sys:String>
+    <sys:String x:Key="Ui.Text.ApiStartup">Запуск API</sys:String>
     <sys:String x:Key="Ui.Text.FontSizeRange">Размер шрифта должен быть от 8 до 32.</sys:String>
+    <sys:String x:Key="Ui.Text.ApiPortRange">Порт API должен быть числом от 1 до 65535.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidWpfColor">Цвет должен быть корректным цветом WPF, например #F4F0E8.</sys:String>
     <sys:String x:Key="Ui.Text.ChooseSchemeFolder">Выберите папку схем StarRupture</sys:String>
     <sys:String x:Key="Ui.Status.StartingApi">Запуск локального API...</sys:String>
