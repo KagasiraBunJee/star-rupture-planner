@@ -603,16 +603,8 @@ public partial class CanvasView
         border.BorderBrush = selected
             ? new SolidColorBrush(OutputPortColor)
             : new SolidColorBrush(GraphiteLineColor);
-        border.BorderThickness = selected ? new Thickness(2.5) : new Thickness(1.5);
-        border.Effect = selected
-            ? new System.Windows.Media.Effects.DropShadowEffect
-            {
-                Color = OutputPortColor,
-                BlurRadius = 22,
-                ShadowDepth = 0,
-                Opacity = 0.58,
-            }
-            : null;
+        border.BorderThickness = new Thickness(2.5);
+        border.Effect = null;
     }
 
     private static void ApplyCommentSelectionVisual(Border border, bool selected)
