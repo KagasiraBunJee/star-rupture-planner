@@ -41,6 +41,7 @@ tools/
 starrupture_api/scraper.py
 starrupture_api/planner_image_sync.py
 tests/test_planner_image_sync.py
+tasks/
 
 # Python virtual environments
 .venv/
