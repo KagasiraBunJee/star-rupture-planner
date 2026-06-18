@@ -7,6 +7,9 @@
     <sys:String x:Key="Ui.Search.Placeholder">Пошук предметів, рецептів, машин...</sys:String>
     <sys:String x:Key="Ui.Command.New">Новий</sys:String>
     <sys:String x:Key="Ui.Command.Open">Відкрити</sys:String>
+    <sys:String x:Key="Ui.Command.Add">Додати</sys:String>
+    <sys:String x:Key="Ui.Command.Choose">Вибрати</sys:String>
+    <sys:String x:Key="Ui.Command.Default">Типово</sys:String>
     <sys:String x:Key="Ui.Command.Save">Зберегти</sys:String>
     <sys:String x:Key="Ui.Command.Cancel">Скасувати</sys:String>
     <sys:String x:Key="Ui.Command.Export">Експорт</sys:String>
@@ -57,6 +60,7 @@
     <sys:String x:Key="Ui.Settings.InGame">У грі</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Тема</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Мова планувальника</sys:String>
+    <sys:String x:Key="Ui.Settings.SchemeFolder">Папка схем</sys:String>
     <sys:String x:Key="Ui.Settings.Api">Локальний API</sys:String>
     <sys:String x:Key="Ui.Settings.Port">Порт</sys:String>
     <sys:String x:Key="Ui.Settings.ApiPortNote">Типово 8010. Змініть, якщо цей порт уже зайнятий іншою локальною програмою.</sys:String>
@@ -112,4 +116,6 @@
     <sys:String x:Key="Ui.Status.LastSaved">Збережено: {0}, {1}</sys:String>
     <sys:String x:Key="Ui.Status.Today">Сьогодні</sys:String>
     <sys:String x:Key="Ui.Status.Yesterday">Вчора</sys:String>
+    <sys:String x:Key="Ui.Text.AddSchemeJson">Додати JSON схеми</sys:String>
+    <sys:String x:Key="Ui.Text.SchemeAlreadyExists">Схема з назвою &quot;{0}&quot; вже існує. Yes замінить її, No збереже обидві, Cancel скасує дію.</sys:String>
 </ResourceDictionary>

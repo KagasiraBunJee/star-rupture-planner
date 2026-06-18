@@ -28,7 +28,15 @@ public interface ISchemeStore
     IReadOnlyList<SchemeListItem> ListSchemes();
     SchemeDocument Load(string filePath);
     string Save(SchemeDocument document);
+    bool SchemeFileNameExists(string filePath);
+    SchemeListItem ImportSchemeFile(string filePath, SchemeImportMode importMode = SchemeImportMode.KeepBoth);
     void Delete(string filePath);
+}
+
+public enum SchemeImportMode
+{
+    KeepBoth,
+    Replace,
 }
 
 public interface IAppSettingsStore

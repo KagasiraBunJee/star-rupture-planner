@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
+using Path = System.IO.Path;
 
 namespace StarRupturePlanner.Views;
 
@@ -29,8 +30,24 @@ public partial class ToolboxView : UserControl
 
     public event EventHandler<SchemeListItem>? SchemeOpenRequested;
     public event EventHandler<SchemeListItem>? SchemeDeleteRequested;
+    public event EventHandler<string>? SchemeFileDropped;
     public event EventHandler<ResourceToolboxItem>? ResourceActivated;
     public event EventHandler<MachineToolboxItem>? MachineActivated;
+
+    private void SchemesList_DragEnter(object sender, DragEventArgs e) => HandleSchemeFileDrag(e);
+
+    private void SchemesList_DragOver(object sender, DragEventArgs e) => HandleSchemeFileDrag(e);
+
+    private void SchemesList_Drop(object sender, DragEventArgs e)
+    {
+        var filePath = GetDroppedSchemeFilePath(e);
+        e.Effects = filePath is null ? DragDropEffects.None : DragDropEffects.Copy;
+        e.Handled = true;
+        if (filePath is not null)
+        {
+            SchemeFileDropped?.Invoke(this, filePath);
+        }
+    }
 
     private void SchemesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -190,5 +207,27 @@ public partial class ToolboxView : UserControl
 
         item = container.DataContext as T;
         return item is not null;
+    }
+
+    private static void HandleSchemeFileDrag(DragEventArgs e)
+    {
+        e.Effects = GetDroppedSchemeFilePath(e) is null ? DragDropEffects.None : DragDropEffects.Copy;
+        e.Handled = true;
+    }
+
+    private static string? GetDroppedSchemeFilePath(DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            return null;
+        }
+
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths)
+        {
+            return null;
+        }
+
+        return paths.FirstOrDefault(path =>
+            string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase));
     }
 }

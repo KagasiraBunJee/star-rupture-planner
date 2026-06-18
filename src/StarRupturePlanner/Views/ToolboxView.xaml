@@ -35,9 +35,13 @@
             <TabControl x:Name="ToolboxTabs">
                 <TabItem Header="{DynamicResource Ui.Tab.Schemes}">
                     <ListBox x:Name="SchemesList"
+                             AllowDrop="True"
                              Background="{DynamicResource CanvasBrush}"
                              ItemsSource="{Binding Toolbox.Schemes}"
                              ItemTemplate="{StaticResource SchemeItemTemplate}"
+                             DragEnter="SchemesList_DragEnter"
+                             DragOver="SchemesList_DragOver"
+                             Drop="SchemesList_Drop"
                              PreviewMouseLeftButtonDown="SchemesList_PreviewMouseLeftButtonDown"
                              PreviewMouseMove="SchemesList_PreviewMouseMove"
                              PreviewMouseLeftButtonUp="SchemesList_PreviewMouseLeftButtonUp"

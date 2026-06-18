@@ -32,6 +32,9 @@ public sealed class AppSettings
     [JsonPropertyName("current_rail_tier_id")]
     public string? CurrentRailTierId { get; set; }
 
+    [JsonPropertyName("scheme_folder_path")]
+    public string? SchemeFolderPath { get; set; }
+
     public static int NormalizeApiPort(int port) => port is >= 1 and <= 65535 ? port : 8010;
 }
 

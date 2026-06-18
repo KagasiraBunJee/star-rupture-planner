@@ -7,6 +7,9 @@
     <sys:String x:Key="Ui.Search.Placeholder">Поиск предметов, рецептов, машин...</sys:String>
     <sys:String x:Key="Ui.Command.New">Новый</sys:String>
     <sys:String x:Key="Ui.Command.Open">Открыть</sys:String>
+    <sys:String x:Key="Ui.Command.Add">Добавить</sys:String>
+    <sys:String x:Key="Ui.Command.Choose">Выбрать</sys:String>
+    <sys:String x:Key="Ui.Command.Default">По умолчанию</sys:String>
     <sys:String x:Key="Ui.Command.Save">Сохранить</sys:String>
     <sys:String x:Key="Ui.Command.Cancel">Отмена</sys:String>
     <sys:String x:Key="Ui.Command.Export">Экспорт</sys:String>
@@ -57,6 +60,7 @@
     <sys:String x:Key="Ui.Settings.InGame">В игре</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Тема</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Язык планировщика</sys:String>
+    <sys:String x:Key="Ui.Settings.SchemeFolder">Папка схем</sys:String>
     <sys:String x:Key="Ui.Settings.Api">Локальный API</sys:String>
     <sys:String x:Key="Ui.Settings.Port">Порт</sys:String>
     <sys:String x:Key="Ui.Settings.ApiPortNote">По умолчанию 8010. Измените, если этот порт уже занят другим локальным приложением.</sys:String>
@@ -149,6 +153,9 @@
     <sys:String x:Key="Ui.Text.ApiPortRange">Порт API должен быть числом от 1 до 65535.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidWpfColor">Цвет должен быть корректным цветом WPF, например #F4F0E8.</sys:String>
     <sys:String x:Key="Ui.Text.ChooseSchemeFolder">Выберите папку схем StarRupture</sys:String>
+    <sys:String x:Key="Ui.Text.AddSchemeJson">Добавить JSON схемы</sys:String>
+    <sys:String x:Key="Ui.Text.SchemeJsonFilter">JSON схемы (*.json)|*.json</sys:String>
+    <sys:String x:Key="Ui.Text.SchemeAlreadyExists">Схема с именем &quot;{0}&quot; уже существует. Нажмите Yes, чтобы заменить, No, чтобы оставить обе, или Cancel, чтобы отменить.</sys:String>
     <sys:String x:Key="Ui.Status.StartingApi">Запуск локального API...</sys:String>
     <sys:String x:Key="Ui.Status.LoadedRecipes">Загружено рецептов: {0}.</sys:String>
     <sys:String x:Key="Ui.Status.ApiStartupFailed">Ошибка запуска API: {0}</sys:String>
@@ -170,6 +177,8 @@
     <sys:String x:Key="Ui.Status.SchemeHasNoMarkedOutputs">В схеме &quot;{0}&quot; нет отмеченных выходов.</sys:String>
     <sys:String x:Key="Ui.Status.SchemeOutputsUnavailable">Выходы схемы &quot;{0}&quot; недоступны в текущем каталоге.</sys:String>
     <sys:String x:Key="Ui.Status.AddedBlueprintSource">Добавлен источник из схемы {0}. Выходов: {1}.</sys:String>
+    <sys:String x:Key="Ui.Status.AddedScheme">Схема добавлена: {0}.</sys:String>
+    <sys:String x:Key="Ui.Status.CouldNotAddScheme">Не удалось добавить схему: {0}</sys:String>
     <sys:String x:Key="Ui.Status.SchemeFolderChanged">Папка схем изменена.</sys:String>
     <sys:String x:Key="Ui.Status.ResourceNotAvailableForConnection">Этот ресурс {0}</sys:String>
     <sys:String x:Key="Ui.Status.PortsNotCompatible">Порты несовместимы.</sys:String>
