@@ -38,6 +38,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _backgroundTaskRunner = backgroundTaskRunner;
         Settings = _settingsStore.Load();
         Settings.ApiPort = AppSettings.NormalizeApiPort(Settings.ApiPort);
+        Settings.SchemeFolderPath = NormalizeSchemeFolderPath(Settings.SchemeFolderPath);
+        _schemeStore.SetFolder(Settings.SchemeFolderPath);
         _apiClient.ConfigurePort(Settings.ApiPort);
         _apiClient.PlannerLanguage = Settings.PlannerLanguage;
         Toolbox = new ToolboxViewModel(apiClient, uiDispatcher, backgroundTaskRunner);
@@ -187,6 +189,27 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public bool SchemeFileNameExists(string filePath) => _schemeStore.SchemeFileNameExists(filePath);
+
+    public async Task<SchemeListItem?> AddSchemeFileAsync(
+        string filePath,
+        SchemeImportMode importMode = SchemeImportMode.KeepBoth,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var item = await _backgroundTaskRunner.RunAsync(() => _schemeStore.ImportSchemeFile(filePath, importMode), cancellationToken);
+            await RefreshSchemeListAsync(cancellationToken);
+            SetStatus(UiText.Format("Status.AddedScheme", item.Name));
+            return item;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            SetStatus(UiText.Format("Status.CouldNotAddScheme", ex.Message));
+            return null;
+        }
+    }
+
     private static string FormatLastSaved(string? path)
     {
         DateTime when;
@@ -212,6 +235,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     {
         _schemeStore.SetFolder(folderPath);
         SchemeFolderPath = _schemeStore.FolderPath;
+        Settings.SchemeFolderPath = _schemeStore.FolderPath;
     }
 
     public void SaveSettings(AppSettings settings)
@@ -219,12 +243,15 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         var previousPort = AppSettings.NormalizeApiPort(Settings.ApiPort);
         settings.PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage);
         settings.ApiPort = AppSettings.NormalizeApiPort(settings.ApiPort);
+        settings.SchemeFolderPath = NormalizeSchemeFolderPath(settings.SchemeFolderPath);
         Settings = settings;
         if (previousPort != Settings.ApiPort)
         {
             _apiProcessManager.StopStartedProcess();
         }
 
+        _schemeStore.SetFolder(Settings.SchemeFolderPath);
+        SchemeFolderPath = _schemeStore.FolderPath;
         _apiClient.ConfigurePort(Settings.ApiPort);
         _apiClient.PlannerLanguage = Settings.PlannerLanguage;
         _settingsStore.Save(Settings);
@@ -274,6 +301,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         Settings.ApiPort = resolvedPort;
         _settingsStore.Save(Settings);
     }
+
+    private static string NormalizeSchemeFolderPath(string? folderPath) =>
+        string.IsNullOrWhiteSpace(folderPath) ? SchemeStore.DefaultFolderPath() : folderPath.Trim();
 
     public void Dispose()
     {

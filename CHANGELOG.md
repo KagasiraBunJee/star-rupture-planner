@@ -4,6 +4,19 @@ All notable changes to StarRupture Production Planner are tracked here.
 
 The project is currently in alpha. Versions should keep the `-alpha` suffix until the project leaves alpha stage.
 
+## Unreleased
+
+### Added
+
+- Added a persisted scheme folder setting with folder selection and reset-to-default controls.
+- Added scheme JSON import from the top command bar, copying selected schemes into the active schemes folder.
+- Added drag-and-drop scheme JSON import onto the schemes list.
+
+### Changed
+
+- Renamed the top command bar scheme action from Open to Add.
+- Scheme imports now prompt to replace, keep both, or cancel when a filename already exists.
+
 ## 0.4.2-alpha - 2026-06-18
 
 ### Documentation

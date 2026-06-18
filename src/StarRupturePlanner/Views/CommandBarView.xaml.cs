@@ -18,7 +18,7 @@ public partial class CommandBarView : UserControl
     }
 
     public event EventHandler? NewRequested;
-    public event EventHandler? OpenFolderRequested;
+    public event EventHandler? AddSchemeRequested;
     public event EventHandler? SaveRequested;
     public event EventHandler? SettingsRequested;
 
@@ -64,7 +64,7 @@ public partial class CommandBarView : UserControl
 
     private void NewScheme_Click(object sender, RoutedEventArgs e) => NewRequested?.Invoke(this, EventArgs.Empty);
 
-    private void ChooseFolder_Click(object sender, RoutedEventArgs e) => OpenFolderRequested?.Invoke(this, EventArgs.Empty);
+    private void AddScheme_Click(object sender, RoutedEventArgs e) => AddSchemeRequested?.Invoke(this, EventArgs.Empty);
 
     private void SaveScheme_Click(object sender, RoutedEventArgs e) => SaveRequested?.Invoke(this, EventArgs.Empty);
 
