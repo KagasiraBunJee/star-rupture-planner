@@ -31,7 +31,7 @@ public static class AppVersionInfo
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 
         return string.IsNullOrWhiteSpace(attribute?.InformationalVersion)
-            ? "0.4.2-alpha"
+            ? "0.4.3-alpha"
             : attribute.InformationalVersion;
     }
 }

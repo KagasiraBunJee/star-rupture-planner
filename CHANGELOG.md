@@ -4,7 +4,11 @@ All notable changes to StarRupture Production Planner are tracked here.
 
 The project is currently in alpha. Versions should keep the `-alpha` suffix until the project leaves alpha stage.
 
-## Unreleased
+## 0.4.3-alpha - 2026-06-18
+
+### Documentation
+
+- Added the MIT License and linked it from the README.
 
 ### Added
 
