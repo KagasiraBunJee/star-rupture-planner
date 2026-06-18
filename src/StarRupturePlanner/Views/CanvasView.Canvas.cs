@@ -1143,6 +1143,7 @@ public partial class CanvasView
                 labelPlacement.AngleDegrees,
                 EdgeStrokeColor(edge, isValid),
                 isValid && !isShort ? BrushColor(CardTextBrush(), Color.FromRgb(244, 240, 232)) : ShortageColor,
+                EdgeLabelBackgroundColor(),
                 CardFontFamily(),
                 CardFontSize(-1),
                 isValid);
@@ -1173,6 +1174,7 @@ public partial class CanvasView
             0,
             ShortageColor,
             ShortageColor,
+            EdgeLabelBackgroundColor(),
             CardFontFamily(),
             CardFontSize(-1),
             false);
@@ -2729,6 +2731,13 @@ public partial class CanvasView
             ? ThemeColor("NodeCardTextBrush", Color.FromRgb(0xF4, 0xF0, 0xE8))
             : BrushFromString(configured, "#F4F0E8").Color;
         return new SolidColorBrush(color) { Opacity = opacity };
+    }
+
+    private static Color EdgeLabelBackgroundColor()
+    {
+        // Pair the edge-label chip with the same theme surface the label text follows so the
+        // text stays legible in both themes (dark text on a light chip in the light theme).
+        return ThemeColor("NodeCardBottomBrush", Color.FromArgb(232, 8, 15, 20));
     }
 
     public void DeleteSelection()
