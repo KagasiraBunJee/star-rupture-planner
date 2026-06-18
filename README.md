@@ -261,3 +261,7 @@ Run the .NET planner test harness:
 ```powershell
 dotnet run --project tests\StarRupturePlanner.Tests\StarRupturePlanner.Tests.csproj
 ```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
