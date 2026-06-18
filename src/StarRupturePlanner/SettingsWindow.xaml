@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{DynamicResource Ui.Command.Settings}"
         Width="520"
-        Height="500"
+        Height="560"
         MinWidth="500"
         MinHeight="450"
         Icon="pack://application:,,,/Assets/AppIcon.ico"
@@ -42,6 +42,18 @@
 
                         <TextBlock Text="{DynamicResource Ui.Settings.Language}" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,6"/>
                         <ComboBox x:Name="LanguagePicker" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="{DynamicResource Ui.Settings.SchemeFolder}" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,6"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="SchemeFolderBox" IsReadOnly="True"/>
+                            <Button Grid.Column="1" Content="{DynamicResource Ui.Command.Choose}" Click="ChooseSchemeFolder_Click"/>
+                            <Button Grid.Column="2" Content="{DynamicResource Ui.Command.Default}" Click="DefaultSchemeFolder_Click"/>
+                        </Grid>
 
                         <TextBlock Text="{DynamicResource Ui.Settings.Api}" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,6"/>
                         <Grid Margin="0,0,0,12">

@@ -25,12 +25,14 @@ var tests = new (string Name, Action Body)[]
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
     ("Scheme serialization round trips", SchemeSerializationRoundTrips),
     ("Scheme store deletes saved schemes", SchemeStoreDeletesSavedSchemes),
+    ("Scheme store imports scheme JSON into active folder", SchemeStoreImportsSchemeJsonIntoActiveFolder),
     ("Scheme store removes deleted blueprint references", SchemeStoreRemovesDeletedBlueprintReferences),
     ("Scheme store rejects delete outside folder", SchemeStoreRejectsDeleteOutsideFolder),
     ("Machine node can persist without selected recipe", MachineNodeCanPersistWithoutRecipe),
     ("Connection route points persist", ConnectionRoutePointsPersist),
     ("Comment rectangles persist", CommentRectanglesPersist),
     ("App settings serialization round trips", AppSettingsSerializationRoundTrips),
+    ("View model applies configured scheme folder", ViewModelAppliesConfiguredSchemeFolder),
     ("View model refreshes localized saved state", ViewModelRefreshesLocalizedSavedState),
     ("Async command tracks running state", AsyncCommandTracksRunningState),
     ("Canvas view model creates compatible edge", CanvasViewModelCreatesCompatibleEdge),
@@ -604,6 +606,39 @@ static void SchemeStoreDeletesSavedSchemes()
     Directory.Delete(temp, recursive: true);
 }
 
+static void SchemeStoreImportsSchemeJsonIntoActiveFolder()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    var sourceFolder = Path.Combine(temp, "source");
+    var targetFolder = Path.Combine(temp, "target");
+    ISchemeStore sourceStore = new SchemeStore(sourceFolder);
+    ISchemeStore targetStore = new SchemeStore(targetFolder);
+    var sourcePath = sourceStore.Save(new SchemeDocument { Name = "Imported Line" });
+
+    var imported = targetStore.ImportSchemeFile(sourcePath);
+
+    AssertTrue(File.Exists(sourcePath));
+    AssertTrue(File.Exists(imported.FilePath));
+    AssertTrue(imported.FilePath.StartsWith(targetFolder, StringComparison.OrdinalIgnoreCase));
+    AssertEqual("Imported Line", targetStore.Load(imported.FilePath).Name);
+    AssertTrue(targetStore.SchemeFileNameExists(sourcePath));
+
+    var duplicate = targetStore.ImportSchemeFile(sourcePath, SchemeImportMode.KeepBoth);
+    AssertTrue(File.Exists(duplicate.FilePath));
+    AssertFalse(PathUtil.SamePath(imported.FilePath, duplicate.FilePath));
+    AssertTrue(Path.GetFileNameWithoutExtension(duplicate.FilePath).Contains("(2)", StringComparison.Ordinal));
+
+    var replacementSourcePath = sourceStore.Save(new SchemeDocument { Name = "Replacement Line", FilePath = sourcePath });
+    var replaced = targetStore.ImportSchemeFile(replacementSourcePath, SchemeImportMode.Replace);
+    AssertTrue(PathUtil.SamePath(imported.FilePath, replaced.FilePath));
+    AssertEqual("Replacement Line", targetStore.Load(replaced.FilePath).Name);
+
+    var invalidPath = Path.Combine(sourceFolder, "not-a-scheme.json");
+    File.WriteAllText(invalidPath, """{"foo":true}""");
+    AssertThrows<InvalidOperationException>(() => targetStore.ImportSchemeFile(invalidPath));
+    Directory.Delete(temp, recursive: true);
+}
+
 static void SchemeStoreRemovesDeletedBlueprintReferences()
 {
     var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
@@ -768,6 +803,7 @@ static void AppSettingsSerializationRoundTrips()
         PlannerLanguage = PlannerLanguages.Ukrainian,
         ApiPort = 8020,
         CurrentRailTierId = "rail-2",
+        SchemeFolderPath = Path.Combine(temp, "schemes"),
         CanvasCardFont = new FontSettings { Family = "Segoe UI", Size = 14, Color = "#112233" },
         LeftBarListFont = new FontSettings { Family = "Consolas", Size = 11, Color = "#445566" },
     });
@@ -777,10 +813,46 @@ static void AppSettingsSerializationRoundTrips()
     AssertEqual(PlannerLanguages.Ukrainian, loaded.PlannerLanguage);
     AssertEqual(8020, loaded.ApiPort);
     AssertEqual("rail-2", loaded.CurrentRailTierId);
+    AssertEqual(Path.Combine(temp, "schemes"), loaded.SchemeFolderPath);
     AssertEqual("Segoe UI", loaded.CanvasCardFont.Family);
     AssertEqual(14d, loaded.CanvasCardFont.Size);
     AssertEqual("#445566", loaded.LeftBarListFont.Color);
     Directory.Delete(temp, recursive: true);
+}
+
+static void ViewModelAppliesConfiguredSchemeFolder()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-vm-scheme-folder-" + Guid.NewGuid().ToString("N"));
+    var initialFolder = Path.Combine(temp, "initial");
+    var configuredFolder = Path.Combine(temp, "configured");
+    var changedFolder = Path.Combine(temp, "changed");
+    Directory.CreateDirectory(temp);
+
+    try
+    {
+        var settingsStore = new AppSettingsStore(Path.Combine(temp, "settings.json"));
+        settingsStore.Save(new AppSettings { SchemeFolderPath = configuredFolder });
+        ISchemeStore schemeStore = new SchemeStore(initialFolder);
+        var viewModel = new MainWindowViewModel(
+            new TestPlannerApiClient(),
+            new TestApiProcessManager(),
+            schemeStore,
+            settingsStore,
+            new ImmediateUiDispatcher(),
+            new ImmediateBackgroundTaskRunner());
+
+        AssertEqual(configuredFolder, schemeStore.FolderPath);
+        AssertEqual(configuredFolder, viewModel.SchemeFolderPath);
+
+        viewModel.SaveSettings(new AppSettings { SchemeFolderPath = changedFolder });
+
+        AssertEqual(changedFolder, schemeStore.FolderPath);
+        AssertEqual(changedFolder, settingsStore.Load().SchemeFolderPath);
+    }
+    finally
+    {
+        Directory.Delete(temp, recursive: true);
+    }
 }
 
 static void ViewModelRefreshesLocalizedSavedState()
@@ -790,11 +862,13 @@ static void ViewModelRefreshesLocalizedSavedState()
 
     try
     {
+        var settingsStore = new AppSettingsStore(Path.Combine(temp, "settings.json"));
+        settingsStore.Save(new AppSettings { SchemeFolderPath = temp });
         var viewModel = new MainWindowViewModel(
             new TestPlannerApiClient(),
             new TestApiProcessManager(),
             new SchemeStore(temp),
-            new AppSettingsStore(Path.Combine(temp, "settings.json")),
+            settingsStore,
             new ImmediateUiDispatcher(),
             new ImmediateBackgroundTaskRunner());
         viewModel.Scheme.Name = "test";

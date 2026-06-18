@@ -149,7 +149,7 @@ public sealed class EdgeLayer : FrameworkElement
 
         drawingContext.PushTransform(new RotateTransform(edge.LabelAngleDegrees, center.X, center.Y));
         drawingContext.DrawRoundedRectangle(
-            new SolidColorBrush(Color.FromArgb(232, 8, 15, 20)),
+            new SolidColorBrush(edge.LabelBackground),
             null,
             rect,
             4,
@@ -167,6 +167,7 @@ public sealed record EdgeRenderItem(
     double LabelAngleDegrees,
     Color StrokeColor,
     Color TextColor,
+    Color LabelBackground,
     FontFamily FontFamily,
     double FontSize,
     bool IsValid);

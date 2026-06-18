@@ -7,6 +7,9 @@
     <sys:String x:Key="Ui.Search.Placeholder">Gegenstände, Rezepte, Maschinen suchen...</sys:String>
     <sys:String x:Key="Ui.Command.New">Neu</sys:String>
     <sys:String x:Key="Ui.Command.Open">Öffnen</sys:String>
+    <sys:String x:Key="Ui.Command.Add">Hinzufügen</sys:String>
+    <sys:String x:Key="Ui.Command.Choose">Auswählen</sys:String>
+    <sys:String x:Key="Ui.Command.Default">Standard</sys:String>
     <sys:String x:Key="Ui.Command.Save">Speichern</sys:String>
     <sys:String x:Key="Ui.Command.Cancel">Abbrechen</sys:String>
     <sys:String x:Key="Ui.Command.Export">Export</sys:String>
@@ -57,6 +60,7 @@
     <sys:String x:Key="Ui.Settings.InGame">Im Spiel</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Design</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Planersprache</sys:String>
+    <sys:String x:Key="Ui.Settings.SchemeFolder">Schemaordner</sys:String>
     <sys:String x:Key="Ui.Settings.Api">Lokale API</sys:String>
     <sys:String x:Key="Ui.Settings.Port">Port</sys:String>
     <sys:String x:Key="Ui.Settings.ApiPortNote">Standard ist 8010. Ändere dies, wenn eine andere lokale App diesen Port bereits verwendet.</sys:String>
@@ -112,4 +116,6 @@
     <sys:String x:Key="Ui.Status.LastSaved">Zuletzt gespeichert: {0}, {1}</sys:String>
     <sys:String x:Key="Ui.Status.Today">Heute</sys:String>
     <sys:String x:Key="Ui.Status.Yesterday">Gestern</sys:String>
+    <sys:String x:Key="Ui.Text.AddSchemeJson">Schema-JSON hinzufügen</sys:String>
+    <sys:String x:Key="Ui.Text.SchemeAlreadyExists">Ein Schema mit dem Namen &quot;{0}&quot; existiert bereits. Yes ersetzt es, No behält beide, Cancel bricht ab.</sys:String>
 </ResourceDictionary>
