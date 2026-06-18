@@ -187,6 +187,7 @@ public partial class CanvasView
             Tag = comment,
         };
         title.TextChanged += CommentTitle_TextChanged;
+        title.PreviewKeyDown += CommentTitle_PreviewKeyDown;
         grid.Children.Add(title);
 
         var body = new Border
@@ -602,16 +603,8 @@ public partial class CanvasView
         border.BorderBrush = selected
             ? new SolidColorBrush(OutputPortColor)
             : new SolidColorBrush(GraphiteLineColor);
-        border.BorderThickness = selected ? new Thickness(2.5) : new Thickness(1.5);
-        border.Effect = selected
-            ? new System.Windows.Media.Effects.DropShadowEffect
-            {
-                Color = OutputPortColor,
-                BlurRadius = 22,
-                ShadowDepth = 0,
-                Opacity = 0.58,
-            }
-            : null;
+        border.BorderThickness = new Thickness(2.5);
+        border.Effect = null;
     }
 
     private static void ApplyCommentSelectionVisual(Border border, bool selected)
@@ -1150,6 +1143,7 @@ public partial class CanvasView
                 labelPlacement.AngleDegrees,
                 EdgeStrokeColor(edge, isValid),
                 isValid && !isShort ? BrushColor(CardTextBrush(), Color.FromRgb(244, 240, 232)) : ShortageColor,
+                EdgeLabelBackgroundColor(),
                 CardFontFamily(),
                 CardFontSize(-1),
                 isValid);
@@ -1180,6 +1174,7 @@ public partial class CanvasView
             0,
             ShortageColor,
             ShortageColor,
+            EdgeLabelBackgroundColor(),
             CardFontFamily(),
             CardFontSize(-1),
             false);
@@ -1892,6 +1887,14 @@ public partial class CanvasView
             DispatcherPriority.Input);
     }
 
+    private void FocusCanvasViewport()
+    {
+        if (Keyboard.FocusedElement is TextBox { Tag: SchemeComment })
+        {
+            CanvasViewport.Focus();
+        }
+    }
+
     private RoutePoint? RoutePointForReference(RoutePointReference reference)
     {
         var edge = _scheme.Edges.FirstOrDefault(item => item.Id == reference.EdgeId);
@@ -1960,6 +1963,8 @@ public partial class CanvasView
             return;
         }
 
+        FocusCanvasViewport();
+
         if (!_selectedCommentIds.Contains(comment.Id))
         {
             SelectSingleComment(comment);
@@ -2008,6 +2013,17 @@ public partial class CanvasView
         {
             comment.Text = textBox.Text;
         }
+    }
+
+    private void CommentTitle_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+        {
+            return;
+        }
+
+        FocusCanvasViewport();
+        e.Handled = true;
     }
 
     private void CommentResizeGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2074,6 +2090,8 @@ public partial class CanvasView
         {
             return;
         }
+
+        FocusCanvasViewport();
 
         if (!_selectedNodeIds.Contains(node.Id))
         {
@@ -2143,6 +2161,8 @@ public partial class CanvasView
             return;
         }
 
+        FocusCanvasViewport();
+
         if (e.OriginalEventArgs.ClickCount == 2)
         {
             AddRoutePoint(edge, e.OriginalEventArgs.GetPosition(PlannerCanvas));
@@ -2207,6 +2227,8 @@ public partial class CanvasView
             return;
         }
 
+        FocusCanvasViewport();
+
         if (!_selectedRoutePoints.Contains(reference))
         {
             SelectSingleRoutePoint(edge, reference);
@@ -2257,6 +2279,8 @@ public partial class CanvasView
             return;
         }
 
+        FocusCanvasViewport();
+
         if (!IsPortReferenceAvailable(port))
         {
             SetStatus(UiText.Format("Status.ResourceNotAvailableForConnection", UiText.T("Text.NotAvailableForConnection")));
@@ -2282,6 +2306,7 @@ public partial class CanvasView
     {
         if (e.OriginalSource == GridInputLayer)
         {
+            FocusCanvasViewport();
             ClearSelection();
             _isSelecting = true;
             _selectionStart = e.GetPosition(PlannerCanvas);
@@ -2706,6 +2731,13 @@ public partial class CanvasView
             ? ThemeColor("NodeCardTextBrush", Color.FromRgb(0xF4, 0xF0, 0xE8))
             : BrushFromString(configured, "#F4F0E8").Color;
         return new SolidColorBrush(color) { Opacity = opacity };
+    }
+
+    private static Color EdgeLabelBackgroundColor()
+    {
+        // Pair the edge-label chip with the same theme surface the label text follows so the
+        // text stays legible in both themes (dark text on a light chip in the light theme).
+        return ThemeColor("NodeCardBottomBrush", Color.FromArgb(232, 8, 15, 20));
     }
 
     public void DeleteSelection()

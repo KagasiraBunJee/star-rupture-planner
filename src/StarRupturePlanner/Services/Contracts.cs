@@ -8,6 +8,7 @@ public interface IPlannerApiClient
 {
     Uri BaseUri { get; }
     string PlannerLanguage { get; set; }
+    void ConfigurePort(int port);
     Task<bool> IsApiAvailableAsync(CancellationToken cancellationToken = default);
     Task<PlannerCatalog> GetCatalogAsync(CancellationToken cancellationToken = default);
     Task<SuggestionResponse> GetSuggestionsAsync(string direction, string itemId, CancellationToken cancellationToken = default);
@@ -17,6 +18,7 @@ public interface IPlannerApiClient
 public interface IApiProcessManager : IDisposable
 {
     Task<string> EnsureStartedAsync(CancellationToken cancellationToken = default);
+    void StopStartedProcess();
 }
 
 public interface ISchemeStore
@@ -26,7 +28,15 @@ public interface ISchemeStore
     IReadOnlyList<SchemeListItem> ListSchemes();
     SchemeDocument Load(string filePath);
     string Save(SchemeDocument document);
+    bool SchemeFileNameExists(string filePath);
+    SchemeListItem ImportSchemeFile(string filePath, SchemeImportMode importMode = SchemeImportMode.KeepBoth);
     void Delete(string filePath);
+}
+
+public enum SchemeImportMode
+{
+    KeepBoth,
+    Replace,
 }
 
 public interface IAppSettingsStore

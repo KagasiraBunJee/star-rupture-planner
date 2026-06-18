@@ -16,6 +16,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private SchemeDocument _scheme = new();
     private AppSettings _settings = new();
     private string _status = "";
+    private string? _lastApiStartupError;
     private string _schemeFolderPath = "";
     private string _lastSavedText = UiText.T("Status.NotSavedYet");
     private CancellationTokenSource? _startupCancellation;
@@ -35,9 +36,13 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _settingsStore = settingsStore;
         _uiDispatcher = uiDispatcher;
         _backgroundTaskRunner = backgroundTaskRunner;
-        Toolbox = new ToolboxViewModel(apiClient, uiDispatcher, backgroundTaskRunner);
         Settings = _settingsStore.Load();
+        Settings.ApiPort = AppSettings.NormalizeApiPort(Settings.ApiPort);
+        Settings.SchemeFolderPath = NormalizeSchemeFolderPath(Settings.SchemeFolderPath);
+        _schemeStore.SetFolder(Settings.SchemeFolderPath);
+        _apiClient.ConfigurePort(Settings.ApiPort);
         _apiClient.PlannerLanguage = Settings.PlannerLanguage;
+        Toolbox = new ToolboxViewModel(apiClient, uiDispatcher, backgroundTaskRunner);
         SchemeFolderPath = _schemeStore.FolderPath;
         NewScheme();
     }
@@ -80,6 +85,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _lastSavedText, value);
     }
 
+    public string? LastApiStartupError
+    {
+        get => _lastApiStartupError;
+        private set => SetProperty(ref _lastApiStartupError, value);
+    }
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         _startupCancellation?.Cancel();
@@ -89,9 +100,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
+            LastApiStartupError = null;
             SetStatus(UiText.T("Status.StartingApi"));
+            _apiClient.ConfigurePort(Settings.ApiPort);
             _apiClient.PlannerLanguage = Settings.PlannerLanguage;
             var apiStatus = await _apiProcessManager.EnsureStartedAsync(token);
+            SaveResolvedApiPortIfChanged();
             var catalog = await _apiClient.GetCatalogAsync(token);
             await _uiDispatcher.InvokeAsync(() => Catalog = catalog, token);
             await Toolbox.SetCatalogAsync(catalog, token);
@@ -102,6 +116,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
+            LastApiStartupError = UiText.Format("Status.ApiStartupFailed", ex.Message);
             SetStatus(UiText.Format("Status.ApiStartupFailed", ex.Message));
         }
     }
@@ -174,6 +189,27 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public bool SchemeFileNameExists(string filePath) => _schemeStore.SchemeFileNameExists(filePath);
+
+    public async Task<SchemeListItem?> AddSchemeFileAsync(
+        string filePath,
+        SchemeImportMode importMode = SchemeImportMode.KeepBoth,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var item = await _backgroundTaskRunner.RunAsync(() => _schemeStore.ImportSchemeFile(filePath, importMode), cancellationToken);
+            await RefreshSchemeListAsync(cancellationToken);
+            SetStatus(UiText.Format("Status.AddedScheme", item.Name));
+            return item;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            SetStatus(UiText.Format("Status.CouldNotAddScheme", ex.Message));
+            return null;
+        }
+    }
+
     private static string FormatLastSaved(string? path)
     {
         DateTime when;
@@ -199,12 +235,24 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     {
         _schemeStore.SetFolder(folderPath);
         SchemeFolderPath = _schemeStore.FolderPath;
+        Settings.SchemeFolderPath = _schemeStore.FolderPath;
     }
 
     public void SaveSettings(AppSettings settings)
     {
+        var previousPort = AppSettings.NormalizeApiPort(Settings.ApiPort);
         settings.PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage);
+        settings.ApiPort = AppSettings.NormalizeApiPort(settings.ApiPort);
+        settings.SchemeFolderPath = NormalizeSchemeFolderPath(settings.SchemeFolderPath);
         Settings = settings;
+        if (previousPort != Settings.ApiPort)
+        {
+            _apiProcessManager.StopStartedProcess();
+        }
+
+        _schemeStore.SetFolder(Settings.SchemeFolderPath);
+        SchemeFolderPath = _schemeStore.FolderPath;
+        _apiClient.ConfigurePort(Settings.ApiPort);
         _apiClient.PlannerLanguage = Settings.PlannerLanguage;
         _settingsStore.Save(Settings);
         SetStatus(UiText.T("Status.SettingsSaved"));
@@ -214,9 +262,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            LastApiStartupError = null;
             SetStatus(UiText.T("Status.ReloadingLanguage"));
+            _apiClient.ConfigurePort(Settings.ApiPort);
             _apiClient.PlannerLanguage = Settings.PlannerLanguage;
             await _apiProcessManager.EnsureStartedAsync(cancellationToken);
+            SaveResolvedApiPortIfChanged();
             var catalog = await _apiClient.GetCatalogAsync(cancellationToken);
             await _uiDispatcher.InvokeAsync(() => Catalog = catalog, cancellationToken);
             await Toolbox.SetCatalogAsync(catalog, cancellationToken);
@@ -227,6 +278,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
+            LastApiStartupError = UiText.Format("Status.ApiStartupFailed", ex.Message);
             SetStatus(UiText.Format("Status.CouldNotReloadLanguage", ex.Message));
         }
     }
@@ -237,6 +289,21 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             ? $"{status} {Catalog.TransportTiers.Message}"
             : status;
     }
+
+    private void SaveResolvedApiPortIfChanged()
+    {
+        var resolvedPort = AppSettings.NormalizeApiPort(_apiClient.BaseUri.Port);
+        if (Settings.ApiPort == resolvedPort)
+        {
+            return;
+        }
+
+        Settings.ApiPort = resolvedPort;
+        _settingsStore.Save(Settings);
+    }
+
+    private static string NormalizeSchemeFolderPath(string? folderPath) =>
+        string.IsNullOrWhiteSpace(folderPath) ? SchemeStore.DefaultFolderPath() : folderPath.Trim();
 
     public void Dispose()
     {

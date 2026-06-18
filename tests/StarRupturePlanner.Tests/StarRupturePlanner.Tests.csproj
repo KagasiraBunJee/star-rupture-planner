@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\StarRupturePlanner.Api\StarRupturePlanner.Api.csproj" />
     <ProjectReference Include="..\..\src\StarRupturePlanner\StarRupturePlanner.csproj" />
   </ItemGroup>
 

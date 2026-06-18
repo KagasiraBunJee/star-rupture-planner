@@ -70,11 +70,12 @@ public partial class MainWindow : Window
         _session.StatusRequested += (_, message) => SetStatus(message);
         _session.AnalysisChanged += (_, _) => RefreshToolboxUnlocksIfNeeded();
         CommandBar.NewRequested += (_, _) => NewScheme();
-        CommandBar.OpenFolderRequested += ChooseFolder_Click;
+        CommandBar.AddSchemeRequested += AddScheme_Click;
         CommandBar.SaveRequested += (_, _) => RunUiAsync(SaveCurrentSchemeAsync, "MainWindow.SaveScheme");
         CommandBar.SettingsRequested += Settings_Click;
         ToolboxPanel.SchemeOpenRequested += (_, item) => RunUiAsync(() => OpenSchemeListItemAsync(item), "MainWindow.OpenScheme");
         ToolboxPanel.SchemeDeleteRequested += (_, item) => DeleteSchemeFromToolbox(item);
+        ToolboxPanel.SchemeFileDropped += (_, filePath) => AddSchemeFileFromUserChoice(filePath);
         ToolboxPanel.ResourceActivated += (_, item) => CanvasPanel.AddRecipeNode(item.Recipe, _layoutService.Snap(new Point(260, 180)));
         ToolboxPanel.MachineActivated += (_, item) => CanvasPanel.AddMachineNode(item.Building, _layoutService.Snap(new Point(260, 180)));
         CanvasPanel.Initialize(_session, _apiClient, _calculator, _layoutService, _canvasViewModel);
@@ -143,6 +144,16 @@ public partial class MainWindow : Window
     private async Task InitializeApiAsync()
     {
         await _viewModel.InitializeAsync();
+        if (!string.IsNullOrWhiteSpace(_viewModel.LastApiStartupError))
+        {
+            MessageBox.Show(
+                this,
+                _viewModel.LastApiStartupError,
+                UiText.T("Text.ApiStartup"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
         SyncFromViewModel();
         CanvasPanel.Render();
         UpdateInspector();
@@ -194,26 +205,64 @@ public partial class MainWindow : Window
         UpdateInspector();
     }
 
-    private void ChooseFolder_Click(object? sender, EventArgs e)
+    private void AddScheme_Click(object? sender, EventArgs e)
     {
-        var dialog = new OpenFolderDialog
+        var dialog = new OpenFileDialog
         {
-            Title = UiText.T("Text.ChooseSchemeFolder"),
-            InitialDirectory = _schemeStore.FolderPath,
+            Title = UiText.T("Text.AddSchemeJson"),
+            Filter = UiText.T("Text.SchemeJsonFilter"),
+            CheckFileExists = true,
+            Multiselect = false,
         };
 
         if (dialog.ShowDialog(this) == true)
         {
-            _viewModel.SetSchemeFolder(dialog.FolderName);
-            RunUiAsync(RefreshSchemeListAsync, "MainWindow.RefreshSchemeList");
-            SetStatus(UiText.T("Status.SchemeFolderChanged"));
+            AddSchemeFileFromUserChoice(dialog.FileName);
         }
+    }
+
+    private void AddSchemeFileFromUserChoice(string filePath)
+    {
+        var importMode = ResolveSchemeImportMode(filePath);
+        if (importMode is not null)
+        {
+            RunUiAsync(() => AddSchemeFileAsync(filePath, importMode.Value), "MainWindow.AddScheme");
+        }
+    }
+
+    private SchemeImportMode? ResolveSchemeImportMode(string filePath)
+    {
+        if (!_viewModel.SchemeFileNameExists(filePath))
+        {
+            return SchemeImportMode.KeepBoth;
+        }
+
+        var result = MessageBox.Show(
+            this,
+            UiText.Format("Text.SchemeAlreadyExists", System.IO.Path.GetFileName(filePath)),
+            UiText.T("Text.AddSchemeJson"),
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Question);
+
+        return result switch
+        {
+            MessageBoxResult.Yes => SchemeImportMode.Replace,
+            MessageBoxResult.No => SchemeImportMode.KeepBoth,
+            _ => null,
+        };
+    }
+
+    private async Task AddSchemeFileAsync(string filePath, SchemeImportMode importMode)
+    {
+        await _viewModel.AddSchemeFileAsync(filePath, importMode);
+        SyncFromViewModel();
     }
 
     private void Settings_Click(object? sender, EventArgs e) =>
         RunUiAsync(async () =>
         {
             var previousLanguage = PlannerLanguages.Normalize(_settings.PlannerLanguage);
+            var previousPort = AppSettings.NormalizeApiPort(_settings.ApiPort);
             var window = new SettingsWindow(_settings)
             {
                 Owner = this,
@@ -223,17 +272,34 @@ public partial class MainWindow : Window
                 return;
             }
 
+            var previousSchemeFolder = _schemeStore.FolderPath;
             _settings = window.Settings;
             _viewModel.SaveSettings(_settings);
             var languageChanged = !string.Equals(
                 previousLanguage,
                 PlannerLanguages.Normalize(_settings.PlannerLanguage),
                 StringComparison.Ordinal);
-            if (languageChanged)
+            var portChanged = previousPort != AppSettings.NormalizeApiPort(_settings.ApiPort);
+            if (languageChanged || portChanged)
             {
                 ApplySettings();
                 _viewModel.RefreshLocalizedText();
                 await _viewModel.ReloadCatalogAsync();
+                if (!string.IsNullOrWhiteSpace(_viewModel.LastApiStartupError))
+                {
+                    MessageBox.Show(
+                        this,
+                        _viewModel.LastApiStartupError,
+                        UiText.T("Text.ApiStartup"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+            }
+
+            if (!PathUtil.SamePath(previousSchemeFolder, _schemeStore.FolderPath))
+            {
+                await RefreshSchemeListAsync();
+                SetStatus(UiText.T("Status.SchemeFolderChanged"));
             }
 
             SyncFromViewModel();

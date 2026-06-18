@@ -10,6 +10,11 @@ namespace StarRupturePlanner.Services;
 
 public sealed class LocalApiProcessManager : IApiProcessManager
 {
+    private static readonly string SourceApiProjectRelativePath = Path.Combine(
+        "src",
+        "StarRupturePlanner.Api",
+        "StarRupturePlanner.Api.csproj");
+
     private readonly IPlannerApiClient _apiClient;
     private Process? _process;
 
@@ -20,24 +25,17 @@ public sealed class LocalApiProcessManager : IApiProcessManager
 
     public async Task<string> EnsureStartedAsync(CancellationToken cancellationToken = default)
     {
-        if (await _apiClient.IsApiAvailableAsync(cancellationToken))
+        var requestedPort = _apiClient.BaseUri.Port;
+        var resolution = await ResolveStartupPortAsync(requestedPort, cancellationToken);
+        if (resolution.ApiAlreadyRunning)
         {
-            if (await IsCompatibleApiAsync(cancellationToken))
-            {
-                return "API is already running.";
-            }
-
-            StopStaleApiOnPort(_apiClient.BaseUri.Port);
-        }
-        else
-        {
-            StopStaleApiOnPort(_apiClient.BaseUri.Port);
+            return FormatStartupStatus("API is already running.", requestedPort, resolution.Port);
         }
 
-        var startInfo = CreateApiStartInfo();
+        var startInfo = CreateApiStartInfo(resolution.Port);
         if (startInfo is null)
         {
-            return "Could not find bundled API or starrupture_api beside the app. Start the API manually.";
+            return "Could not find bundled .NET API or source API project beside the app. Start the API manually.";
         }
 
         _process = Process.Start(startInfo);
@@ -49,17 +47,74 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             {
                 if (await IsCompatibleApiAsync(cancellationToken))
                 {
-                    return startInfo.FileName.EndsWith("StarRuptureApi.exe", StringComparison.OrdinalIgnoreCase)
+                    var status = IsBundledApiExecutable(startInfo.FileName)
                         ? "Started bundled API."
-                        : "Started local API.";
+                        : "Started local .NET API.";
+                    return FormatStartupStatus(status, requestedPort, resolution.Port);
                 }
             }
         }
 
-        return "Started API process, but it did not answer on port 8010.";
+        return $"Started API process, but it did not answer on port {resolution.Port}.";
     }
 
-    private static ProcessStartInfo? CreateApiStartInfo()
+    private async Task<StartupPortResolution> ResolveStartupPortAsync(
+        int requestedPort,
+        CancellationToken cancellationToken)
+    {
+        for (var port = AppSettings.NormalizeApiPort(requestedPort); port <= 65535; port++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _apiClient.ConfigurePort(port);
+
+            if (await _apiClient.IsApiAvailableAsync(cancellationToken))
+            {
+                if (await IsCompatibleApiAsync(cancellationToken))
+                {
+                    return new StartupPortResolution(port, ApiAlreadyRunning: true);
+                }
+
+                StopStaleApiOnPort(port);
+            }
+            else
+            {
+                StopStaleApiOnPort(port);
+            }
+
+            if (ListeningProcessIds(port).Count == 0)
+            {
+                return new StartupPortResolution(port, ApiAlreadyRunning: false);
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"No free API port was found at or above {requestedPort.ToString(CultureInfo.InvariantCulture)}.");
+    }
+
+    public static int FindAvailablePort(int startPort)
+    {
+        for (var port = AppSettings.NormalizeApiPort(startPort); port <= 65535; port++)
+        {
+            if (ListeningProcessIds(port).Count == 0)
+            {
+                return port;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"No free TCP port was found at or above {startPort.ToString(CultureInfo.InvariantCulture)}.");
+    }
+
+    private static string FormatStartupStatus(string status, int requestedPort, int resolvedPort)
+    {
+        return requestedPort == resolvedPort
+            ? status
+            : $"API port changed from {requestedPort.ToString(CultureInfo.InvariantCulture)} to {resolvedPort.ToString(CultureInfo.InvariantCulture)} because the configured port was busy. {status}";
+    }
+
+    private readonly record struct StartupPortResolution(int Port, bool ApiAlreadyRunning);
+
+    private static ProcessStartInfo? CreateApiStartInfo(int port)
     {
         var bundledApi = FindBundledApiExecutable();
         if (bundledApi is not null)
@@ -67,27 +122,34 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             return new ProcessStartInfo
             {
                 FileName = bundledApi,
-                Arguments = "serve --host 127.0.0.1 --port 8010",
+                Arguments = $"--port {port.ToString(CultureInfo.InvariantCulture)}",
                 WorkingDirectory = Path.GetDirectoryName(bundledApi)!,
                 CreateNoWindow = true,
                 UseShellExecute = false,
             };
         }
 
-        var repoRoot = FindRepoRoot();
-        if (repoRoot is null)
+        var sourceApiProject = FindSourceApiProject();
+        if (sourceApiProject is null)
         {
             return null;
         }
 
-        return new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
-            FileName = "python",
-            Arguments = "-m starrupture_api.main serve --host 127.0.0.1 --port 8010",
-            WorkingDirectory = repoRoot,
+            FileName = "dotnet",
+            WorkingDirectory = FindRepoRoot(Path.GetDirectoryName(sourceApiProject)) ?? Path.GetDirectoryName(sourceApiProject)!,
             CreateNoWindow = true,
             UseShellExecute = false,
         };
+        startInfo.ArgumentList.Add("run");
+        startInfo.ArgumentList.Add("--project");
+        startInfo.ArgumentList.Add(sourceApiProject);
+        startInfo.ArgumentList.Add("--no-launch-profile");
+        startInfo.ArgumentList.Add("--");
+        startInfo.ArgumentList.Add("--port");
+        startInfo.ArgumentList.Add(port.ToString(CultureInfo.InvariantCulture));
+        return startInfo;
     }
 
     private async Task<bool> IsCompatibleApiAsync(CancellationToken cancellationToken)
@@ -182,7 +244,7 @@ public sealed class LocalApiProcessManager : IApiProcessManager
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[LocalApiProcessManager] Failed to stop stale Python API process {processId}: {ex.Message}");
+                Debug.WriteLine($"[LocalApiProcessManager] Failed to stop stale API process {processId}: {ex.Message}");
                 // Best effort only. If the stale API cannot be stopped, startup
                 // will report that the replacement process never became ready.
             }
@@ -192,6 +254,7 @@ public sealed class LocalApiProcessManager : IApiProcessManager
     private static bool IsManagedApiProcess(string processName)
     {
         return processName.Contains("python", StringComparison.OrdinalIgnoreCase)
+            || processName.Contains("StarRupturePlanner.Api", StringComparison.OrdinalIgnoreCase)
             || processName.Contains("StarRuptureApi", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -263,7 +326,7 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         var directory = new DirectoryInfo(startPath ?? AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (Directory.Exists(Path.Combine(directory.FullName, "starrupture_api")))
+            if (File.Exists(Path.Combine(directory.FullName, SourceApiProjectRelativePath)))
             {
                 return directory.FullName;
             }
@@ -274,7 +337,7 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         var current = new DirectoryInfo(Environment.CurrentDirectory);
         while (current is not null)
         {
-            if (Directory.Exists(Path.Combine(current.FullName, "starrupture_api")))
+            if (File.Exists(Path.Combine(current.FullName, SourceApiProjectRelativePath)))
             {
                 return current.FullName;
             }
@@ -285,15 +348,24 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         return null;
     }
 
+    public static string? FindSourceApiProject(string? startPath = null)
+    {
+        var root = FindRepoRoot(startPath);
+        return root is null ? null : Path.Combine(root, SourceApiProjectRelativePath);
+    }
+
     public static string? FindBundledApiExecutable(string? startPath = null)
     {
         var directory = new DirectoryInfo(startPath ?? AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var apiPath = Path.Combine(directory.FullName, "api", "StarRuptureApi.exe");
-            if (File.Exists(apiPath))
+            foreach (var executableName in BundledApiExecutableNames())
             {
-                return apiPath;
+                var apiPath = Path.Combine(directory.FullName, "api", executableName);
+                if (File.Exists(apiPath))
+                {
+                    return apiPath;
+                }
             }
 
             directory = directory.Parent;
@@ -302,14 +374,23 @@ public sealed class LocalApiProcessManager : IApiProcessManager
         return null;
     }
 
+    private static bool IsBundledApiExecutable(string fileName) =>
+        BundledApiExecutableNames().Any(executableName =>
+            fileName.EndsWith(executableName, StringComparison.OrdinalIgnoreCase));
+
+    private static IReadOnlyList<string> BundledApiExecutableNames() =>
+    [
+        "StarRupturePlanner.Api.exe",
+    ];
+
     public void Dispose()
     {
-        StopOwnedProcess();
+        StopStartedProcess();
         _process?.Dispose();
         _process = null;
     }
 
-    private void StopOwnedProcess()
+    public void StopStartedProcess()
     {
         if (_process is null)
         {

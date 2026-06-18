@@ -10,6 +10,9 @@ public sealed class AppSettings
     [JsonPropertyName("planner_language")]
     public string PlannerLanguage { get; set; } = PlannerLanguages.English;
 
+    [JsonPropertyName("api_port")]
+    public int ApiPort { get; set; } = 8010;
+
     [JsonPropertyName("canvas_card_font")]
     public FontSettings CanvasCardFont { get; set; } = new()
     {
@@ -28,6 +31,11 @@ public sealed class AppSettings
 
     [JsonPropertyName("current_rail_tier_id")]
     public string? CurrentRailTierId { get; set; }
+
+    [JsonPropertyName("scheme_folder_path")]
+    public string? SchemeFolderPath { get; set; }
+
+    public static int NormalizeApiPort(int port) => port is >= 1 and <= 65535 ? port : 8010;
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]

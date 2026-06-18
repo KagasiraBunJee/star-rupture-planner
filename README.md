@@ -4,14 +4,25 @@ Convenient production planner for StarRupture. It helps keep supply chains, prod
 
 Currently the project ships as a Windows desktop planner with a bundled local API. The API also exposes an MCP server so AI agents can connect to the same production data. Later, the plan is to let MCP-connected agents help create and edit production schemes directly in the app.
 
-The repository has two main parts:
+## Download The App
+
+Most users should download the Windows installer from the [StarRupture Planner releases page](https://github.com/KagasiraBunJee/star-rupture-planner/releases).
+
+Open the latest release and download the `StarRupturePlanner-...-Installer.exe` file. The installer includes the desktop app, local API, data files, localization, and cached images, so Python is not required.
+
+The repository has three main parts:
 
 - `starrupture_api/`: Python data service that reads/writes the local SQLite dataset, exposes HTTP JSON endpoints, and mounts an MCP SSE server.
+- `src/StarRupturePlanner.Api/`: .NET 8 local API and MCP server used by packaged desktop builds.
 - `src/StarRupturePlanner/`: .NET 8 WPF desktop app for building production schemes against that local API.
 
 ## Screenshots
 
 ![Scheme builder canvas](images/scheme_builder.PNG)
+
+Canvas comment sections:
+
+![Canvas comment sections](images/comment_sections.PNG)
 
 Node suggestion helper:
 
@@ -21,43 +32,74 @@ Node suggestion helper:
 | --- | --- |
 | ![Resource and machine selector](images/resource_machine_selector.PNG) | ![Corporation level settings](images/corporation_level_settings.PNG) |
 
-## Requirements
+## Requirements For Development
 
-- Windows for the WPF desktop app.
-- .NET 8 SDK for building and running `StarRupturePlanner`.
-- Packaged desktop builds bundle the API as `api\StarRuptureApi.exe`, so users do not need Python.
-- Python 3.11+ is recommended only for source/API development.
-- Python packages used by the source API server: `uvicorn`, `starlette`, and `mcp`.
+### Installed App
 
-There is currently no checked-in Python dependency manifest. For a fresh environment:
+Most users only need:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install uvicorn starlette mcp
-```
+- Windows x64.
+- The release installer or manual extraction zip from GitHub Releases.
+
+The packaged app is self-contained. It includes:
+
+- `StarRupturePlanner.exe`, the WPF desktop planner.
+- `api\StarRupturePlanner.Api.exe`, the local .NET API and MCP server.
+- `data\`, including SQLite data, localization, transport tiers, and cached images.
+
+Users do not need to install .NET, Python, SQLite, or Node.js to run the packaged app.
+
+### Run From Source
+
+For normal source development:
+
+- Windows, because the desktop planner is WPF.
+- .NET 8 SDK.
+- The checked-in `data\` folder.
+
+Python is not required if you run the .NET API project. Python is only needed for the legacy Python API or Python tests.
+
+### Build Release Packages
+
+To build the same kind of package produced by the release workflow:
+
+- Windows x64.
+- .NET 8 SDK.
+- Inno Setup 6, only if building the `.exe` installer locally.
+- PowerShell.
+
+The GitHub Actions release workflow installs Inno Setup automatically. It sets up Python only for release-note tooling; Python is not used to build or run the packaged API.
 
 ## Data And API
 
-The Python service stores data in `data/starrupture.sqlite3` and serves cached image assets from:
+The .NET API reads `data/starrupture.sqlite3` and serves cached image assets from:
 
 - `data/assets/items`
 - `data/assets/buildings`
 
-Run the HTTP API and MCP SSE server:
+The bundled dataset/API metadata is marked for StarRupture `0.2.8`.
+
+Run the .NET HTTP API and MCP server from source:
 
 ```powershell
-python -m starrupture_api.main serve --host 127.0.0.1 --port 8010
+dotnet run --project src\StarRupturePlanner.Api\StarRupturePlanner.Api.csproj
 ```
 
-Inspect one item payload from the command line:
+The API listens on `127.0.0.1:8010` by default. Use `--port` when that port collides with another local process:
 
 ```powershell
-python -m starrupture_api.main item rotor
+dotnet run --project src\StarRupturePlanner.Api\StarRupturePlanner.Api.csproj -- --port 8020
 ```
 
-The HTTP app is a Starlette app created by `starrupture_api.http_app:create_app`. It uses one shared `ResourceService`, so HTTP routes and MCP tools read the same SQLite dataset and localization files.
+Then open an endpoint such as:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8010/api/items/rotor
+```
+
+The API and MCP tools use one shared resource service, so HTTP routes and MCP calls read the same SQLite dataset and localization files.
+
+The legacy Python API remains in `starrupture_api/` for comparison work and Python tests. It is not used by the packaged app or by the planner's source-development startup path.
 
 ## HTTP Endpoints
 
@@ -88,10 +130,13 @@ Planner endpoints are graph-oriented for the desktop app:
 
 ## MCP Server
 
-The MCP server is mounted into the same Starlette app:
+The MCP server is mounted into the same local API app:
 
-- SSE endpoint: `http://127.0.0.1:8010/mcp/sse`
-- Message endpoint: `http://127.0.0.1:8010/mcp/messages/`
+- Streamable HTTP endpoint: `http://127.0.0.1:8010/mcp`
+- Legacy SSE endpoint: `http://127.0.0.1:8010/mcp/sse`
+- Legacy message endpoint: `http://127.0.0.1:8010/mcp/message`
+
+The local MCP server does not require authorization, tokens, or API keys. It is intended for local agent sessions running on the same machine. If you change the API port in planner settings or with `--port`, use that port in the MCP URL too.
 
 Available MCP tools:
 
@@ -105,22 +150,47 @@ Use the MCP server when an AI client needs StarRupture production facts without 
 
 ## Desktop Planner
 
-Run from source:
+For source development, you can start the .NET API in one terminal:
+
+```powershell
+dotnet run --project src\StarRupturePlanner.Api\StarRupturePlanner.Api.csproj
+```
+
+Then start the WPF planner in another terminal:
 
 ```powershell
 dotnet run --project src\StarRupturePlanner\StarRupturePlanner.csproj
 ```
 
-The planner starts the local API automatically on `127.0.0.1:8010` when needed. Release packages prefer the bundled API executable:
+The planner talks to `http://127.0.0.1:8010` by default. If that API is already running, the planner uses it.
+If the configured port is busy, the planner automatically tries the next port (`8011`, then `8012`, and so on) and saves the working port for future starts.
+You can also change the local API port manually in Settings -> General -> Local API.
+
+If you start only the planner from a source checkout and no compatible API is running, the planner starts the repo-local .NET API project automatically:
 
 ```powershell
-api\StarRuptureApi.exe serve --host 127.0.0.1 --port 8010
+dotnet run --project src\StarRupturePlanner.Api\StarRupturePlanner.Api.csproj -- --port 8010
 ```
 
-Source/development layouts fall back to searching upward from the app directory and current working directory until `starrupture_api` is found, then start:
+It does not start the legacy Python API.
+
+For Visual Studio, open `StarRupturePlanner.sln`. It contains both projects:
+
+- `StarRupturePlanner`: the WPF planner.
+- `StarRupturePlanner.Api`: the .NET API and MCP server.
+
+You can set `StarRupturePlanner` as the startup project; it will start the .NET API itself when needed. If you want to debug both processes from Visual Studio at the same time, configure multiple startup projects and start both `StarRupturePlanner.Api` and `StarRupturePlanner`.
+
+Release packages start the bundled .NET API automatically when needed:
 
 ```powershell
-python -m starrupture_api.main serve --host 127.0.0.1 --port 8010
+api\StarRupturePlanner.Api.exe
+```
+
+You can also run the bundled API without the desktop planner:
+
+```powershell
+api\StarRupturePlanner.Api.exe --port 8020
 ```
 
 If another managed API process is already listening on that port but does not match the expected current catalog shape, the app tries to stop that stale process and start the bundled or repo-local API.
@@ -144,26 +214,39 @@ The Settings window controls planner language, dark/light/system theme, canvas-c
 
 ## Build From Sources
 
-Restore and build the WPF app:
+Restore the solution:
 
 ```powershell
-dotnet restore src\StarRupturePlanner\StarRupturePlanner.csproj
-dotnet build src\StarRupturePlanner\StarRupturePlanner.csproj
+dotnet restore StarRupturePlanner.sln
 ```
 
-Build release:
+Build the solution:
 
 ```powershell
-dotnet build src\StarRupturePlanner\StarRupturePlanner.csproj -c Release
+dotnet build StarRupturePlanner.sln
 ```
 
-Publish a self-contained Windows x64 build:
+Build release configurations:
 
 ```powershell
-dotnet publish src\StarRupturePlanner\StarRupturePlanner.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish\StarRupturePlanner-win-x64
+dotnet build StarRupturePlanner.sln -c Release
 ```
 
-Packaged desktop builds include a bundled API executable. Local source publishes still need Python if you run the published WPF app outside the packaged app layout.
+Publish the desktop app and the bundled API into a package-like layout:
+
+```powershell
+dotnet publish src\StarRupturePlanner\StarRupturePlanner.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish\StarRupturePlanner-win-x64
+dotnet publish src\StarRupturePlanner.Api\StarRupturePlanner.Api.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish\StarRupturePlanner-win-x64\api
+Copy-Item -LiteralPath data -Destination publish\StarRupturePlanner-win-x64 -Recurse -Force
+```
+
+After publishing, the layout should contain:
+
+- `publish\StarRupturePlanner-win-x64\StarRupturePlanner.exe`
+- `publish\StarRupturePlanner-win-x64\api\StarRupturePlanner.Api.exe`
+- `publish\StarRupturePlanner-win-x64\data\`
+
+To build the installer locally, install Inno Setup 6 and run the release packaging steps in `.github\workflows\manual-wpf-release.yml`, or trigger the GitHub Actions workflow.
 
 ## Tests
 
@@ -178,3 +261,7 @@ Run the .NET planner test harness:
 ```powershell
 dotnet run --project tests\StarRupturePlanner.Tests\StarRupturePlanner.Tests.csproj
 ```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).

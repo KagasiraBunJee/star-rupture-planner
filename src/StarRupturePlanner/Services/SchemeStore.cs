@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using StarRupturePlanner.Models;
@@ -71,6 +72,68 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         return document.FilePath;
     }
 
+    public bool SchemeFileNameExists(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return false;
+        }
+
+        var sourcePath = Path.GetFullPath(filePath);
+        var destinationPath = Path.Combine(FolderPath, Path.GetFileName(sourcePath));
+        return File.Exists(destinationPath) && !PathUtil.SamePath(sourcePath, destinationPath);
+    }
+
+    public SchemeListItem ImportSchemeFile(string filePath, SchemeImportMode importMode = SchemeImportMode.KeepBoth)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("Scheme file path is required.", nameof(filePath));
+        }
+
+        var sourcePath = Path.GetFullPath(filePath);
+        if (!File.Exists(sourcePath))
+        {
+            throw new FileNotFoundException("Scheme file was not found.", sourcePath);
+        }
+
+        if (!string.Equals(Path.GetExtension(sourcePath), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only scheme JSON files can be added.");
+        }
+
+        ValidateSchemeJsonFile(sourcePath);
+        var document = Load(sourcePath);
+        if (string.IsNullOrWhiteSpace(document.Name))
+        {
+            document.Name = Path.GetFileNameWithoutExtension(sourcePath);
+        }
+
+        Directory.CreateDirectory(FolderPath);
+        var defaultDestinationPath = Path.Combine(FolderPath, Path.GetFileName(sourcePath));
+        var destinationPath = importMode == SchemeImportMode.Replace
+            ? defaultDestinationPath
+            : NextAvailablePath(defaultDestinationPath);
+        if (PathUtil.SamePath(sourcePath, destinationPath))
+        {
+            return new SchemeListItem
+            {
+                FilePath = sourcePath,
+                Name = Path.GetFileNameWithoutExtension(sourcePath),
+                Outputs = ReadSchemeOutputs(sourcePath),
+            };
+        }
+
+        document.FilePath = destinationPath;
+        Save(document);
+        return new SchemeListItem
+        {
+            FilePath = destinationPath,
+            Name = Path.GetFileNameWithoutExtension(destinationPath),
+            Outputs = ReadSchemeOutputs(destinationPath),
+        };
+    }
+
     public void Delete(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
@@ -107,6 +170,81 @@ public sealed class SchemeStore : DocumentStoreBase<SchemeDocument, SchemeListIt
         var invalid = Path.GetInvalidFileNameChars();
         var cleaned = new string(name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()).Trim();
         return string.IsNullOrWhiteSpace(cleaned) ? "Untitled" : cleaned;
+    }
+
+    private static string NextAvailablePath(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return path;
+        }
+
+        var folder = Path.GetDirectoryName(path) ?? "";
+        var name = Path.GetFileNameWithoutExtension(path);
+        var extension = Path.GetExtension(path);
+        for (var index = 2; ; index++)
+        {
+            var candidate = Path.Combine(folder, $"{name} ({index}){extension}");
+            if (!File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+    }
+
+    private static void ValidateSchemeJsonFile(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var json = JsonDocument.Parse(stream);
+        var root = json.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("Selected JSON file is not a StarRupture scheme.");
+        }
+
+        var hasSchemeProperty =
+            HasProperty(root, "version")
+            || HasProperty(root, "name")
+            || HasProperty(root, "canvas")
+            || HasProperty(root, "nodes")
+            || HasProperty(root, "edges")
+            || HasProperty(root, "comments")
+            || HasProperty(root, "corporation_levels")
+            || HasProperty(root, "selected_rail_tier_id");
+        if (!hasSchemeProperty)
+        {
+            throw new InvalidOperationException("Selected JSON file is not a StarRupture scheme.");
+        }
+
+        RequireKindIfPresent(root, "canvas", JsonValueKind.Object);
+        RequireKindIfPresent(root, "nodes", JsonValueKind.Array);
+        RequireKindIfPresent(root, "edges", JsonValueKind.Array);
+        RequireKindIfPresent(root, "comments", JsonValueKind.Array);
+        RequireKindIfPresent(root, "corporation_levels", JsonValueKind.Object);
+    }
+
+    private static bool HasProperty(JsonElement element, string propertyName)
+    {
+        return element.EnumerateObject()
+            .Any(property => string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void RequireKindIfPresent(JsonElement element, string propertyName, JsonValueKind expectedKind)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (!string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (property.Value.ValueKind != expectedKind)
+            {
+                throw new InvalidOperationException("Selected JSON file is not a valid StarRupture scheme.");
+            }
+
+            return;
+        }
     }
 
     private static List<SchemeListOutputItem> ReadSchemeOutputs(string path)

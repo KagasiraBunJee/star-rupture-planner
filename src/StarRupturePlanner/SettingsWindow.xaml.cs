@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.Win32;
 using StarRupturePlanner.Models;
 using StarRupturePlanner.Services;
 
@@ -52,12 +53,15 @@ public partial class SettingsWindow : Window
         };
         LanguagePicker.SelectedValue = PlannerLanguages.Normalize(Settings.PlannerLanguage);
 
+        ApiPortBox.Text = AppSettings.NormalizeApiPort(Settings.ApiPort).ToString(CultureInfo.InvariantCulture);
+        SchemeFolderBox.Text = NormalizeSchemeFolderPath(Settings.SchemeFolderPath);
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         if (!TryReadFont(CanvasFontFamilyPicker, CanvasFontSizeBox, CanvasFontColorBox, out var canvasFont)
-            || !TryReadFont(LeftFontFamilyPicker, LeftFontSizeBox, LeftFontColorBox, out var leftFont))
+            || !TryReadFont(LeftFontFamilyPicker, LeftFontSizeBox, LeftFontColorBox, out var leftFont)
+            || !TryReadPort(out var apiPort))
         {
             return;
         }
@@ -66,7 +70,40 @@ public partial class SettingsWindow : Window
         Settings.LeftBarListFont = leftFont;
         Settings.Theme = ThemePicker.SelectedValue is AppTheme theme ? theme : AppTheme.System;
         Settings.PlannerLanguage = LanguagePicker.SelectedValue as string ?? PlannerLanguages.English;
+        Settings.ApiPort = apiPort;
+        Settings.SchemeFolderPath = NormalizeSchemeFolderPath(SchemeFolderBox.Text);
         DialogResult = true;
+    }
+
+    private void ChooseSchemeFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = UiText.T("Text.ChooseSchemeFolder"),
+            InitialDirectory = NormalizeSchemeFolderPath(SchemeFolderBox.Text),
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            SchemeFolderBox.Text = dialog.FolderName;
+        }
+    }
+
+    private void DefaultSchemeFolder_Click(object sender, RoutedEventArgs e)
+    {
+        SchemeFolderBox.Text = SchemeStore.DefaultFolderPath();
+    }
+
+    private bool TryReadPort(out int apiPort)
+    {
+        if (!int.TryParse(ApiPortBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out apiPort)
+            || apiPort is < 1 or > 65535)
+        {
+            MessageBox.Show(UiText.T("Text.ApiPortRange"), UiText.T("Text.InvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
     }
 
     private static bool TryReadFont(
@@ -118,7 +155,9 @@ public partial class SettingsWindow : Window
         {
             Theme = settings.Theme,
             PlannerLanguage = PlannerLanguages.Normalize(settings.PlannerLanguage),
+            ApiPort = AppSettings.NormalizeApiPort(settings.ApiPort),
             CurrentRailTierId = settings.CurrentRailTierId,
+            SchemeFolderPath = NormalizeSchemeFolderPath(settings.SchemeFolderPath),
             CanvasCardFont = new FontSettings
             {
                 Family = settings.CanvasCardFont.Family,
@@ -133,6 +172,9 @@ public partial class SettingsWindow : Window
             },
         };
     }
+
+    private static string NormalizeSchemeFolderPath(string? folderPath) =>
+        string.IsNullOrWhiteSpace(folderPath) ? SchemeStore.DefaultFolderPath() : folderPath.Trim();
 
     private sealed record ThemeOption(string Label, AppTheme Value)
     {

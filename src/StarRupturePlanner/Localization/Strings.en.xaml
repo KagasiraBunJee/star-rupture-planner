@@ -7,6 +7,9 @@
     <sys:String x:Key="Ui.Search.Placeholder">Search items, recipes, machines...</sys:String>
     <sys:String x:Key="Ui.Command.New">New</sys:String>
     <sys:String x:Key="Ui.Command.Open">Open</sys:String>
+    <sys:String x:Key="Ui.Command.Add">Add</sys:String>
+    <sys:String x:Key="Ui.Command.Choose">Choose</sys:String>
+    <sys:String x:Key="Ui.Command.Default">Default</sys:String>
     <sys:String x:Key="Ui.Command.Save">Save</sys:String>
     <sys:String x:Key="Ui.Command.Cancel">Cancel</sys:String>
     <sys:String x:Key="Ui.Command.Export">Export</sys:String>
@@ -57,6 +60,10 @@
     <sys:String x:Key="Ui.Settings.InGame">In game</sys:String>
     <sys:String x:Key="Ui.Settings.Theme">Theme</sys:String>
     <sys:String x:Key="Ui.Settings.Language">Planner language</sys:String>
+    <sys:String x:Key="Ui.Settings.SchemeFolder">Scheme folder</sys:String>
+    <sys:String x:Key="Ui.Settings.Api">Local API</sys:String>
+    <sys:String x:Key="Ui.Settings.Port">Port</sys:String>
+    <sys:String x:Key="Ui.Settings.ApiPortNote">Default is 8010. Change this if another local app already uses that port.</sys:String>
     <sys:String x:Key="Ui.Settings.CanvasFont">Canvas card font</sys:String>
     <sys:String x:Key="Ui.Settings.LeftFont">Left bar list font</sys:String>
     <sys:String x:Key="Ui.Settings.Family">Family</sys:String>
@@ -141,9 +148,14 @@
     <sys:String x:Key="Ui.Text.LanguageUkrainian">Ukrainian</sys:String>
     <sys:String x:Key="Ui.Text.SelectFontFamily">Select a font family.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidSettings">Invalid settings</sys:String>
+    <sys:String x:Key="Ui.Text.ApiStartup">API startup</sys:String>
     <sys:String x:Key="Ui.Text.FontSizeRange">Font size must be between 8 and 32.</sys:String>
+    <sys:String x:Key="Ui.Text.ApiPortRange">API port must be a number from 1 to 65535.</sys:String>
     <sys:String x:Key="Ui.Text.InvalidWpfColor">Color must be a valid WPF color, for example #F4F0E8.</sys:String>
     <sys:String x:Key="Ui.Text.ChooseSchemeFolder">Choose StarRupture scheme folder</sys:String>
+    <sys:String x:Key="Ui.Text.AddSchemeJson">Add scheme JSON</sys:String>
+    <sys:String x:Key="Ui.Text.SchemeJsonFilter">Scheme JSON (*.json)|*.json</sys:String>
+    <sys:String x:Key="Ui.Text.SchemeAlreadyExists">A scheme named &quot;{0}&quot; already exists. Choose Yes to replace it, No to keep both, or Cancel to stop.</sys:String>
     <sys:String x:Key="Ui.Status.StartingApi">Starting local API...</sys:String>
     <sys:String x:Key="Ui.Status.LoadedRecipes">Loaded {0} recipes.</sys:String>
     <sys:String x:Key="Ui.Status.ApiStartupFailed">API startup failed: {0}</sys:String>
@@ -165,6 +177,8 @@
     <sys:String x:Key="Ui.Status.SchemeHasNoMarkedOutputs">Scheme &quot;{0}&quot; has no marked outputs.</sys:String>
     <sys:String x:Key="Ui.Status.SchemeOutputsUnavailable">Scheme &quot;{0}&quot; outputs are not available in the current catalog.</sys:String>
     <sys:String x:Key="Ui.Status.AddedBlueprintSource">Added blueprint source from {0} with {1} outputs.</sys:String>
+    <sys:String x:Key="Ui.Status.AddedScheme">Added scheme {0}.</sys:String>
+    <sys:String x:Key="Ui.Status.CouldNotAddScheme">Could not add scheme: {0}</sys:String>
     <sys:String x:Key="Ui.Status.SchemeFolderChanged">Scheme folder changed.</sys:String>
     <sys:String x:Key="Ui.Status.ResourceNotAvailableForConnection">This resource {0}</sys:String>
     <sys:String x:Key="Ui.Status.PortsNotCompatible">Ports are not compatible.</sys:String>
