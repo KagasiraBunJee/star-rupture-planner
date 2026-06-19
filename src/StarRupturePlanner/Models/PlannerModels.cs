@@ -272,3 +272,49 @@ public sealed class SuggestionResponse
     [JsonPropertyName("suggestions")]
     public List<RecipeInfo> Suggestions { get; set; } = [];
 }
+
+public sealed class PlannerSuggestionItem
+{
+    public PlannerSuggestionItemKind Kind { get; set; } = PlannerSuggestionItemKind.NewMachine;
+
+    public string Header { get; set; } = "";
+
+    public RecipeInfo? Recipe { get; set; }
+
+    public string ExistingNodeId { get; set; } = "";
+
+    public string ExistingPortDirection { get; set; } = "";
+
+    public string ItemId { get; set; } = "";
+
+    public string ImageUrl { get; set; } = "";
+
+    public string Title { get; set; } = "";
+
+    public string Subtitle { get; set; } = "";
+
+    public string Detail { get; set; } = "";
+
+    public double MaxProductionPerMinute { get; set; }
+
+    public double FreePerMinute { get; set; }
+
+    public double RequiredPerMinute { get; set; }
+
+    public bool HasShortageRisk { get; set; }
+
+    public bool IsHeader => Kind == PlannerSuggestionItemKind.Header;
+
+    public bool IsExistingMachine => Kind == PlannerSuggestionItemKind.ExistingMachine;
+
+    public bool IsNewMachine => Kind == PlannerSuggestionItemKind.NewMachine;
+
+    public bool IsSelectable => !IsHeader;
+}
+
+public enum PlannerSuggestionItemKind
+{
+    Header = 0,
+    ExistingMachine = 1,
+    NewMachine = 2,
+}

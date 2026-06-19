@@ -20,6 +20,8 @@ var tests = new (string Name, Action Body)[]
     ("High priority consumer is satisfied first", HighPriorityConsumerIsSatisfiedFirst),
     ("Same priority redistributes capped demand", SamePriorityRedistributesCappedDemand),
     ("Shortage marks edge and creates alert", ShortageMarksEdgeAndCreatesAlert),
+    ("Existing producer suggestions use free connected capacity", ExistingProducerSuggestionsUseFreeConnectedCapacity),
+    ("Existing suggestions skip duplicate and self candidates", ExistingSuggestionsSkipDuplicateAndSelfCandidates),
     ("Connection compatibility requires matching item", ConnectionCompatibilityRequiresMatchingItem),
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
@@ -522,6 +524,106 @@ static void ShortageMarksEdgeAndCreatesAlert()
 
     AssertTrue(analysis.ShortEdges.Contains("edge-short"));
     AssertEqual(1, analysis.Alerts.Count);
+}
+
+static void ExistingProducerSuggestionsUseFreeConnectedCapacity()
+{
+    var sourceRecipe = SourceRecipe(120);
+    var existingConsumerRecipe = ConsumerRecipe("existing", "Existing Consumer", 40);
+    var targetRecipe = ConsumerRecipe("target", "Target Consumer", 60);
+    var catalog = new PlannerCatalog { Recipes = [sourceRecipe, existingConsumerRecipe, targetRecipe] };
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "existing", SelectedRecipeKey = existingConsumerRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-existing",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "existing",
+                TargetItemId = "part",
+            },
+        ],
+    };
+
+    IPlannerCalculator calculator = new PlannerCalculator();
+    var analysis = ProductionAnalysisService.Analyze(scheme, catalog, calculator);
+    var suggestions = PlannerSuggestionService.ExistingMachineSuggestions(
+        scheme,
+        catalog,
+        analysis,
+        calculator,
+        "target",
+        "input",
+        "part");
+
+    var sourceSuggestion = suggestions.Single(item => item.ExistingNodeId == "source");
+    AssertEqual(120d, sourceSuggestion.MaxProductionPerMinute);
+    AssertEqual(80d, sourceSuggestion.FreePerMinute);
+    AssertEqual(60d, sourceSuggestion.RequiredPerMinute);
+    AssertFalse(sourceSuggestion.HasShortageRisk);
+
+    targetRecipe.Inputs[0].QuantityPerMinute = 90;
+    analysis = ProductionAnalysisService.Analyze(scheme, catalog, calculator);
+    sourceSuggestion = PlannerSuggestionService.ExistingMachineSuggestions(
+            scheme,
+            catalog,
+            analysis,
+            calculator,
+            "target",
+            "input",
+            "part")
+        .Single(item => item.ExistingNodeId == "source");
+    AssertEqual(80d, sourceSuggestion.FreePerMinute);
+    AssertEqual(90d, sourceSuggestion.RequiredPerMinute);
+    AssertTrue(sourceSuggestion.HasShortageRisk);
+}
+
+static void ExistingSuggestionsSkipDuplicateAndSelfCandidates()
+{
+    var sourceRecipe = SourceRecipe(120);
+    var targetRecipe = ConsumerRecipe("target", "Target Consumer", 60);
+    var catalog = new PlannerCatalog { Recipes = [sourceRecipe, targetRecipe] };
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-target",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "target",
+                TargetItemId = "part",
+            },
+        ],
+    };
+
+    IPlannerCalculator calculator = new PlannerCalculator();
+    var analysis = ProductionAnalysisService.Analyze(scheme, catalog, calculator);
+    var suggestions = PlannerSuggestionService.ExistingMachineSuggestions(
+        scheme,
+        catalog,
+        analysis,
+        calculator,
+        "target",
+        "input",
+        "part");
+
+    AssertFalse(suggestions.Any(item => item.ExistingNodeId == "source"));
+    AssertFalse(suggestions.Any(item => item.ExistingNodeId == "target"));
 }
 
 static void ConnectionCompatibilityRequiresMatchingItem()
