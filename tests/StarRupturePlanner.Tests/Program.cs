@@ -27,6 +27,7 @@ var tests = new (string Name, Action Body)[]
     ("Connection compatibility requires matching item", ConnectionCompatibilityRequiresMatchingItem),
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
+    ("Canvas autoscroll ramps near viewport edges", CanvasAutoScrollRampsNearViewportEdges),
     ("Scheme serialization round trips", SchemeSerializationRoundTrips),
     ("Port order serializes and normalizes", PortOrderSerializesAndNormalizes),
     ("Scheme store deletes saved schemes", SchemeStoreDeletesSavedSchemes),
@@ -733,6 +734,26 @@ static void CanvasLayoutSnapsToGrid()
     var snapped = layout.Snap(new System.Windows.Point(37, 59));
     AssertEqual(48d, snapped.X);
     AssertEqual(48d, snapped.Y);
+}
+
+static void CanvasAutoScrollRampsNearViewportEdges()
+{
+    var size = new System.Windows.Size(1000, 800);
+    var center = CanvasAutoScrollService.TranslateDelta(new System.Windows.Point(500, 400), size, 1);
+    AssertEqual(0d, center.X);
+    AssertEqual(0d, center.Y);
+
+    var nearLeft = CanvasAutoScrollService.TranslateDelta(new System.Windows.Point(40, 400), size, 1);
+    var atLeft = CanvasAutoScrollService.TranslateDelta(new System.Windows.Point(0, 400), size, 1);
+    var outsideLeft = CanvasAutoScrollService.TranslateDelta(new System.Windows.Point(-40, 400), size, 1);
+    AssertTrue(nearLeft.X > 0);
+    AssertTrue(atLeft.X > nearLeft.X);
+    AssertEqual(CanvasAutoScrollService.MaxPixelsPerSecond, outsideLeft.X);
+
+    var nearRight = CanvasAutoScrollService.TranslateDelta(new System.Windows.Point(960, 400), size, 1);
+    var outsideBottom = CanvasAutoScrollService.TranslateDelta(new System.Windows.Point(500, 840), size, 1);
+    AssertTrue(nearRight.X < 0);
+    AssertEqual(-CanvasAutoScrollService.MaxPixelsPerSecond, outsideBottom.Y);
 }
 
 static void SchemeSerializationRoundTrips()
