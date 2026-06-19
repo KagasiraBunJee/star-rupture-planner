@@ -182,16 +182,18 @@ When changing planner behavior, look for existing logic in `PlannerCalculator`, 
 
 ## Git Workflow
 
-- Every new change must be made on a separate branch.
-- Branch names must start with a change-type prefix followed by a short kebab-case description:
-  - `feat/short-context` for new features.
-  - `fix/short-context` for bug fixes.
-  - `refactor/short-context` for refactoring without behavior changes.
-  - `chore/short-context` for internal maintenance, dependency updates, version bumps, and housekeeping.
-  - `docs/short-context` for documentation-only changes.
-  - `test/short-context` for test-only changes.
-  - `build/short-context` for build or packaging changes.
-  - `ci/short-context` for workflow changes.
+- Every task must have a Linear issue before work starts. If the requested task does not already have one, create it in Linear, assign it to `me`, add labels based on the change context, and attach it to the relevant Planner project/milestone when known.
+- Move the Linear issue to `In Progress` when implementation starts, to `In Review` when the branch is pushed and ready for review, and to `Done` only after the PR has merged.
+- Every new change must be made on a separate branch unless the user explicitly asks to update an existing integration branch.
+- Branch names must start with a change-type prefix, then the lowercase Linear issue id, then a short kebab-case description:
+  - `feat/sta-11/short-context` for new features.
+  - `fix/sta-12/short-context` for bug fixes.
+  - `refactor/sta-13/short-context` for refactoring without behavior changes.
+  - `chore/sta-14/short-context` for internal maintenance, dependency updates, version bumps, and housekeeping.
+  - `docs/sta-15/short-context` for documentation-only changes.
+  - `test/sta-16/short-context` for test-only changes.
+  - `build/sta-17/short-context` for build or packaging changes.
+  - `ci/sta-18/short-context` for workflow changes.
 - Commit messages must use the same conventional prefix style, for example `feat: add scheme output picker`, `fix: handle stale api process`, `refactor: simplify canvas routing`, `docs: update agent workflow`.
 - Keep commits focused. Do not bundle unrelated app, data, and documentation work into one commit.
 - The default PR target branch is `develop` unless the user says otherwise.
