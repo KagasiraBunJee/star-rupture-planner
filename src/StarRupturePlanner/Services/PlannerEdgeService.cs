@@ -124,6 +124,72 @@ public static class PlannerEdgeService
         return string.Join("\n", lines);
     }
 
+    public static IReadOnlyList<SchemeEdge> ConnectedEdgesForPort(
+        SchemeDocument scheme,
+        string nodeId,
+        string direction,
+        string itemId)
+    {
+        return direction == "input"
+            ? scheme.Edges
+                .Where(edge => edge.TargetNodeId == nodeId && edge.TargetItemId == itemId)
+                .ToList()
+            : scheme.Edges
+                .Where(edge => edge.SourceNodeId == nodeId && edge.SourceItemId == itemId)
+                .ToList();
+    }
+
+    public static IReadOnlyList<ConnectionMenuItemInfo> ConnectionMenuItemsForPort(
+        SchemeDocument scheme,
+        PlannerCatalog catalog,
+        IPlannerCalculator calculator,
+        string nodeId,
+        string direction,
+        string itemId,
+        ProductionAnalysisResult? analysis = null)
+    {
+        return ConnectedEdgesForPort(scheme, nodeId, direction, itemId)
+            .Select(edge => ConnectionMenuItemForEdge(scheme, catalog, calculator, edge, direction, analysis))
+            .Where(item => item is not null)
+            .Select(item => item!)
+            .ToList();
+    }
+
+    private static ConnectionMenuItemInfo? ConnectionMenuItemForEdge(
+        SchemeDocument scheme,
+        PlannerCatalog catalog,
+        IPlannerCalculator calculator,
+        SchemeEdge edge,
+        string portDirection,
+        ProductionAnalysisResult? analysis)
+    {
+        var source = scheme.Nodes.FirstOrDefault(node => node.Id == edge.SourceNodeId);
+        var target = scheme.Nodes.FirstOrDefault(node => node.Id == edge.TargetNodeId);
+        if (source is null && target is null)
+        {
+            return null;
+        }
+
+        var sourceOutput = OutputForNode(catalog, source, edge.SourceItemId);
+        var targetRecipe = RecipeForNode(catalog, target);
+        var input = targetRecipe?.Inputs.FirstOrDefault(item => item.ItemId == edge.TargetItemId);
+        var itemName = sourceOutput?.Name ?? input?.Name ?? edge.SourceItemId;
+        var rate = analysis?.EdgeDeliveries.GetValueOrDefault(edge.Id)
+            ?? sourceOutput?.RatePerMinute
+            ?? 0;
+        var oppositeNode = portDirection == "input" ? source : target;
+        var oppositeName = oppositeNode is null
+            ? portDirection == "input" ? edge.SourceNodeId : edge.TargetNodeId
+            : NodeName(catalog, oppositeNode);
+
+        return new ConnectionMenuItemInfo(
+            edge.Id,
+            oppositeName,
+            itemName,
+            rate,
+            $"{oppositeName} - {itemName} {rate:g}/min");
+    }
+
     private static FlowMetrics ComputeFlow(
         SchemeDocument scheme,
         PlannerCatalog catalog,
@@ -191,14 +257,19 @@ public static class PlannerEdgeService
 
     public static string SourceNodeName(PlannerCatalog catalog, SchemeNode source)
     {
-        if (source.NodeType == SchemeNodeType.BlueprintSource)
+        return NodeName(catalog, source);
+    }
+
+    public static string NodeName(PlannerCatalog catalog, SchemeNode node)
+    {
+        if (node.NodeType == SchemeNodeType.BlueprintSource)
         {
-            return string.IsNullOrWhiteSpace(source.SourceSchemeName) ? "Blueprint source" : source.SourceSchemeName;
+            return string.IsNullOrWhiteSpace(node.SourceSchemeName) ? "Blueprint source" : node.SourceSchemeName;
         }
 
-        var recipe = RecipeForNode(catalog, source);
-        var building = BuildingForNode(catalog, source);
-        return recipe?.BuildingName ?? building?.Name ?? source.BuildingId;
+        var recipe = RecipeForNode(catalog, node);
+        var building = BuildingForNode(catalog, node);
+        return recipe?.BuildingName ?? building?.Name ?? node.BuildingId;
     }
 
     public static BuildingInfo? BuildingForNode(PlannerCatalog catalog, SchemeNode? node)
@@ -237,3 +308,10 @@ public sealed record SourceOutputInfo(
     string ItemId,
     string Name,
     double RatePerMinute);
+
+public sealed record ConnectionMenuItemInfo(
+    string EdgeId,
+    string OppositeNodeName,
+    string ItemName,
+    double RatePerMinute,
+    string DisplayName);

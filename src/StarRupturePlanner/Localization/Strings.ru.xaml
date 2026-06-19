@@ -132,6 +132,8 @@
     <sys:String x:Key="Ui.Text.OnlyOutput">Только выход</sys:String>
     <sys:String x:Key="Ui.Text.SchemeOutput">Выход схемы</sys:String>
     <sys:String x:Key="Ui.Text.Surplus">Излишек +{0:g}/мин</sys:String>
+    <sys:String x:Key="Ui.Text.RemoveConnection">Удалить соединение</sys:String>
+    <sys:String x:Key="Ui.Text.RemoveAllConnections">Удалить все соединения</sys:String>
     <sys:String x:Key="Ui.Label.Surplus">Излишек</sys:String>
     <sys:String x:Key="Ui.Text.NoSchemeOutputsMarked">Выходы схемы не отмечены</sys:String>
     <sys:String x:Key="Ui.Text.Comment">Комментарий</sys:String>
@@ -184,6 +186,7 @@
     <sys:String x:Key="Ui.Status.PortsNotCompatible">Порты несовместимы.</sys:String>
     <sys:String x:Key="Ui.Status.ConnectionAlreadyExists">Соединение уже существует.</sys:String>
     <sys:String x:Key="Ui.Status.ConnectedMachines">Машины соединены.</sys:String>
+    <sys:String x:Key="Ui.Status.DisconnectedConnections">Удалено соединений: {0}.</sys:String>
     <sys:String x:Key="Ui.Status.NoCompatibleMachines">Совместимые машины не найдены.</sys:String>
     <sys:String x:Key="Ui.Status.FoundCompatibleMachines">Найдено совместимых машин: {0}.</sys:String>
     <sys:String x:Key="Ui.Status.CouldNotLoadSuggestions">Не удалось загрузить предложения: {0}</sys:String>

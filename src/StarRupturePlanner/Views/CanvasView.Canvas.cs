@@ -1034,6 +1034,7 @@ public partial class CanvasView
         {
             dot.PreviewMouseLeftButtonDown += Port_MouseLeftButtonDown;
         }
+        dot.PreviewMouseRightButtonDown += Port_MouseRightButtonDown;
         _portViews[portReference] = dot;
 
         var info = new StackPanel
@@ -2302,6 +2303,60 @@ public partial class CanvasView
         e.Handled = true;
     }
 
+    private void Port_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement handle || handle.Tag is not PortReference port)
+        {
+            return;
+        }
+
+        var items = PlannerEdgeService.ConnectionMenuItemsForPort(
+            _scheme,
+            _catalog,
+            _calculator,
+            port.NodeId,
+            port.Direction,
+            port.ItemId,
+            _productionAnalysis);
+        if (items.Count == 0)
+        {
+            handle.ContextMenu = null;
+            e.Handled = true;
+            return;
+        }
+
+        FocusCanvasViewport();
+        var menu = new ContextMenu
+        {
+            PlacementTarget = handle,
+        };
+
+        foreach (var item in items)
+        {
+            var edgeId = item.EdgeId;
+            var menuItem = new MenuItem
+            {
+                Header = item.DisplayName,
+                ToolTip = UiText.T("Text.RemoveConnection"),
+            };
+            menuItem.Click += (_, _) => DisconnectEdgesById([edgeId]);
+            menu.Items.Add(menuItem);
+        }
+
+        menu.Items.Add(new Separator());
+        var allEdgeIds = items.Select(item => item.EdgeId).ToList();
+        var removeAll = new MenuItem
+        {
+            Header = UiText.T("Text.RemoveAllConnections"),
+        };
+        removeAll.Click += (_, _) => DisconnectEdgesById(allEdgeIds);
+        menu.Items.Add(removeAll);
+
+        handle.ContextMenu = menu;
+        menu.IsOpen = true;
+        e.Handled = true;
+    }
+
     private void PlannerCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource == GridInputLayer)
@@ -2761,6 +2816,7 @@ public partial class CanvasView
         }
 
         var changed = false;
+        var disconnectedEdges = 0;
         foreach (var group in routePointsToDelete.GroupBy(reference => reference.EdgeId))
         {
             var edge = _scheme.Edges.FirstOrDefault(item => item.Id == group.Key);
@@ -2781,6 +2837,12 @@ public partial class CanvasView
             }
         }
 
+        if (routePointsToDelete.Count == 0 && _selectedEdge is not null)
+        {
+            disconnectedEdges = _scheme.Edges.RemoveAll(edge => edge.Id == _selectedEdge.Id);
+            changed |= disconnectedEdges > 0;
+        }
+
         if (nodeIdsToDelete.Count > 0)
         {
             _scheme.Nodes.RemoveAll(node => nodeIdsToDelete.Contains(node.Id));
@@ -2799,7 +2861,31 @@ public partial class CanvasView
             ClearSelection();
             RenderCanvas();
             UpdateInspector();
+            if (disconnectedEdges > 0)
+            {
+                SetStatus(UiText.Format("Status.DisconnectedConnections", disconnectedEdges));
+            }
         }
+    }
+
+    private void DisconnectEdgesById(IEnumerable<string> edgeIds)
+    {
+        var ids = edgeIds.ToHashSet(StringComparer.Ordinal);
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        var removed = _scheme.Edges.RemoveAll(edge => ids.Contains(edge.Id));
+        if (removed == 0)
+        {
+            return;
+        }
+
+        ClearSelection();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus(UiText.Format("Status.DisconnectedConnections", removed));
     }
 
 }

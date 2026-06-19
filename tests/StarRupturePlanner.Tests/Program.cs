@@ -40,6 +40,8 @@ var tests = new (string Name, Action Body)[]
     ("Blueprint source output feeds consumers", BlueprintSourceOutputFeedsConsumers),
     ("Canvas geometry routes through divider points", CanvasGeometryRoutesThroughDividerPoints),
     ("Edge label includes transport tier", EdgeLabelIncludesTransportTier),
+    ("Connection menu labels input source edge", ConnectionMenuLabelsInputSourceEdge),
+    ("Connection menu labels output consumer edges", ConnectionMenuLabelsOutputConsumerEdges),
     ("Scheme serialization round trips corporation settings", SchemeSerializationRoundTripsCorporationSettings),
     ("Corporation defaults unlock training rail availability", CorporationDefaultsUnlockTrainingRailAvailability),
     ("Locked building is hidden until corporation level allows it", LockedBuildingRequiresCorporationLevel),
@@ -1115,6 +1117,119 @@ static void EdgeLabelIncludesTransportTier()
     AssertTrue(detail.Contains("30 / 20 /min", StringComparison.Ordinal));
     AssertTrue(detail.Contains("Rail tier 1", StringComparison.Ordinal));
     AssertTrue(detail.Contains("120/min capacity (OK)", StringComparison.Ordinal));
+}
+
+static void ConnectionMenuLabelsInputSourceEdge()
+{
+    var sourceRecipe = new RecipeInfo
+    {
+        RecipeKey = "smelter:calcium-block",
+        BuildingId = "smelter",
+        BuildingName = "Smelter",
+        Output = new RecipePortInfo { ItemId = "calcium-block", Name = "Calcium block", QuantityPerMinute = 60 },
+    };
+    var targetRecipe = new RecipeInfo
+    {
+        RecipeKey = "furnace:powder",
+        BuildingId = "furnace",
+        BuildingName = "Furnace v2",
+        Output = new RecipePortInfo { ItemId = "calcium-powder", Name = "Calcium powder", QuantityPerMinute = 200 },
+        Inputs =
+        [
+            new RecipePortInfo { ItemId = "calcium-block", Name = "Calcium block", QuantityPerMinute = 40 },
+        ],
+    };
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "target", SelectedRecipeKey = targetRecipe.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-a",
+                SourceNodeId = "source",
+                SourceItemId = "calcium-block",
+                TargetNodeId = "target",
+                TargetItemId = "calcium-block",
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog { Recipes = [sourceRecipe, targetRecipe] };
+    var calculator = new PlannerCalculator();
+    var analysis = ProductionAnalysisService.Analyze(scheme, catalog, calculator);
+
+    var items = PlannerEdgeService.ConnectionMenuItemsForPort(
+        scheme,
+        catalog,
+        calculator,
+        "target",
+        "input",
+        "calcium-block",
+        analysis);
+
+    AssertEqual(1, items.Count);
+    AssertEqual("edge-a", items[0].EdgeId);
+    AssertEqual("Smelter", items[0].OppositeNodeName);
+    AssertEqual("Calcium block", items[0].ItemName);
+    AssertEqual(40d, items[0].RatePerMinute);
+    AssertEqual("Smelter - Calcium block 40/min", items[0].DisplayName);
+}
+
+static void ConnectionMenuLabelsOutputConsumerEdges()
+{
+    var sourceRecipe = SourceRecipe(120);
+    var firstConsumer = ConsumerRecipe("consumer-a", "Furnace v2", 40);
+    var secondConsumer = ConsumerRecipe("consumer-b", "Assembler", 60);
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "consumer-a", SelectedRecipeKey = firstConsumer.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "consumer-b", SelectedRecipeKey = secondConsumer.RecipeKey, MachineCount = 1 },
+        ],
+        Edges =
+        [
+            new SchemeEdge
+            {
+                Id = "edge-a",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "consumer-a",
+                TargetItemId = "part",
+            },
+            new SchemeEdge
+            {
+                Id = "edge-b",
+                SourceNodeId = "source",
+                SourceItemId = "part",
+                TargetNodeId = "consumer-b",
+                TargetItemId = "part",
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog { Recipes = [sourceRecipe, firstConsumer, secondConsumer] };
+    var calculator = new PlannerCalculator();
+    var analysis = ProductionAnalysisService.Analyze(scheme, catalog, calculator);
+
+    var connectedEdges = PlannerEdgeService.ConnectedEdgesForPort(scheme, "source", "output", "part");
+    var items = PlannerEdgeService.ConnectionMenuItemsForPort(
+        scheme,
+        catalog,
+        calculator,
+        "source",
+        "output",
+        "part",
+        analysis);
+
+    AssertEqual(2, connectedEdges.Count);
+    AssertEqual(2, items.Count);
+    AssertEqual("Furnace v2 - Part 40/min", items[0].DisplayName);
+    AssertEqual("Assembler - Part 60/min", items[1].DisplayName);
 }
 
 static void SchemeSerializationRoundTripsCorporationSettings()
