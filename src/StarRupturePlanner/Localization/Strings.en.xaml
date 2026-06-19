@@ -132,6 +132,17 @@
     <sys:String x:Key="Ui.Text.OnlyOutput">Only output</sys:String>
     <sys:String x:Key="Ui.Text.SchemeOutput">Scheme output</sys:String>
     <sys:String x:Key="Ui.Text.Surplus">Surplus +{0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.RemoveConnection">Remove connection</sys:String>
+    <sys:String x:Key="Ui.Text.RemoveAllConnections">Remove all connections</sys:String>
+    <sys:String x:Key="Ui.Text.ExistingMachines">Existing machines</sys:String>
+    <sys:String x:Key="Ui.Text.NewMachines">New machines</sys:String>
+    <sys:String x:Key="Ui.Text.MaxProduction">Max {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.FreeProduction">Free {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ProducesProduction">Produces {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ConsumesProduction">Consumes {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.RequiredProduction">Required {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.SourceFreeProduction">Source free {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ReorderPort">Reorder port</sys:String>
     <sys:String x:Key="Ui.Label.Surplus">Surplus</sys:String>
     <sys:String x:Key="Ui.Text.NoSchemeOutputsMarked">No scheme outputs marked</sys:String>
     <sys:String x:Key="Ui.Text.Comment">Comment</sys:String>
@@ -184,6 +195,7 @@
     <sys:String x:Key="Ui.Status.PortsNotCompatible">Ports are not compatible.</sys:String>
     <sys:String x:Key="Ui.Status.ConnectionAlreadyExists">Connection already exists.</sys:String>
     <sys:String x:Key="Ui.Status.ConnectedMachines">Connected machines.</sys:String>
+    <sys:String x:Key="Ui.Status.DisconnectedConnections">Disconnected {0} connection(s).</sys:String>
     <sys:String x:Key="Ui.Status.NoCompatibleMachines">No compatible machines found.</sys:String>
     <sys:String x:Key="Ui.Status.FoundCompatibleMachines">Found {0} compatible machines.</sys:String>
     <sys:String x:Key="Ui.Status.CouldNotLoadSuggestions">Could not load suggestions: {0}</sys:String>

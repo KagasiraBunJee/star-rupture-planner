@@ -12,7 +12,11 @@ public sealed class EdgeLayer : FrameworkElement
     private const double LabelPaddingX = 8;
     private const double LabelPaddingY = 4;
 
+    private static readonly Color RemovalHighlightColor = Color.FromRgb(0xFF, 0x48, 0x48);
+
     private IReadOnlyList<EdgeRenderItem> _edges = [];
+    private string? _hoveredEdgeId;
+    private IReadOnlyList<string>? _markedEdgeIds;
 
     public event EventHandler<EdgeLayerMouseEventArgs>? EdgeMouseLeftButtonDown;
 
@@ -26,6 +30,33 @@ public sealed class EdgeLayer : FrameworkElement
     {
         _edges = edges;
         InvalidateVisual();
+    }
+
+    public void SetMarkedEdges(IReadOnlyList<string>? edgeIds)
+    {
+        _markedEdgeIds = edgeIds;
+        InvalidateVisual();
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        var hit = HitTestEdge(e.GetPosition(this));
+        if (hit != _hoveredEdgeId)
+        {
+            _hoveredEdgeId = hit;
+            InvalidateVisual();
+        }
+    }
+
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        if (_hoveredEdgeId != null)
+        {
+            _hoveredEdgeId = null;
+            InvalidateVisual();
+        }
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -51,34 +82,79 @@ public sealed class EdgeLayer : FrameworkElement
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
-
         var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
+        // Non-highlighted edges first so highlighted ones render on top.
         foreach (var edge in _edges)
         {
-            if (edge.Points.Count < 2)
-            {
-                DrawInvalidLabel(drawingContext, edge, pixelsPerDip);
-                continue;
-            }
-
-            var geometry = CanvasGeometryService.CreateRoutedGeometry(edge.Points);
-            geometry.Freeze();
-
-            var glowPen = new Pen(new SolidColorBrush(Color.FromArgb(72, edge.StrokeColor.R, edge.StrokeColor.G, edge.StrokeColor.B)), edge.IsValid ? 8.5 : 6);
-            glowPen.Freeze();
-            drawingContext.DrawGeometry(null, glowPen, geometry);
-
-            var strokePen = new Pen(new SolidColorBrush(edge.StrokeColor), edge.IsValid ? 3.5 : 2.5)
-            {
-                StartLineCap = PenLineCap.Round,
-                EndLineCap = PenLineCap.Round,
-                LineJoin = PenLineJoin.Round,
-            };
-            strokePen.Freeze();
-            drawingContext.DrawGeometry(null, strokePen, geometry);
-
-            DrawLabel(drawingContext, edge, pixelsPerDip);
+            if (IsHighlighted(edge.Id)) continue;
+            DrawEdge(drawingContext, edge, pixelsPerDip, hover: false, marked: false);
         }
+        foreach (var edge in _edges)
+        {
+            var marked = _markedEdgeIds?.Contains(edge.Id) == true;
+            var hover = !marked && _hoveredEdgeId == edge.Id;
+            if (!marked && !hover) continue;
+            DrawEdge(drawingContext, edge, pixelsPerDip, hover, marked);
+        }
+    }
+
+    private bool IsHighlighted(string edgeId) =>
+        _hoveredEdgeId == edgeId || _markedEdgeIds?.Contains(edgeId) == true;
+
+    private static void DrawEdge(DrawingContext dc, EdgeRenderItem edge, double pixelsPerDip, bool hover, bool marked)
+    {
+        if (edge.Points.Count < 2)
+        {
+            DrawInvalidLabel(dc, edge, pixelsPerDip);
+            return;
+        }
+
+        var geometry = CanvasGeometryService.CreateRoutedGeometry(edge.Points);
+        geometry.Freeze();
+
+        Color strokeColor;
+        byte glowAlpha;
+        double glowWidth, strokeWidth;
+
+        if (marked)
+        {
+            strokeColor = RemovalHighlightColor;
+            glowAlpha = 85;
+            glowWidth = edge.IsValid ? 12 : 9;
+            strokeWidth = edge.IsValid ? 4.5 : 3.5;
+        }
+        else if (hover)
+        {
+            strokeColor = edge.StrokeColor;
+            glowAlpha = 115;
+            glowWidth = edge.IsValid ? 13 : 10;
+            strokeWidth = edge.IsValid ? 4.5 : 3.5;
+        }
+        else
+        {
+            strokeColor = edge.StrokeColor;
+            glowAlpha = 72;
+            glowWidth = edge.IsValid ? 8.5 : 6;
+            strokeWidth = edge.IsValid ? 3.5 : 2.5;
+        }
+
+        var glowPen = new Pen(
+            new SolidColorBrush(Color.FromArgb(glowAlpha, strokeColor.R, strokeColor.G, strokeColor.B)),
+            glowWidth);
+        glowPen.Freeze();
+        dc.DrawGeometry(null, glowPen, geometry);
+
+        var strokePen = new Pen(new SolidColorBrush(strokeColor), strokeWidth)
+        {
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round,
+            LineJoin = PenLineJoin.Round,
+        };
+        strokePen.Freeze();
+        dc.DrawGeometry(null, strokePen, geometry);
+
+        DrawLabel(dc, edge, pixelsPerDip);
     }
 
     private string? HitTestEdge(Point point)
