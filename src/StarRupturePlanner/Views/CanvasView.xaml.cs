@@ -82,6 +82,8 @@ public partial class CanvasView : UserControl
     private readonly HashSet<string> _groupDragEdgeIds = [];
     private readonly HashSet<string> _pendingDragEdgeIds = [];
     private bool _dragEdgeRefreshScheduled;
+    private bool _isDragAutoScrollRunning;
+    private DateTime _lastDragAutoScrollTick;
     private Rectangle? _selectionRectangle;
     private bool _isSelecting;
     private bool _isCreatingComment;
@@ -93,6 +95,7 @@ public partial class CanvasView : UserControl
         InitializeComponent();
         Unloaded += (_, _) =>
         {
+            StopDragAutoScroll();
             _suggestionCancellation?.Cancel();
             _suggestionCancellation?.Dispose();
             _suggestionCancellation = null;
