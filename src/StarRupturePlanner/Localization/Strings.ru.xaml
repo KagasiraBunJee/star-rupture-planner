@@ -138,6 +138,7 @@
     <sys:String x:Key="Ui.Text.FreeProduction">Free {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Text.RequiredProduction">Required {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Text.SourceFreeProduction">Source free {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ReorderPort">Reorder port</sys:String>
     <sys:String x:Key="Ui.Label.Surplus">Излишек</sys:String>
     <sys:String x:Key="Ui.Text.NoSchemeOutputsMarked">Выходы схемы не отмечены</sys:String>
     <sys:String x:Key="Ui.Text.Comment">Комментарий</sys:String>

@@ -26,6 +26,7 @@ var tests = new (string Name, Action Body)[]
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
     ("Canvas layout snaps to grid", CanvasLayoutSnapsToGrid),
     ("Scheme serialization round trips", SchemeSerializationRoundTrips),
+    ("Port order serializes and normalizes", PortOrderSerializesAndNormalizes),
     ("Scheme store deletes saved schemes", SchemeStoreDeletesSavedSchemes),
     ("Scheme store imports scheme JSON into active folder", SchemeStoreImportsSchemeJsonIntoActiveFolder),
     ("Scheme store removes deleted blueprint references", SchemeStoreRemovesDeletedBlueprintReferences),
@@ -231,7 +232,7 @@ static void LegacyTargetOutputMigratesToMachineCount()
         new PlannerCatalog { Recipes = [recipe] },
         new PlannerCalculator());
 
-    AssertEqual(4, scheme.Version);
+    AssertEqual(5, scheme.Version);
     AssertEqual(3, scheme.Nodes[0].MachineCount);
     AssertEqual(0d, scheme.Nodes[0].TargetOutputPerMinute);
     AssertFalse(scheme.Nodes[0].OnlyOutput);
@@ -689,6 +690,53 @@ static void SchemeSerializationRoundTrips()
     var loaded = store.Load(path);
     AssertEqual("Test Scheme", loaded.Name);
     AssertEqual("node-a", loaded.Nodes[0].Id);
+    Directory.Delete(temp, recursive: true);
+}
+
+static void PortOrderSerializesAndNormalizes()
+{
+    var temp = Path.Combine(Path.GetTempPath(), "sr-planner-tests-" + Guid.NewGuid().ToString("N"));
+    ISchemeStore store = new SchemeStore(temp);
+    var document = new SchemeDocument
+    {
+        Name = "Ordered Ports",
+        Nodes =
+        [
+            new SchemeNode
+            {
+                Id = "node-a",
+                SelectedRecipeKey = "crafter:ordered",
+                InputOrder = ["stale", "part-b", "part-a"],
+                OutputOrder = ["out-b", "out-a"],
+            },
+        ],
+    };
+
+    var path = store.Save(document);
+    var loaded = store.Load(path);
+    AssertEqual("part-b", loaded.Nodes[0].InputOrder[1]);
+
+    var recipe = new RecipeInfo
+    {
+        RecipeKey = "crafter:ordered",
+        Output = new RecipePortInfo { ItemId = "out-a", Name = "Out A" },
+        Inputs =
+        [
+            new RecipePortInfo { ItemId = "part-a", Name = "Part A" },
+            new RecipePortInfo { ItemId = "part-b", Name = "Part B" },
+            new RecipePortInfo { ItemId = "part-c", Name = "Part C" },
+        ],
+    };
+    var node = loaded.Nodes[0];
+    PlannerPortOrderService.NormalizeNodeOrders(node, recipe);
+    AssertEqual(3, node.InputOrder.Count);
+    AssertEqual("part-b", node.InputOrder[0]);
+    AssertEqual("part-a", node.InputOrder[1]);
+    AssertEqual("part-c", node.InputOrder[2]);
+
+    PlannerPortOrderService.MovePort(node, "input", "part-c", 0, recipe.Inputs.Select(input => input.ItemId).ToList());
+    AssertEqual("part-c", node.InputOrder[0]);
+    AssertEqual("part-b", node.InputOrder[1]);
     Directory.Delete(temp, recursive: true);
 }
 

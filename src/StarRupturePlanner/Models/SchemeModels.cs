@@ -89,6 +89,12 @@ public sealed class SchemeNode : SchemeElement
     [JsonPropertyName("blueprint_outputs")]
     public List<BlueprintOutputPort> BlueprintOutputs { get; set; } = [];
 
+    [JsonPropertyName("input_order")]
+    public List<string> InputOrder { get; set; } = [];
+
+    [JsonPropertyName("output_order")]
+    public List<string> OutputOrder { get; set; } = [];
+
     [JsonPropertyName("x")]
     public double X { get; set; }
 
