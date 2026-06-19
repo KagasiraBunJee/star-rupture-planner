@@ -106,8 +106,8 @@ public static class PlannerSuggestionService
             ItemId = itemId,
             ImageUrl = ExistingNodeImageUrl(catalog, sourceNode, itemId),
             Title = PlannerEdgeService.SourceNodeName(catalog, sourceNode),
-            Subtitle = output.Name,
-            Detail = $"{UiText.Format("Text.MaxProduction", maxProduction)}  {UiText.Format("Text.FreeProduction", free)}  {UiText.Format("Text.ConsumesProduction", required)}",
+            Subtitle = FormatItemRate(output.Name, maxProduction),
+            Detail = $"{UiText.Format("Text.FreeProduction", free)}  {UiText.Format("Text.ConsumesProduction", required)}",
             MaxProductionPerMinute = maxProduction,
             FreePerMinute = free,
             RequiredPerMinute = required,
@@ -169,9 +169,9 @@ public static class PlannerSuggestionService
             ItemId = itemId,
             ImageUrl = recipe.BuildingImageUrl ?? "",
             Title = recipe.BuildingName,
-            Subtitle = input.Name,
-            Detail = $"{UiText.Format("Text.ConsumesProduction", required)}  {UiText.Format("Text.SourceFreeProduction", sourceFree)}",
-            MaxProductionPerMinute = sourceFree,
+            Subtitle = FormatItemRate(input.Name, required),
+            Detail = FormatItemRate(recipe.Output.Name, recipe.Output.QuantityPerMinute),
+            MaxProductionPerMinute = recipe.Output.QuantityPerMinute,
             FreePerMinute = sourceFree,
             RequiredPerMinute = required,
             ConsumptionPerMinute = required,
@@ -251,4 +251,6 @@ public static class PlannerSuggestionService
             && string.Equals(edge.TargetNodeId, targetNodeId, StringComparison.Ordinal)
             && string.Equals(edge.SourceItemId, itemId, StringComparison.Ordinal));
     }
+
+    public static string FormatItemRate(string itemName, double ratePerMinute) => $"{itemName} - {ratePerMinute:g}/min";
 }

@@ -2647,6 +2647,11 @@ public partial class CanvasView
             : recipe.Inputs
                 .FirstOrDefault(input => string.Equals(input.ItemId, sourcePort.ItemId, StringComparison.Ordinal))
                 ?.QuantityPerMinute ?? 0;
+        var matchedName = sourcePort.Direction == "input"
+            ? recipe.Output.Name
+            : recipe.Inputs
+                .FirstOrDefault(input => string.Equals(input.ItemId, sourcePort.ItemId, StringComparison.Ordinal))
+                ?.Name ?? sourcePort.ItemId;
         return new PlannerSuggestionItem
         {
             Kind = PlannerSuggestionItemKind.NewMachine,
@@ -2654,8 +2659,10 @@ public partial class CanvasView
             ItemId = recipe.Output.ItemId,
             ImageUrl = recipe.BuildingImageUrl ?? "",
             Title = recipe.BuildingName,
-            Subtitle = recipe.Output.Name,
-            Detail = $"{UiText.Format("Text.ProducesProduction", production)}  {UiText.Format("Text.ConsumesProduction", consumption)}",
+            Subtitle = PlannerSuggestionService.FormatItemRate(matchedName, sourcePort.Direction == "input" ? production : consumption),
+            Detail = sourcePort.Direction == "input"
+                ? $"{UiText.Format("Text.ProducesProduction", production)}  {UiText.Format("Text.ConsumesProduction", consumption)}"
+                : PlannerSuggestionService.FormatItemRate(recipe.Output.Name, production),
             MaxProductionPerMinute = production,
             ConsumptionPerMinute = consumption,
         };

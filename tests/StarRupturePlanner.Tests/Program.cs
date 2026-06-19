@@ -21,6 +21,7 @@ var tests = new (string Name, Action Body)[]
     ("Same priority redistributes capped demand", SamePriorityRedistributesCappedDemand),
     ("Shortage marks edge and creates alert", ShortageMarksEdgeAndCreatesAlert),
     ("Existing producer suggestions use free connected capacity", ExistingProducerSuggestionsUseFreeConnectedCapacity),
+    ("Existing consumer suggestions show consumed and produced rates", ExistingConsumerSuggestionsShowConsumedAndProducedRates),
     ("Existing suggestions skip duplicate and self candidates", ExistingSuggestionsSkipDuplicateAndSelfCandidates),
     ("Connection compatibility requires matching item", ConnectionCompatibilityRequiresMatchingItem),
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
@@ -585,6 +586,58 @@ static void ExistingProducerSuggestionsUseFreeConnectedCapacity()
     AssertEqual(80d, sourceSuggestion.FreePerMinute);
     AssertEqual(90d, sourceSuggestion.RequiredPerMinute);
     AssertTrue(sourceSuggestion.HasShortageRisk);
+}
+
+static void ExistingConsumerSuggestionsShowConsumedAndProducedRates()
+{
+    var sourceRecipe = SourceRecipe(120);
+    var furnaceRecipe = new RecipeInfo
+    {
+        RecipeKey = "furnace:calcium-powder",
+        BuildingId = "furnace",
+        BuildingName = "Furnace v2",
+        Output = new RecipePortInfo
+        {
+            ItemId = "calcium-powder",
+            Name = "Calcium powder",
+            QuantityPerMinute = 200,
+        },
+        Inputs =
+        [
+            new RecipePortInfo
+            {
+                ItemId = "part",
+                Name = "Calcium block",
+                QuantityPerMinute = 40,
+            },
+        ],
+    };
+    var catalog = new PlannerCatalog { Recipes = [sourceRecipe, furnaceRecipe] };
+    var scheme = new SchemeDocument
+    {
+        Nodes =
+        [
+            new SchemeNode { Id = "source", SelectedRecipeKey = sourceRecipe.RecipeKey, MachineCount = 1 },
+            new SchemeNode { Id = "furnace", SelectedRecipeKey = furnaceRecipe.RecipeKey, MachineCount = 1 },
+        ],
+    };
+
+    IPlannerCalculator calculator = new PlannerCalculator();
+    var analysis = ProductionAnalysisService.Analyze(scheme, catalog, calculator);
+    var suggestion = PlannerSuggestionService.ExistingMachineSuggestions(
+            scheme,
+            catalog,
+            analysis,
+            calculator,
+            "source",
+            "output",
+            "part")
+        .Single(item => item.ExistingNodeId == "furnace");
+
+    AssertEqual("Calcium block - 40/min", suggestion.Subtitle);
+    AssertEqual("Calcium powder - 200/min", suggestion.Detail);
+    AssertEqual(40d, suggestion.ConsumptionPerMinute);
+    AssertEqual(200d, suggestion.MaxProductionPerMinute);
 }
 
 static void ExistingSuggestionsSkipDuplicateAndSelfCandidates()
