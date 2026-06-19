@@ -69,6 +69,7 @@ public static class UiText
         ["Text.OnlyOutput"] = "Only output",
         ["Text.SchemeOutput"] = "Scheme output",
         ["Text.Surplus"] = "Surplus +{0:g}/min",
+        ["Text.ReorderPort"] = "Reorder port",
         ["Text.NoSchemeOutputsMarked"] = "No scheme outputs marked",
         ["Text.Comment"] = "Comment",
         ["Text.DeleteScheme"] = "Delete scheme",

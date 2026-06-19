@@ -415,9 +415,11 @@ public partial class CanvasView
             {
                 var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
                 inputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.InputsUpper")));
-                foreach (var input in recipe.Inputs)
+                var inputPorts = PlannerPortOrderService.OrderedInputs(node, recipe);
+                var inputIds = inputPorts.Select(input => input.ItemId).ToList();
+                foreach (var input in inputPorts)
                 {
-                    inputs.Children.Add(CreatePortVisual(node, input, "input"));
+                    inputs.Children.Add(CreatePortVisual(node, input, "input", inputIds.Count > 1, inputIds));
                 }
 
                 var divider = new Border
@@ -435,7 +437,12 @@ public partial class CanvasView
 
             var output = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 10, 14, 12) };
             output.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
-            output.Children.Add(CreatePortVisual(node, recipe.Output, "output"));
+            var outputPorts = PlannerPortOrderService.OrderedOutputs(node, recipe);
+            var outputIds = outputPorts.Select(item => item.ItemId).ToList();
+            foreach (var outputPort in outputPorts)
+            {
+                output.Children.Add(CreatePortVisual(node, outputPort, "output", outputIds.Count > 1, outputIds));
+            }
 
             Grid.SetColumn(output, 2);
             body.Children.Add(output);
@@ -571,9 +578,11 @@ public partial class CanvasView
 
         var outputs = new StackPanel { Margin = new Thickness(8, 10, 14, 12), VerticalAlignment = VerticalAlignment.Center };
         outputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
-        foreach (var output in node.BlueprintOutputs)
+        var outputPorts = PlannerPortOrderService.OrderedBlueprintOutputs(node);
+        var outputIds = outputPorts.Select(output => output.ItemId).ToList();
+        foreach (var output in outputPorts)
         {
-            outputs.Children.Add(CreatePortVisual(node, BlueprintPortToRecipePort(output), "output"));
+            outputs.Children.Add(CreatePortVisual(node, BlueprintPortToRecipePort(output), "output", outputIds.Count > 1, outputIds));
         }
 
         Grid.SetColumn(outputs, 1);
@@ -994,20 +1003,28 @@ public partial class CanvasView
         return port is not null && IsPortAvailableForConnection(node, port, reference.Direction);
     }
 
-    private FrameworkElement CreatePortVisual(SchemeNode node, RecipePortInfo port, string direction)
+    private FrameworkElement CreatePortVisual(
+        SchemeNode node,
+        RecipePortInfo port,
+        string direction,
+        bool canReorder = false,
+        IReadOnlyList<string>? visibleItemIds = null)
     {
         var rate = PortRate(node, port, direction);
         var available = IsPortAvailableForConnection(node, port, direction);
         var portReference = new PortReference(node.Id, direction, port.ItemId);
+        var orderReference = new PortOrderReference(node.Id, direction, port.ItemId);
         var row = new Grid
         {
             Margin = new Thickness(0, 4, 0, 4),
+            Tag = orderReference,
             ToolTip = available
                 ? $"{port.Name} {rate:g}/min"
                 : $"{port.Name} {UiText.T("Text.NotAvailableForConnection")}",
         };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var dot = new Ellipse
@@ -1079,12 +1096,144 @@ public partial class CanvasView
             info.Children.Add(label);
             info.Children.Add(imageFrame);
             Grid.SetColumn(info, 1);
-            Grid.SetColumn(dot, 2);
+            Grid.SetColumn(dot, 3);
+        }
+
+        if (canReorder && visibleItemIds is not null)
+        {
+            var grip = CreatePortOrderGrip(orderReference, visibleItemIds);
+            Grid.SetColumn(grip, direction == "input" ? 2 : 2);
+            row.Children.Add(grip);
         }
 
         row.Children.Add(dot);
         row.Children.Add(info);
         return row;
+    }
+
+    private FrameworkElement CreatePortOrderGrip(PortOrderReference reference, IReadOnlyList<string> visibleItemIds)
+    {
+        var grip = new Border
+        {
+            Width = 16,
+            Height = 22,
+            Background = Brushes.Transparent,
+            Cursor = Cursors.SizeNS,
+            Tag = (Reference: reference, VisibleItemIds: visibleItemIds.ToList()),
+            ToolTip = UiText.T("Text.ReorderPort"),
+            Child = new TextBlock
+            {
+                Text = "||",
+                Foreground = CardTextBrush(0.62),
+                FontFamily = CardFontFamily(),
+                FontSize = CardFontSize(-2),
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+        grip.PreviewMouseLeftButtonDown += PortOrderGrip_MouseLeftButtonDown;
+        return grip;
+    }
+
+    private void PortOrderGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement element
+            || element.Tag is not ValueTuple<PortOrderReference, List<string>> tag)
+        {
+            return;
+        }
+
+        FocusCanvasViewport();
+        _portOrderDrag = new PortOrderDrag(tag.Item1, tag.Item2);
+        CanvasViewport.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void UpdatePortOrderDrag(Point canvasPoint)
+    {
+        if (_portOrderDrag is null)
+        {
+            return;
+        }
+
+        var target = PortOrderReferenceAt(canvasPoint);
+        if (target is null
+            || !string.Equals(target.NodeId, _portOrderDrag.Reference.NodeId, StringComparison.Ordinal)
+            || !string.Equals(target.Direction, _portOrderDrag.Reference.Direction, StringComparison.Ordinal)
+            || string.Equals(target.ItemId, _portOrderDrag.Reference.ItemId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var node = _scheme.Nodes.FirstOrDefault(item => string.Equals(item.Id, target.NodeId, StringComparison.Ordinal));
+        if (node is null)
+        {
+            return;
+        }
+
+        var visibleIds = CurrentVisiblePortIds(node, target.Direction);
+        var targetIndex = visibleIds.FindIndex(id => string.Equals(id, target.ItemId, StringComparison.Ordinal));
+        if (targetIndex < 0)
+        {
+            return;
+        }
+
+        PlannerPortOrderService.MovePort(
+            node,
+            target.Direction,
+            _portOrderDrag.Reference.ItemId,
+            targetIndex,
+            visibleIds);
+        _portOrderDrag = new PortOrderDrag(_portOrderDrag.Reference, CurrentVisiblePortIds(node, target.Direction));
+        RenderCanvas();
+        UpdateInspector();
+    }
+
+    private void EndPortOrderDrag()
+    {
+        _portOrderDrag = null;
+        if (CanvasViewport.IsMouseCaptured)
+        {
+            CanvasViewport.ReleaseMouseCapture();
+        }
+    }
+
+    private PortOrderReference? PortOrderReferenceAt(Point canvasPoint)
+    {
+        var hit = VisualTreeHelper.HitTest(PlannerCanvas, canvasPoint)?.VisualHit as DependencyObject;
+        while (hit is not null)
+        {
+            if (hit is FrameworkElement { Tag: PortOrderReference reference })
+            {
+                return reference;
+            }
+
+            hit = VisualTreeHelper.GetParent(hit);
+        }
+
+        return null;
+    }
+
+    private List<string> CurrentVisiblePortIds(SchemeNode node, string direction)
+    {
+        if (direction == "input")
+        {
+            var recipe = RecipeForNode(node);
+            return recipe is null
+                ? []
+                : PlannerPortOrderService.OrderedInputs(node, recipe).Select(input => input.ItemId).ToList();
+        }
+
+        if (node.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            return PlannerPortOrderService.OrderedBlueprintOutputs(node).Select(output => output.ItemId).ToList();
+        }
+
+        var outputRecipe = RecipeForNode(node);
+        return outputRecipe is null
+            ? []
+            : PlannerPortOrderService.OrderedOutputs(node, outputRecipe).Select(output => output.ItemId).ToList();
     }
 
     private void AddEdgeView(SchemeEdge edge)
@@ -2353,6 +2502,12 @@ public partial class CanvasView
 
     private void PlannerCanvas_MouseMove(object sender, MouseEventArgs e)
     {
+        if (_portOrderDrag is not null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            UpdatePortOrderDrag(e.GetPosition(PlannerCanvas));
+            return;
+        }
+
         if (_connectionDrag is not null)
         {
             var current = e.GetPosition(PlannerCanvas);
@@ -2391,6 +2546,13 @@ public partial class CanvasView
 
     private void PlannerCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_portOrderDrag is not null)
+        {
+            EndPortOrderDrag();
+            e.Handled = true;
+            return;
+        }
+
         if (_connectionDrag is not null)
         {
             var drag = _connectionDrag;

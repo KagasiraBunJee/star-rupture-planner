@@ -132,6 +132,7 @@
     <sys:String x:Key="Ui.Text.OnlyOutput">Только выход</sys:String>
     <sys:String x:Key="Ui.Text.SchemeOutput">Выход схемы</sys:String>
     <sys:String x:Key="Ui.Text.Surplus">Излишек +{0:g}/мин</sys:String>
+    <sys:String x:Key="Ui.Text.ReorderPort">Reorder port</sys:String>
     <sys:String x:Key="Ui.Label.Surplus">Излишек</sys:String>
     <sys:String x:Key="Ui.Text.NoSchemeOutputsMarked">Выходы схемы не отмечены</sys:String>
     <sys:String x:Key="Ui.Text.Comment">Комментарий</sys:String>
