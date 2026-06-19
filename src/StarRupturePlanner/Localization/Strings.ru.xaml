@@ -134,6 +134,14 @@
     <sys:String x:Key="Ui.Text.Surplus">Излишек +{0:g}/мин</sys:String>
     <sys:String x:Key="Ui.Text.RemoveConnection">Удалить соединение</sys:String>
     <sys:String x:Key="Ui.Text.RemoveAllConnections">Удалить все соединения</sys:String>
+    <sys:String x:Key="Ui.Text.ExistingMachines">Existing machines</sys:String>
+    <sys:String x:Key="Ui.Text.NewMachines">New machines</sys:String>
+    <sys:String x:Key="Ui.Text.MaxProduction">Max {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.FreeProduction">Free {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ProducesProduction">Produces {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ConsumesProduction">Consumes {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.RequiredProduction">Required {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.SourceFreeProduction">Source free {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Label.Surplus">Излишек</sys:String>
     <sys:String x:Key="Ui.Text.NoSchemeOutputsMarked">Выходы схемы не отмечены</sys:String>
     <sys:String x:Key="Ui.Text.Comment">Комментарий</sys:String>

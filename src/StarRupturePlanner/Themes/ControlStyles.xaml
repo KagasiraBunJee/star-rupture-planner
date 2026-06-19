@@ -300,46 +300,129 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ItemChrome" Property="Opacity" Value="0.5"/>
                         </Trigger>
+                        <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                            <Setter TargetName="ItemChrome" Property="Padding" Value="8,4"/>
+                            <Setter TargetName="ItemChrome" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="ItemChrome" Property="BorderBrush" Value="Transparent"/>
+                        </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                <Setter Property="IsHitTestVisible" Value="False"/>
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="Margin" Value="6,6,6,0"/>
+                <Setter Property="Padding" Value="8,4"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <DataTemplate x:Key="SuggestionRecipeTemplate">
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="44"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Border Width="34"
-                    Height="34"
-                    Background="{DynamicResource NodeCardImageBrush}"
-                    BorderBrush="{DynamicResource NodeCardImageBorderBrush}"
+            <TextBlock x:Name="HeaderText"
+                       Text="{Binding Header}"
+                       Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Visibility="Collapsed"/>
+            <Border x:Name="SuggestionCard"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
                     BorderThickness="1"
                     CornerRadius="6">
-                <Image Width="28"
-                       Height="28"
-                       Source="{Binding BuildingImageUrl, Converter={StaticResource PlaceholderImageSourceConverter}}"
-                       Stretch="Uniform"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="44"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="34"
+                            Height="34"
+                            Background="{DynamicResource NodeCardImageBrush}"
+                            BorderBrush="{DynamicResource NodeCardImageBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <Image Width="28"
+                               Height="28"
+                               Source="{Binding ImageUrl, Converter={StaticResource PlaceholderImageSourceConverter}}"
+                               Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}"
+                                   Foreground="{DynamicResource ThemeForegroundBrush}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Margin="0,2,0,0"
+                                   FontSize="11"
+                                   TextTrimming="CharacterEllipsis">
+                            <Run Text="{Binding SuggestedMaterialName}"
+                                 Foreground="{DynamicResource StarBlueBrush}"
+                                 FontWeight="SemiBold"/>
+                            <Run Text=" - "
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                            <Run Text="{Binding SuggestedMaterialRateText}"
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                        </TextBlock>
+                        <TextBlock x:Name="DetailText"
+                                   Text="{Binding Detail}"
+                                   Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
+                                   FontSize="10.5"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="FreeDetailSafeText"
+                                   FontSize="10.5"
+                                   TextTrimming="CharacterEllipsis"
+                                   Visibility="Collapsed">
+                            <Run Text="{Binding FreeDetailText}"
+                                 Foreground="{DynamicResource SignalGreenBrush}"
+                                 FontWeight="SemiBold"/>
+                            <Run Text="  "
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                            <Run Text="{Binding DetailAfterFreeText}"
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                        </TextBlock>
+                        <TextBlock x:Name="FreeDetailRiskText"
+                                   FontSize="10.5"
+                                   TextTrimming="CharacterEllipsis"
+                                   Visibility="Collapsed">
+                            <Run Text="{Binding FreeDetailText}"
+                                 Foreground="#FF6B6B"
+                                 FontWeight="SemiBold"/>
+                            <Run Text="  "
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                            <Run Text="{Binding DetailAfterFreeText}"
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
             </Border>
-            <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding BuildingName}"
-                           Foreground="{DynamicResource ThemeForegroundBrush}"
-                           FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis"/>
-                <TextBlock Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
-                           FontSize="11"
-                           TextTrimming="CharacterEllipsis">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="{}{0}  {1:g}/min">
-                            <Binding Path="Output.Name"/>
-                            <Binding Path="Output.QuantityPerMinute"/>
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
-            </StackPanel>
         </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                <Setter TargetName="HeaderText" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="SuggestionCard" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding HasFreeDetail}" Value="True">
+                <Setter TargetName="DetailText" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding HasFreeDetail}" Value="True"/>
+                    <Condition Binding="{Binding HasShortageRisk}" Value="False"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="FreeDetailSafeText" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding HasFreeDetail}" Value="True"/>
+                    <Condition Binding="{Binding HasShortageRisk}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="FreeDetailRiskText" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+            <DataTrigger Binding="{Binding HasShortageRisk}" Value="True">
+                <Setter TargetName="SuggestionCard" Property="Background" Value="#24FF6B6B"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 
     <Style TargetType="TabControl">
