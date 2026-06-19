@@ -2575,9 +2575,13 @@ public partial class CanvasView
             response.Suggestions = response.Suggestions
                 .Where(recipe => PlannerUnlockService.IsBuildingUnlocked(_catalog, _scheme, recipe.BuildingId))
                 .ToList();
-            SuggestionList.ItemsSource = response.Suggestions;
+
+            var rows = BuildSuggestionRows(sourcePort, response.Suggestions);
+            NormalizeSuggestionItems(rows);
+            var selectableCount = rows.Count(row => row.IsSelectable);
+            SuggestionList.ItemsSource = rows;
             SuggestionList.Tag = sourcePort;
-            SuggestionPopup.IsOpen = response.Suggestions.Count > 0;
+            SuggestionPopup.IsOpen = selectableCount > 0;
             if (SuggestionPopup.IsOpen)
             {
                 CenterSuggestionPopupAtCanvasPoint(canvasPoint);
@@ -2586,9 +2590,9 @@ public partial class CanvasView
                     DispatcherPriority.Loaded);
             }
 
-            SetStatus(response.Suggestions.Count == 0
+            SetStatus(selectableCount == 0
                 ? UiText.T("Status.NoCompatibleMachines")
-                : UiText.Format("Status.FoundCompatibleMachines", response.Suggestions.Count));
+                : UiText.Format("Status.FoundCompatibleMachines", selectableCount));
         }
         catch (OperationCanceledException)
         {
@@ -2597,6 +2601,56 @@ public partial class CanvasView
         {
             SetStatus(UiText.Format("Status.CouldNotLoadSuggestions", ex.Message));
         }
+    }
+
+    private List<PlannerSuggestionItem> BuildSuggestionRows(PortReference sourcePort, IReadOnlyList<RecipeInfo> newMachineRecipes)
+    {
+        var rows = new List<PlannerSuggestionItem>();
+        var existing = PlannerSuggestionService.ExistingMachineSuggestions(
+                _scheme,
+                _catalog,
+                _productionAnalysis,
+                _calculator,
+                sourcePort.NodeId,
+                sourcePort.Direction,
+                sourcePort.ItemId)
+            .ToList();
+
+        if (existing.Count > 0)
+        {
+            rows.Add(new PlannerSuggestionItem
+            {
+                Kind = PlannerSuggestionItemKind.Header,
+                Header = UiText.T("Text.ExistingMachines"),
+            });
+            rows.AddRange(existing);
+        }
+
+        if (newMachineRecipes.Count > 0)
+        {
+            rows.Add(new PlannerSuggestionItem
+            {
+                Kind = PlannerSuggestionItemKind.Header,
+                Header = UiText.T("Text.NewMachines"),
+            });
+            rows.AddRange(newMachineRecipes.Select(CreateNewMachineSuggestionItem));
+        }
+
+        return rows;
+    }
+
+    private static PlannerSuggestionItem CreateNewMachineSuggestionItem(RecipeInfo recipe)
+    {
+        return new PlannerSuggestionItem
+        {
+            Kind = PlannerSuggestionItemKind.NewMachine,
+            Recipe = recipe,
+            ItemId = recipe.Output.ItemId,
+            ImageUrl = recipe.BuildingImageUrl ?? "",
+            Title = recipe.BuildingName,
+            Subtitle = recipe.Output.Name,
+            Detail = $"{recipe.Output.QuantityPerMinute:g}/min",
+        };
     }
 
     private void NormalizeSuggestionAssets(IEnumerable<RecipeInfo> suggestions)
@@ -2610,6 +2664,14 @@ public partial class CanvasView
             {
                 input.ImageUrl = _apiClient.ToAbsoluteAssetUrl(input.ImageUrl);
             }
+        }
+    }
+
+    private void NormalizeSuggestionItems(IEnumerable<PlannerSuggestionItem> suggestions)
+    {
+        foreach (var suggestion in suggestions)
+        {
+            suggestion.ImageUrl = _apiClient.ToAbsoluteAssetUrl(suggestion.ImageUrl);
         }
     }
 
@@ -2654,8 +2716,33 @@ public partial class CanvasView
     private void SuggestionList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!SuggestionPopup.IsOpen
-            || SuggestionList.SelectedItem is not RecipeInfo recipe
+            || SuggestionList.SelectedItem is not PlannerSuggestionItem suggestion
+            || !suggestion.IsSelectable
             || SuggestionList.Tag is not PortReference sourcePort)
+        {
+            return;
+        }
+
+        if (suggestion.IsExistingMachine)
+        {
+            var existingPort = new PortReference(suggestion.ExistingNodeId, suggestion.ExistingPortDirection, sourcePort.ItemId);
+            if (TryCreateEdge(sourcePort, existingPort))
+            {
+                var existingNode = _scheme.Nodes.FirstOrDefault(node => node.Id == suggestion.ExistingNodeId);
+                if (existingNode is not null)
+                {
+                    SelectSingleNode(existingNode);
+                }
+            }
+
+            SuggestionPopup.IsOpen = false;
+            SuggestionList.SelectedItem = null;
+            RenderCanvas();
+            UpdateInspector();
+            return;
+        }
+
+        if (suggestion.Recipe is not RecipeInfo recipe)
         {
             return;
         }
