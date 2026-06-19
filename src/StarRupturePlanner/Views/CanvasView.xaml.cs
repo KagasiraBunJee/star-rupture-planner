@@ -75,6 +75,7 @@ public partial class CanvasView : UserControl
     private CommentResizeDrag? _commentResizeDrag;
     private ConnectionDrag? _connectionDrag;
     private PortOrderDrag? _portOrderDrag;
+    private Grid? _connectionHoverShell;
     private CancellationTokenSource? _suggestionCancellation;
     private Point _suggestionCanvasPoint;
     private readonly Dictionary<string, Point> _groupDragNodeStarts = [];
