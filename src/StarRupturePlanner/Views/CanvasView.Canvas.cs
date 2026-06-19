@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -279,6 +279,7 @@ public partial class CanvasView
         root.MouseLeftButtonDown += Node_MouseLeftButtonDown;
         root.MouseMove += Node_MouseMove;
         root.MouseLeftButtonUp += Node_MouseLeftButtonUp;
+        root.MouseRightButtonDown += Node_MouseRightButtonDown;
 
         var grid = new Grid();
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // category accent
@@ -482,6 +483,7 @@ public partial class CanvasView
         root.MouseLeftButtonDown += Node_MouseLeftButtonDown;
         root.MouseMove += Node_MouseMove;
         root.MouseLeftButtonUp += Node_MouseLeftButtonUp;
+        root.MouseRightButtonDown += Node_MouseRightButtonDown;
 
         var grid = new Grid();
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -1034,6 +1036,7 @@ public partial class CanvasView
         {
             dot.PreviewMouseLeftButtonDown += Port_MouseLeftButtonDown;
         }
+        dot.PreviewMouseRightButtonDown += Port_MouseRightButtonDown;
         _portViews[portReference] = dot;
 
         var info = new StackPanel
@@ -2135,6 +2138,36 @@ public partial class CanvasView
         ClearGroupDrag();
     }
 
+    private void Node_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.Tag is not SchemeNode node)
+        {
+            return;
+        }
+
+        var connectedEdgeIds = _scheme.Edges
+            .Where(edge => edge.SourceNodeId == node.Id || edge.TargetNodeId == node.Id)
+            .Select(edge => edge.Id)
+            .ToList();
+
+        if (connectedEdgeIds.Count == 0)
+        {
+            element.ContextMenu = null;
+            e.Handled = true;
+            return;
+        }
+
+        FocusCanvasViewport();
+        var menu = new ContextMenu { PlacementTarget = element };
+        var removeAll = CreateDisconnectMenuItem(UiText.T("Text.RemoveAllConnections"), "");
+        removeAll.Click += (_, _) => DisconnectEdgesById(connectedEdgeIds);
+        menu.Items.Add(removeAll);
+
+        element.ContextMenu = menu;
+        menu.IsOpen = true;
+        e.Handled = true;
+    }
+
     private void Edge_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement element && element.Tag is SchemeEdge edge)
@@ -2299,6 +2332,58 @@ public partial class CanvasView
         PlannerCanvas.Children.Insert(0, path);
         _connectionDrag = new ConnectionDrag(port, path, start);
         Mouse.Capture(CanvasViewport);
+        e.Handled = true;
+    }
+
+    private void Port_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement handle || handle.Tag is not PortReference port)
+        {
+            return;
+        }
+
+        var items = PlannerEdgeService.ConnectionMenuItemsForPort(
+            _scheme,
+            _catalog,
+            _calculator,
+            port.NodeId,
+            port.Direction,
+            port.ItemId,
+            _productionAnalysis);
+        if (items.Count == 0)
+        {
+            handle.ContextMenu = null;
+            e.Handled = true;
+            return;
+        }
+
+        FocusCanvasViewport();
+        var menu = new ContextMenu
+        {
+            PlacementTarget = handle,
+        };
+
+        foreach (var item in items)
+        {
+            var edgeId = item.EdgeId;
+            var menuItem = CreateDisconnectMenuItem(item.DisplayName);
+            menuItem.Click += (_, _) => DisconnectEdgesById([edgeId]);
+            menuItem.MouseEnter += (_, _) => _edgeLayer?.SetMarkedEdges([edgeId]);
+            menuItem.MouseLeave += (_, _) => _edgeLayer?.SetMarkedEdges(null);
+            menu.Items.Add(menuItem);
+        }
+
+        menu.Items.Add(new Separator());
+        var allEdgeIds = items.Select(item => item.EdgeId).ToList();
+        var removeAll = CreateDisconnectMenuItem(UiText.T("Text.RemoveAllConnections"), "");
+        removeAll.Click += (_, _) => DisconnectEdgesById(allEdgeIds);
+        removeAll.MouseEnter += (_, _) => _edgeLayer?.SetMarkedEdges(allEdgeIds);
+        removeAll.MouseLeave += (_, _) => _edgeLayer?.SetMarkedEdges(null);
+        menu.Items.Add(removeAll);
+
+        menu.Closed += (_, _) => _edgeLayer?.SetMarkedEdges(null);
+        handle.ContextMenu = menu;
+        menu.IsOpen = true;
         e.Handled = true;
     }
 
@@ -2761,6 +2846,7 @@ public partial class CanvasView
         }
 
         var changed = false;
+        var disconnectedEdges = 0;
         foreach (var group in routePointsToDelete.GroupBy(reference => reference.EdgeId))
         {
             var edge = _scheme.Edges.FirstOrDefault(item => item.Id == group.Key);
@@ -2781,6 +2867,12 @@ public partial class CanvasView
             }
         }
 
+        if (routePointsToDelete.Count == 0 && _selectedEdge is not null)
+        {
+            disconnectedEdges = _scheme.Edges.RemoveAll(edge => edge.Id == _selectedEdge.Id);
+            changed |= disconnectedEdges > 0;
+        }
+
         if (nodeIdsToDelete.Count > 0)
         {
             _scheme.Nodes.RemoveAll(node => nodeIdsToDelete.Contains(node.Id));
@@ -2799,7 +2891,52 @@ public partial class CanvasView
             ClearSelection();
             RenderCanvas();
             UpdateInspector();
+            if (disconnectedEdges > 0)
+            {
+                SetStatus(UiText.Format("Status.DisconnectedConnections", disconnectedEdges));
+            }
         }
+    }
+
+    private static MenuItem CreateDisconnectMenuItem(string text, string iconGlyph = "")
+    {
+        var red = Color.FromRgb(0xFF, 0x48, 0x48);
+        var header = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        header.Children.Add(new TextBlock
+        {
+            Text = iconGlyph,
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 12,
+            Foreground = new SolidColorBrush(red),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 9, 0),
+        });
+        header.Children.Add(new TextBlock
+        {
+            Text = text,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        return new MenuItem { Header = header };
+    }
+
+    private void DisconnectEdgesById(IEnumerable<string> edgeIds)
+    {
+        var ids = edgeIds.ToHashSet(StringComparer.Ordinal);
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        var removed = _scheme.Edges.RemoveAll(edge => ids.Contains(edge.Id));
+        if (removed == 0)
+        {
+            return;
+        }
+
+        ClearSelection();
+        RenderCanvas();
+        UpdateInspector();
+        SetStatus(UiText.Format("Status.DisconnectedConnections", removed));
     }
 
 }
