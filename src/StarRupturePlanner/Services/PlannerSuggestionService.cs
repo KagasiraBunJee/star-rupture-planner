@@ -107,6 +107,8 @@ public static class PlannerSuggestionService
             ImageUrl = ExistingNodeImageUrl(catalog, sourceNode, itemId),
             Title = PlannerEdgeService.SourceNodeName(catalog, sourceNode),
             Subtitle = FormatItemRate(output.Name, maxProduction),
+            SuggestedMaterialName = output.Name,
+            SuggestedMaterialRateText = FormatRateText(maxProduction),
             Detail = $"{UiText.Format("Text.FreeProduction", free)}  {UiText.Format("Text.ConsumesProduction", required)}",
             MaxProductionPerMinute = maxProduction,
             FreePerMinute = free,
@@ -170,6 +172,8 @@ public static class PlannerSuggestionService
             ImageUrl = recipe.BuildingImageUrl ?? "",
             Title = recipe.BuildingName,
             Subtitle = FormatItemRate(input.Name, required),
+            SuggestedMaterialName = input.Name,
+            SuggestedMaterialRateText = FormatRateText(required),
             Detail = FormatItemRate(recipe.Output.Name, recipe.Output.QuantityPerMinute),
             MaxProductionPerMinute = recipe.Output.QuantityPerMinute,
             FreePerMinute = sourceFree,
@@ -255,5 +259,7 @@ public static class PlannerSuggestionService
     public static string FormatInputRates(RecipeInfo recipe) =>
         string.Join("  ", recipe.Inputs.Select(input => FormatItemRate(input.Name, input.QuantityPerMinute)));
 
-    public static string FormatItemRate(string itemName, double ratePerMinute) => $"{itemName} - {ratePerMinute:g}/min";
+    public static string FormatItemRate(string itemName, double ratePerMinute) => $"{itemName} - {FormatRateText(ratePerMinute)}";
+
+    public static string FormatRateText(double ratePerMinute) => $"{ratePerMinute:g}/min";
 }

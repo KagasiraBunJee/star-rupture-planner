@@ -571,6 +571,8 @@ static void ExistingProducerSuggestionsUseFreeConnectedCapacity()
     AssertEqual(80d, sourceSuggestion.FreePerMinute);
     AssertEqual(60d, sourceSuggestion.RequiredPerMinute);
     AssertEqual(60d, sourceSuggestion.ConsumptionPerMinute);
+    AssertEqual("Part", sourceSuggestion.SuggestedMaterialName);
+    AssertEqual("120/min", sourceSuggestion.SuggestedMaterialRateText);
     AssertFalse(sourceSuggestion.HasShortageRisk);
 
     targetRecipe.Inputs[0].QuantityPerMinute = 90;
@@ -636,6 +638,8 @@ static void ExistingConsumerSuggestionsShowConsumedAndProducedRates()
         .Single(item => item.ExistingNodeId == "furnace");
 
     AssertEqual("Calcium block - 40/min", suggestion.Subtitle);
+    AssertEqual("Calcium block", suggestion.SuggestedMaterialName);
+    AssertEqual("40/min", suggestion.SuggestedMaterialRateText);
     AssertEqual("Calcium powder - 200/min", suggestion.Detail);
     AssertEqual(40d, suggestion.ConsumptionPerMinute);
     AssertEqual(200d, suggestion.MaxProductionPerMinute);

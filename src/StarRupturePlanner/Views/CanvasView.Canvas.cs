@@ -2660,6 +2660,8 @@ public partial class CanvasView
             ImageUrl = recipe.BuildingImageUrl ?? "",
             Title = recipe.BuildingName,
             Subtitle = PlannerSuggestionService.FormatItemRate(matchedName, sourcePort.Direction == "input" ? production : consumption),
+            SuggestedMaterialName = matchedName,
+            SuggestedMaterialRateText = PlannerSuggestionService.FormatRateText(sourcePort.Direction == "input" ? production : consumption),
             Detail = sourcePort.Direction == "input"
                 ? PlannerSuggestionService.FormatInputRates(recipe)
                 : PlannerSuggestionService.FormatItemRate(recipe.Output.Name, production),

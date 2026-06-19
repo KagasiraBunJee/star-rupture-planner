@@ -293,6 +293,10 @@ public sealed class PlannerSuggestionItem
 
     public string Subtitle { get; set; } = "";
 
+    public string SuggestedMaterialName { get; set; } = "";
+
+    public string SuggestedMaterialRateText { get; set; } = "";
+
     public string Detail { get; set; } = "";
 
     public double MaxProductionPerMinute { get; set; }
