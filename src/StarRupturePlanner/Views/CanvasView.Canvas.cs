@@ -1113,6 +1113,29 @@ public partial class CanvasView
 
     private FrameworkElement CreatePortOrderGrip(PortOrderReference reference, IReadOnlyList<string> visibleItemIds)
     {
+        var iconBrush = CardTextBrush(0.62);
+        var icon = new StackPanel
+        {
+            Width = 10,
+            Height = 10,
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        for (var index = 0; index < 3; index++)
+        {
+            icon.Children.Add(new Rectangle
+            {
+                Width = 10,
+                Height = 1.5,
+                RadiusX = 0.75,
+                RadiusY = 0.75,
+                Fill = iconBrush,
+                Margin = index == 0 ? new Thickness(0) : new Thickness(0, 2, 0, 0),
+            });
+        }
+
         var grip = new Border
         {
             Width = 16,
@@ -1121,16 +1144,7 @@ public partial class CanvasView
             Cursor = Cursors.SizeNS,
             Tag = (Reference: reference, VisibleItemIds: visibleItemIds.ToList()),
             ToolTip = UiText.T("Text.ReorderPort"),
-            Child = new TextBlock
-            {
-                Text = "||",
-                Foreground = CardTextBrush(0.62),
-                FontFamily = CardFontFamily(),
-                FontSize = CardFontSize(-2),
-                FontWeight = FontWeights.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
+            Child = icon,
         };
         grip.PreviewMouseLeftButtonDown += PortOrderGrip_MouseLeftButtonDown;
         return grip;
