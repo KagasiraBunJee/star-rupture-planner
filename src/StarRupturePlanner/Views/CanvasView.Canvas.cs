@@ -2774,6 +2774,19 @@ public partial class CanvasView
                 _connectionDrag.StartPoint,
                 current,
                 _connectionDrag.Port.Direction);
+
+            // Highlight the port row under the cursor if it's a compatible drop target.
+            var hitVisual = VisualTreeHelper.HitTest(PlannerCanvas, current)?.VisualHit as DependencyObject;
+            var shell = FindPortLiftShell(hitVisual);
+            if (shell?.Tag is PortOrderReference orderRef)
+            {
+                var candidate = new PortReference(orderRef.NodeId, orderRef.Direction, orderRef.ItemId);
+                SetConnectionHoverShell(CanConnectPorts(_connectionDrag.Port, candidate) ? shell : null);
+            }
+            else
+            {
+                SetConnectionHoverShell(null);
+            }
             return;
         }
 
@@ -2820,11 +2833,21 @@ public partial class CanvasView
             StopDragAutoScroll();
             PlannerCanvas.Children.Remove(drag.Path);
 
-            // Capture is on the input layer, so e.OriginalSource isn't the dropped port.
-            // Hit-test the content layer at the drop point to find the target port.
-            var dropPoint = e.GetPosition(PlannerCanvas);
-            var hit = VisualTreeHelper.HitTest(PlannerCanvas, dropPoint)?.VisualHit as DependencyObject;
-            var targetPort = FindAncestor<FrameworkElement>(hit)?.Tag as PortReference;
+            // Prefer the highlighted port row (large hit area) over the exact-dot hit-test.
+            PortReference? targetPort = null;
+            if (_connectionHoverShell?.Tag is PortOrderReference hoveredOrder)
+                targetPort = new PortReference(hoveredOrder.NodeId, hoveredOrder.Direction, hoveredOrder.ItemId);
+            SetConnectionHoverShell(null);
+
+            if (targetPort is null)
+            {
+                // Capture is on the input layer, so e.OriginalSource isn't the dropped port.
+                // Fall back to hitting the dot directly at the drop point.
+                var dropPoint = e.GetPosition(PlannerCanvas);
+                var hit = VisualTreeHelper.HitTest(PlannerCanvas, dropPoint)?.VisualHit as DependencyObject;
+                targetPort = FindAncestor<FrameworkElement>(hit)?.Tag as PortReference;
+            }
+
             if (targetPort is not null && TryCreateEdge(drag.Port, targetPort))
             {
                 RenderCanvas();
@@ -2980,6 +3003,78 @@ public partial class CanvasView
         });
         SetStatus(UiText.T("Status.ConnectedMachines"));
         return true;
+    }
+
+    // Side-effect-free version of TryCreateEdge used for hover-compatibility checks.
+    private bool CanConnectPorts(PortReference first, PortReference second)
+    {
+        if (first.NodeId == second.NodeId || first.Direction == second.Direction || first.ItemId != second.ItemId)
+            return false;
+        var source = first.Direction == "output" ? first : second;
+        var target = first.Direction == "input" ? first : second;
+        if (!IsPortReferenceAvailable(source) || !IsPortReferenceAvailable(target))
+            return false;
+        var sourceOutput = PlannerEdgeService.OutputForNode(_catalog, _scheme.Nodes.FirstOrDefault(n => n.Id == source.NodeId), source.ItemId);
+        var targetRecipe = RecipeForNode(_scheme.Nodes.FirstOrDefault(n => n.Id == target.NodeId));
+        return sourceOutput is not null
+            && targetRecipe is not null
+            && targetRecipe.Inputs.Any(input => input.ItemId == source.ItemId)
+            && !_scheme.Edges.Any(edge =>
+                edge.SourceNodeId == source.NodeId
+                && edge.TargetNodeId == target.NodeId
+                && edge.SourceItemId == source.ItemId);
+    }
+
+    // Returns the outermost port liftShell Grid (Tag = PortOrderReference) in the visual tree
+    // ancestor chain from `hit`, stopping before PlannerCanvas.
+    private Grid? FindPortLiftShell(DependencyObject? hit)
+    {
+        Grid? found = null;
+        var current = hit;
+        while (current != null && current != PlannerCanvas)
+        {
+            if (current is Grid g && g.Tag is PortOrderReference)
+                found = g;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return found;
+    }
+
+    private void SetConnectionHoverShell(Grid? newShell)
+    {
+        if (_connectionHoverShell == newShell) return;
+        if (_connectionHoverShell is not null) ApplyConnectionHoverLift(_connectionHoverShell, false);
+        _connectionHoverShell = newShell;
+        if (_connectionHoverShell is not null) ApplyConnectionHoverLift(_connectionHoverShell, true);
+    }
+
+    private void ApplyConnectionHoverLift(Grid liftShell, bool lifted)
+    {
+        if (liftShell.Children.Count == 0 || liftShell.Children[0] is not Border effectBorder) return;
+        var nodeTopColor = ThemeColor("NodeCardTopBrush", Color.FromArgb(242, 17, 27, 35));
+        var isLight = IsLightColor(nodeTopColor);
+        var liftShadowColor = isLight ? Color.FromRgb(100, 130, 158) : Color.FromRgb(3, 7, 12);
+        var liftOutlineBrush = ThemeBrush("StarBlueBrush", Color.FromRgb(10, 132, 255));
+        Brush liftBackground = isLight
+            ? ThemeBrush("NodeCardImageBrush", Color.FromRgb(238, 242, 245))
+            : new SolidColorBrush(Color.FromRgb(
+                (byte)Math.Min(255, nodeTopColor.R + 11),
+                (byte)Math.Min(255, nodeTopColor.G + 13),
+                (byte)Math.Min(255, nodeTopColor.B + 17)));
+        effectBorder.Background = lifted ? liftBackground : Brushes.Transparent;
+        effectBorder.BorderBrush = lifted ? liftOutlineBrush : Brushes.Transparent;
+        effectBorder.BorderThickness = new Thickness(lifted ? 1 : 0);
+        effectBorder.Effect = lifted
+            ? new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color = liftShadowColor,
+                BlurRadius = 18,
+                ShadowDepth = 6,
+                Direction = 270,
+                Opacity = isLight ? 0.22 : 0.60,
+            }
+            : null;
+        liftShell.RenderTransform = lifted ? new TranslateTransform(0, -3) : Transform.Identity;
     }
 
     private async Task ShowSuggestionsAsync(PortReference sourcePort, Point canvasPoint)
