@@ -408,17 +408,19 @@ public partial class CanvasView
         else
         {
             var body = new Grid { Margin = new Thickness(0), MinHeight = 70 };
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             if (!node.OnlyOutput)
             {
                 var inputs = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 10, 8, 12) };
                 inputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.InputsUpper")));
-                foreach (var input in recipe.Inputs)
+                var inputPorts = PlannerPortOrderService.OrderedInputs(node, recipe);
+                var inputIds = inputPorts.Select(input => input.ItemId).ToList();
+                foreach (var input in inputPorts)
                 {
-                    inputs.Children.Add(CreatePortVisual(node, input, "input"));
+                    inputs.Children.Add(CreatePortVisual(node, input, "input", inputIds.Count > 1, inputIds));
                 }
 
                 var divider = new Border
@@ -435,8 +437,13 @@ public partial class CanvasView
             }
 
             var output = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 10, 14, 12) };
-            output.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
-            output.Children.Add(CreatePortVisual(node, recipe.Output, "output"));
+            output.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper"), TextAlignment.Right));
+            var outputPorts = PlannerPortOrderService.OrderedOutputs(node, recipe);
+            var outputIds = outputPorts.Select(item => item.ItemId).ToList();
+            foreach (var outputPort in outputPorts)
+            {
+                output.Children.Add(CreatePortVisual(node, outputPort, "output", outputIds.Count > 1, outputIds));
+            }
 
             Grid.SetColumn(output, 2);
             body.Children.Add(output);
@@ -572,10 +579,12 @@ public partial class CanvasView
         body.Children.Add(note);
 
         var outputs = new StackPanel { Margin = new Thickness(8, 10, 14, 12), VerticalAlignment = VerticalAlignment.Center };
-        outputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
-        foreach (var output in node.BlueprintOutputs)
+        outputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper"), TextAlignment.Right));
+        var outputPorts = PlannerPortOrderService.OrderedBlueprintOutputs(node);
+        var outputIds = outputPorts.Select(output => output.ItemId).ToList();
+        foreach (var output in outputPorts)
         {
-            outputs.Children.Add(CreatePortVisual(node, BlueprintPortToRecipePort(output), "output"));
+            outputs.Children.Add(CreatePortVisual(node, BlueprintPortToRecipePort(output), "output", outputIds.Count > 1, outputIds));
         }
 
         Grid.SetColumn(outputs, 1);
@@ -662,7 +671,7 @@ public partial class CanvasView
         }
     }
 
-    private TextBlock CreateCardSectionLabel(string text)
+    private TextBlock CreateCardSectionLabel(string text, TextAlignment textAlignment = TextAlignment.Left)
     {
         return new TextBlock
         {
@@ -671,6 +680,8 @@ public partial class CanvasView
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-2),
             FontWeight = FontWeights.SemiBold,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextAlignment = textAlignment,
             Margin = new Thickness(0, 0, 0, 6),
         };
     }
@@ -996,20 +1007,28 @@ public partial class CanvasView
         return port is not null && IsPortAvailableForConnection(node, port, reference.Direction);
     }
 
-    private FrameworkElement CreatePortVisual(SchemeNode node, RecipePortInfo port, string direction)
+    private FrameworkElement CreatePortVisual(
+        SchemeNode node,
+        RecipePortInfo port,
+        string direction,
+        bool canReorder = false,
+        IReadOnlyList<string>? visibleItemIds = null)
     {
         var rate = PortRate(node, port, direction);
         var available = IsPortAvailableForConnection(node, port, direction);
         var portReference = new PortReference(node.Id, direction, port.ItemId);
+        var orderReference = new PortOrderReference(node.Id, direction, port.ItemId);
+        var isReorderDragSource = _portOrderDrag?.Reference == orderReference;
         var row = new Grid
         {
-            Margin = new Thickness(0, 4, 0, 4),
+            Tag = orderReference,
             ToolTip = available
                 ? $"{port.Name} {rate:g}/min"
                 : $"{port.Name} {UiText.T("Text.NotAvailableForConnection")}",
         };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var dot = new Ellipse
@@ -1039,12 +1058,14 @@ public partial class CanvasView
         dot.PreviewMouseRightButtonDown += Port_MouseRightButtonDown;
         _portViews[portReference] = dot;
 
-        var info = new StackPanel
+        var info = new Grid
         {
-            Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = direction == "input" ? HorizontalAlignment.Left : HorizontalAlignment.Right,
         };
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var imageFrame = new Border
         {
             Width = 22,
@@ -1059,35 +1080,240 @@ public partial class CanvasView
         imageFrame.Child = image;
         var label = new TextBlock
         {
-            Text = $"{port.Name} {rate:g}/min",
+            Text = port.Name,
             Foreground = available ? CardTextBrush() : new SolidColorBrush(LockedPortColor),
             VerticalAlignment = VerticalAlignment.Center,
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-1),
             TextTrimming = TextTrimming.CharacterEllipsis,
-            MaxWidth = 152,
+            MinWidth = 28,
+            MaxWidth = 118,
+        };
+        var rateLabel = new TextBlock
+        {
+            Text = $"{rate:g}/min",
+            Foreground = available ? CardTextBrush(0.78) : new SolidColorBrush(LockedPortColor),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-1),
+            Margin = new Thickness(5, 0, 0, 0),
         };
 
         if (direction == "input")
         {
             imageFrame.Margin = new Thickness(7, 0, 5, 0);
-            info.Children.Add(imageFrame);
-            info.Children.Add(label);
+            Grid.SetColumn(imageFrame, 0);
+            Grid.SetColumn(label, 1);
+            Grid.SetColumn(rateLabel, 2);
             Grid.SetColumn(dot, 0);
             Grid.SetColumn(info, 1);
         }
         else
         {
             imageFrame.Margin = new Thickness(5, 0, 7, 0);
-            info.Children.Add(label);
-            info.Children.Add(imageFrame);
+            rateLabel.Margin = new Thickness(5, 0, 5, 0);
+            Grid.SetColumn(label, 0);
+            Grid.SetColumn(rateLabel, 1);
+            Grid.SetColumn(imageFrame, 2);
             Grid.SetColumn(info, 1);
-            Grid.SetColumn(dot, 2);
+            Grid.SetColumn(dot, 3);
+        }
+        info.Children.Add(imageFrame);
+        info.Children.Add(label);
+        info.Children.Add(rateLabel);
+
+        if (canReorder && visibleItemIds is not null)
+        {
+            var grip = CreatePortOrderGrip(orderReference, visibleItemIds);
+            grip.Margin = direction == "input" ? new Thickness(10, 0, 3, 0) : new Thickness(3, 0, 10, 0);
+            Grid.SetColumn(grip, direction == "input" ? 2 : 2);
+            row.Children.Add(grip);
         }
 
         row.Children.Add(dot);
         row.Children.Add(info);
-        return row;
+        var liftShadowColor = Color.FromRgb(0, 0, 0);
+        var nodeTopColor = ThemeColor("NodeCardTopBrush", Color.FromArgb(242, 17, 27, 35));
+        var liftOutlineBrush = IsLightColor(nodeTopColor)
+            ? new SolidColorBrush(liftShadowColor)
+            : ThemeBrush("StarBlueBrush", Color.FromRgb(10, 132, 255));
+        var liftShell = new Grid
+        {
+            Margin = new Thickness(0, 3, 0, 3),
+            RenderTransform = isReorderDragSource ? new TranslateTransform(0, -2) : Transform.Identity,
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            Tag = orderReference,
+        };
+        liftShell.Children.Add(new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            Background = isReorderDragSource
+                ? ThemeBrush("NodeCardTopBrush", Color.FromArgb(242, 17, 27, 35))
+                : Brushes.Transparent,
+            BorderBrush = isReorderDragSource
+                ? liftOutlineBrush
+                : Brushes.Transparent,
+            BorderThickness = new Thickness(isReorderDragSource ? 1 : 0),
+            Effect = isReorderDragSource
+                ? new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = liftShadowColor,
+                    BlurRadius = 14,
+                    ShadowDepth = 4,
+                    Direction = 270,
+                    Opacity = 0.42,
+                }
+                : null,
+        });
+        liftShell.Children.Add(new Border
+        {
+            Padding = new Thickness(5, 3, 5, 3),
+            Background = Brushes.Transparent,
+            Tag = orderReference,
+            Child = row,
+        });
+        return liftShell;
+    }
+
+    private FrameworkElement CreatePortOrderGrip(PortOrderReference reference, IReadOnlyList<string> visibleItemIds)
+    {
+        var iconBrush = CardTextBrush(0.62);
+        var icon = new StackPanel
+        {
+            Width = 10,
+            Height = 10,
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        for (var index = 0; index < 3; index++)
+        {
+            icon.Children.Add(new Rectangle
+            {
+                Width = 10,
+                Height = 1.5,
+                RadiusX = 0.75,
+                RadiusY = 0.75,
+                Fill = iconBrush,
+                Margin = index == 0 ? new Thickness(0) : new Thickness(0, 2, 0, 0),
+            });
+        }
+
+        var grip = new Border
+        {
+            Width = 16,
+            Height = 22,
+            Background = Brushes.Transparent,
+            Cursor = Cursors.SizeNS,
+            Tag = (Reference: reference, VisibleItemIds: visibleItemIds.ToList()),
+            ToolTip = UiText.T("Text.ReorderPort"),
+            Child = icon,
+        };
+        grip.PreviewMouseLeftButtonDown += PortOrderGrip_MouseLeftButtonDown;
+        return grip;
+    }
+
+    private void PortOrderGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement element
+            || element.Tag is not ValueTuple<PortOrderReference, List<string>> tag)
+        {
+            return;
+        }
+
+        FocusCanvasViewport();
+        _portOrderDrag = new PortOrderDrag(tag.Item1, tag.Item2);
+        CanvasViewport.CaptureMouse();
+        RenderCanvas();
+        e.Handled = true;
+    }
+
+    private void UpdatePortOrderDrag(Point canvasPoint)
+    {
+        if (_portOrderDrag is null)
+        {
+            return;
+        }
+
+        var target = PortOrderReferenceAt(canvasPoint);
+        if (target is null
+            || !string.Equals(target.NodeId, _portOrderDrag.Reference.NodeId, StringComparison.Ordinal)
+            || !string.Equals(target.Direction, _portOrderDrag.Reference.Direction, StringComparison.Ordinal)
+            || string.Equals(target.ItemId, _portOrderDrag.Reference.ItemId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var node = _scheme.Nodes.FirstOrDefault(item => string.Equals(item.Id, target.NodeId, StringComparison.Ordinal));
+        if (node is null)
+        {
+            return;
+        }
+
+        var visibleIds = CurrentVisiblePortIds(node, target.Direction);
+        var targetIndex = visibleIds.FindIndex(id => string.Equals(id, target.ItemId, StringComparison.Ordinal));
+        if (targetIndex < 0)
+        {
+            return;
+        }
+
+        PlannerPortOrderService.MovePort(
+            node,
+            target.Direction,
+            _portOrderDrag.Reference.ItemId,
+            targetIndex,
+            visibleIds);
+        _portOrderDrag = new PortOrderDrag(_portOrderDrag.Reference, CurrentVisiblePortIds(node, target.Direction));
+        RenderCanvas();
+        UpdateInspector();
+    }
+
+    private void EndPortOrderDrag()
+    {
+        _portOrderDrag = null;
+        if (CanvasViewport.IsMouseCaptured)
+        {
+            CanvasViewport.ReleaseMouseCapture();
+        }
+        RenderCanvas();
+    }
+
+    private PortOrderReference? PortOrderReferenceAt(Point canvasPoint)
+    {
+        var hit = VisualTreeHelper.HitTest(PlannerCanvas, canvasPoint)?.VisualHit as DependencyObject;
+        while (hit is not null)
+        {
+            if (hit is FrameworkElement { Tag: PortOrderReference reference })
+            {
+                return reference;
+            }
+
+            hit = VisualTreeHelper.GetParent(hit);
+        }
+
+        return null;
+    }
+
+    private List<string> CurrentVisiblePortIds(SchemeNode node, string direction)
+    {
+        if (direction == "input")
+        {
+            var recipe = RecipeForNode(node);
+            return recipe is null
+                ? []
+                : PlannerPortOrderService.OrderedInputs(node, recipe).Select(input => input.ItemId).ToList();
+        }
+
+        if (node.NodeType == SchemeNodeType.BlueprintSource)
+        {
+            return PlannerPortOrderService.OrderedBlueprintOutputs(node).Select(output => output.ItemId).ToList();
+        }
+
+        var outputRecipe = RecipeForNode(node);
+        return outputRecipe is null
+            ? []
+            : PlannerPortOrderService.OrderedOutputs(node, outputRecipe).Select(output => output.ItemId).ToList();
     }
 
     private void AddEdgeView(SchemeEdge edge)
@@ -2438,6 +2664,12 @@ public partial class CanvasView
 
     private void PlannerCanvas_MouseMove(object sender, MouseEventArgs e)
     {
+        if (_portOrderDrag is not null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            UpdatePortOrderDrag(e.GetPosition(PlannerCanvas));
+            return;
+        }
+
         if (_connectionDrag is not null)
         {
             var current = e.GetPosition(PlannerCanvas);
@@ -2476,6 +2708,13 @@ public partial class CanvasView
 
     private void PlannerCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_portOrderDrag is not null)
+        {
+            EndPortOrderDrag();
+            e.Handled = true;
+            return;
+        }
+
         if (_connectionDrag is not null)
         {
             var drag = _connectionDrag;
@@ -2935,6 +3174,12 @@ public partial class CanvasView
         // Pair the edge-label chip with the same theme surface the label text follows so the
         // text stays legible in both themes (dark text on a light chip in the light theme).
         return ThemeColor("NodeCardBottomBrush", Color.FromArgb(232, 8, 15, 20));
+    }
+
+    private static bool IsLightColor(Color color)
+    {
+        var luminance = (0.299 * color.R) + (0.587 * color.G) + (0.114 * color.B);
+        return luminance >= 180;
     }
 
     public void DeleteSelection()

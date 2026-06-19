@@ -79,6 +79,7 @@ public static class UiText
         ["Text.ConsumesProduction"] = "Consumes {0:g}/min",
         ["Text.RequiredProduction"] = "Required {0:g}/min",
         ["Text.SourceFreeProduction"] = "Source free {0:g}/min",
+        ["Text.ReorderPort"] = "Reorder port",
         ["Text.NoSchemeOutputsMarked"] = "No scheme outputs marked",
         ["Text.Comment"] = "Comment",
         ["Text.DeleteScheme"] = "Delete scheme",
