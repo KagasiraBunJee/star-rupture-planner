@@ -407,9 +407,9 @@ public partial class CanvasView
         else
         {
             var body = new Grid { Margin = new Thickness(0), MinHeight = 70 };
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             if (!node.OnlyOutput)
             {
@@ -436,7 +436,7 @@ public partial class CanvasView
             }
 
             var output = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 10, 14, 12) };
-            output.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
+            output.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper"), TextAlignment.Right));
             var outputPorts = PlannerPortOrderService.OrderedOutputs(node, recipe);
             var outputIds = outputPorts.Select(item => item.ItemId).ToList();
             foreach (var outputPort in outputPorts)
@@ -577,7 +577,7 @@ public partial class CanvasView
         body.Children.Add(note);
 
         var outputs = new StackPanel { Margin = new Thickness(8, 10, 14, 12), VerticalAlignment = VerticalAlignment.Center };
-        outputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper")));
+        outputs.Children.Add(CreateCardSectionLabel(UiText.T("Text.OutputsUpper"), TextAlignment.Right));
         var outputPorts = PlannerPortOrderService.OrderedBlueprintOutputs(node);
         var outputIds = outputPorts.Select(output => output.ItemId).ToList();
         foreach (var output in outputPorts)
@@ -669,7 +669,7 @@ public partial class CanvasView
         }
     }
 
-    private TextBlock CreateCardSectionLabel(string text)
+    private TextBlock CreateCardSectionLabel(string text, TextAlignment textAlignment = TextAlignment.Left)
     {
         return new TextBlock
         {
@@ -678,6 +678,8 @@ public partial class CanvasView
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-2),
             FontWeight = FontWeights.SemiBold,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextAlignment = textAlignment,
             Margin = new Thickness(0, 0, 0, 6),
         };
     }
@@ -1014,9 +1016,9 @@ public partial class CanvasView
         var available = IsPortAvailableForConnection(node, port, direction);
         var portReference = new PortReference(node.Id, direction, port.ItemId);
         var orderReference = new PortOrderReference(node.Id, direction, port.ItemId);
+        var isReorderDragSource = _portOrderDrag?.Reference == orderReference;
         var row = new Grid
         {
-            Margin = new Thickness(0, 4, 0, 4),
             Tag = orderReference,
             ToolTip = available
                 ? $"{port.Name} {rate:g}/min"
@@ -1053,12 +1055,14 @@ public partial class CanvasView
         }
         _portViews[portReference] = dot;
 
-        var info = new StackPanel
+        var info = new Grid
         {
-            Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = direction == "input" ? HorizontalAlignment.Left : HorizontalAlignment.Right,
         };
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var imageFrame = new Border
         {
             Width = 22,
@@ -1073,42 +1077,99 @@ public partial class CanvasView
         imageFrame.Child = image;
         var label = new TextBlock
         {
-            Text = $"{port.Name} {rate:g}/min",
+            Text = port.Name,
             Foreground = available ? CardTextBrush() : new SolidColorBrush(LockedPortColor),
             VerticalAlignment = VerticalAlignment.Center,
             FontFamily = CardFontFamily(),
             FontSize = CardFontSize(-1),
             TextTrimming = TextTrimming.CharacterEllipsis,
-            MaxWidth = 152,
+            MinWidth = 28,
+            MaxWidth = 118,
+        };
+        var rateLabel = new TextBlock
+        {
+            Text = $"{rate:g}/min",
+            Foreground = available ? CardTextBrush(0.78) : new SolidColorBrush(LockedPortColor),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = CardFontFamily(),
+            FontSize = CardFontSize(-1),
+            Margin = new Thickness(5, 0, 0, 0),
         };
 
         if (direction == "input")
         {
             imageFrame.Margin = new Thickness(7, 0, 5, 0);
-            info.Children.Add(imageFrame);
-            info.Children.Add(label);
+            Grid.SetColumn(imageFrame, 0);
+            Grid.SetColumn(label, 1);
+            Grid.SetColumn(rateLabel, 2);
             Grid.SetColumn(dot, 0);
             Grid.SetColumn(info, 1);
         }
         else
         {
             imageFrame.Margin = new Thickness(5, 0, 7, 0);
-            info.Children.Add(label);
-            info.Children.Add(imageFrame);
+            rateLabel.Margin = new Thickness(5, 0, 5, 0);
+            Grid.SetColumn(label, 0);
+            Grid.SetColumn(rateLabel, 1);
+            Grid.SetColumn(imageFrame, 2);
             Grid.SetColumn(info, 1);
             Grid.SetColumn(dot, 3);
         }
+        info.Children.Add(imageFrame);
+        info.Children.Add(label);
+        info.Children.Add(rateLabel);
 
         if (canReorder && visibleItemIds is not null)
         {
             var grip = CreatePortOrderGrip(orderReference, visibleItemIds);
+            grip.Margin = direction == "input" ? new Thickness(10, 0, 3, 0) : new Thickness(3, 0, 10, 0);
             Grid.SetColumn(grip, direction == "input" ? 2 : 2);
             row.Children.Add(grip);
         }
 
         row.Children.Add(dot);
         row.Children.Add(info);
-        return row;
+        var liftShadowColor = Color.FromRgb(0, 0, 0);
+        var nodeTopColor = ThemeColor("NodeCardTopBrush", Color.FromArgb(242, 17, 27, 35));
+        var liftOutlineBrush = IsLightColor(nodeTopColor)
+            ? new SolidColorBrush(liftShadowColor)
+            : ThemeBrush("StarBlueBrush", Color.FromRgb(10, 132, 255));
+        var liftShell = new Grid
+        {
+            Margin = new Thickness(0, 3, 0, 3),
+            RenderTransform = isReorderDragSource ? new TranslateTransform(0, -2) : Transform.Identity,
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            Tag = orderReference,
+        };
+        liftShell.Children.Add(new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            Background = isReorderDragSource
+                ? ThemeBrush("NodeCardTopBrush", Color.FromArgb(242, 17, 27, 35))
+                : Brushes.Transparent,
+            BorderBrush = isReorderDragSource
+                ? liftOutlineBrush
+                : Brushes.Transparent,
+            BorderThickness = new Thickness(isReorderDragSource ? 1 : 0),
+            Effect = isReorderDragSource
+                ? new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = liftShadowColor,
+                    BlurRadius = 14,
+                    ShadowDepth = 4,
+                    Direction = 270,
+                    Opacity = 0.42,
+                }
+                : null,
+        });
+        liftShell.Children.Add(new Border
+        {
+            Padding = new Thickness(5, 3, 5, 3),
+            Background = Brushes.Transparent,
+            Tag = orderReference,
+            Child = row,
+        });
+        return liftShell;
     }
 
     private FrameworkElement CreatePortOrderGrip(PortOrderReference reference, IReadOnlyList<string> visibleItemIds)
@@ -1161,6 +1222,7 @@ public partial class CanvasView
         FocusCanvasViewport();
         _portOrderDrag = new PortOrderDrag(tag.Item1, tag.Item2);
         CanvasViewport.CaptureMouse();
+        RenderCanvas();
         e.Handled = true;
     }
 
@@ -1211,6 +1273,7 @@ public partial class CanvasView
         {
             CanvasViewport.ReleaseMouseCapture();
         }
+        RenderCanvas();
     }
 
     private PortOrderReference? PortOrderReferenceAt(Point canvasPoint)
@@ -2914,6 +2977,12 @@ public partial class CanvasView
         // Pair the edge-label chip with the same theme surface the label text follows so the
         // text stays legible in both themes (dark text on a light chip in the light theme).
         return ThemeColor("NodeCardBottomBrush", Color.FromArgb(232, 8, 15, 20));
+    }
+
+    private static bool IsLightColor(Color color)
+    {
+        var luminance = (0.299 * color.R) + (0.587 * color.G) + (0.114 * color.B);
+        return luminance >= 180;
     }
 
     public void DeleteSelection()
