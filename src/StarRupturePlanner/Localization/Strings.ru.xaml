@@ -136,6 +136,8 @@
     <sys:String x:Key="Ui.Text.NewMachines">New machines</sys:String>
     <sys:String x:Key="Ui.Text.MaxProduction">Max {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Text.FreeProduction">Free {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ProducesProduction">Produces {0:g}/min</sys:String>
+    <sys:String x:Key="Ui.Text.ConsumesProduction">Consumes {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Text.RequiredProduction">Required {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Text.SourceFreeProduction">Source free {0:g}/min</sys:String>
     <sys:String x:Key="Ui.Label.Surplus">Излишек</sys:String>

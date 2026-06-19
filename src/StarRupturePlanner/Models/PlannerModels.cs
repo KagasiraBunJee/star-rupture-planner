@@ -301,6 +301,8 @@ public sealed class PlannerSuggestionItem
 
     public double RequiredPerMinute { get; set; }
 
+    public double ConsumptionPerMinute { get; set; }
+
     public bool HasShortageRisk { get; set; }
 
     public bool IsHeader => Kind == PlannerSuggestionItemKind.Header;

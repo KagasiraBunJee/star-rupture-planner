@@ -2633,14 +2633,20 @@ public partial class CanvasView
                 Kind = PlannerSuggestionItemKind.Header,
                 Header = UiText.T("Text.NewMachines"),
             });
-            rows.AddRange(newMachineRecipes.Select(CreateNewMachineSuggestionItem));
+            rows.AddRange(newMachineRecipes.Select(recipe => CreateNewMachineSuggestionItem(sourcePort, recipe)));
         }
 
         return rows;
     }
 
-    private static PlannerSuggestionItem CreateNewMachineSuggestionItem(RecipeInfo recipe)
+    private PlannerSuggestionItem CreateNewMachineSuggestionItem(PortReference sourcePort, RecipeInfo recipe)
     {
+        var production = recipe.Output.QuantityPerMinute;
+        var consumption = sourcePort.Direction == "input"
+            ? ConsumptionForTargetInput(sourcePort)
+            : recipe.Inputs
+                .FirstOrDefault(input => string.Equals(input.ItemId, sourcePort.ItemId, StringComparison.Ordinal))
+                ?.QuantityPerMinute ?? 0;
         return new PlannerSuggestionItem
         {
             Kind = PlannerSuggestionItemKind.NewMachine,
@@ -2649,8 +2655,18 @@ public partial class CanvasView
             ImageUrl = recipe.BuildingImageUrl ?? "",
             Title = recipe.BuildingName,
             Subtitle = recipe.Output.Name,
-            Detail = $"{recipe.Output.QuantityPerMinute:g}/min",
+            Detail = $"{UiText.Format("Text.ProducesProduction", production)}  {UiText.Format("Text.ConsumesProduction", consumption)}",
+            MaxProductionPerMinute = production,
+            ConsumptionPerMinute = consumption,
         };
+    }
+
+    private double ConsumptionForTargetInput(PortReference sourcePort)
+    {
+        var targetNode = _scheme.Nodes.FirstOrDefault(node => string.Equals(node.Id, sourcePort.NodeId, StringComparison.Ordinal));
+        return targetNode is null
+            ? 0
+            : PlannerSuggestionService.RequiredInputPerMinute(_catalog, _calculator, targetNode, sourcePort.ItemId);
     }
 
     private void NormalizeSuggestionAssets(IEnumerable<RecipeInfo> suggestions)

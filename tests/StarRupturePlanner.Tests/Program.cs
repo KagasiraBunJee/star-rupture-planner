@@ -568,6 +568,7 @@ static void ExistingProducerSuggestionsUseFreeConnectedCapacity()
     AssertEqual(120d, sourceSuggestion.MaxProductionPerMinute);
     AssertEqual(80d, sourceSuggestion.FreePerMinute);
     AssertEqual(60d, sourceSuggestion.RequiredPerMinute);
+    AssertEqual(60d, sourceSuggestion.ConsumptionPerMinute);
     AssertFalse(sourceSuggestion.HasShortageRisk);
 
     targetRecipe.Inputs[0].QuantityPerMinute = 90;

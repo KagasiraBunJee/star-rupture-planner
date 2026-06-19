@@ -107,10 +107,11 @@ public static class PlannerSuggestionService
             ImageUrl = ExistingNodeImageUrl(catalog, sourceNode, itemId),
             Title = PlannerEdgeService.SourceNodeName(catalog, sourceNode),
             Subtitle = output.Name,
-            Detail = $"{UiText.Format("Text.MaxProduction", maxProduction)}  {UiText.Format("Text.FreeProduction", free)}",
+            Detail = $"{UiText.Format("Text.MaxProduction", maxProduction)}  {UiText.Format("Text.FreeProduction", free)}  {UiText.Format("Text.ConsumesProduction", required)}",
             MaxProductionPerMinute = maxProduction,
             FreePerMinute = free,
             RequiredPerMinute = required,
+            ConsumptionPerMinute = required,
             HasShortageRisk = required > free + Epsilon,
         };
     }
@@ -169,10 +170,11 @@ public static class PlannerSuggestionService
             ImageUrl = recipe.BuildingImageUrl ?? "",
             Title = recipe.BuildingName,
             Subtitle = input.Name,
-            Detail = $"{UiText.Format("Text.RequiredProduction", required)}  {UiText.Format("Text.SourceFreeProduction", sourceFree)}",
+            Detail = $"{UiText.Format("Text.ConsumesProduction", required)}  {UiText.Format("Text.SourceFreeProduction", sourceFree)}",
             MaxProductionPerMinute = sourceFree,
             FreePerMinute = sourceFree,
             RequiredPerMinute = required,
+            ConsumptionPerMinute = required,
             HasShortageRisk = required > sourceFree + Epsilon,
         };
     }

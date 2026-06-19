@@ -73,6 +73,8 @@ public static class UiText
         ["Text.NewMachines"] = "New machines",
         ["Text.MaxProduction"] = "Max {0:g}/min",
         ["Text.FreeProduction"] = "Free {0:g}/min",
+        ["Text.ProducesProduction"] = "Produces {0:g}/min",
+        ["Text.ConsumesProduction"] = "Consumes {0:g}/min",
         ["Text.RequiredProduction"] = "Required {0:g}/min",
         ["Text.SourceFreeProduction"] = "Source free {0:g}/min",
         ["Text.NoSchemeOutputsMarked"] = "No scheme outputs marked",
