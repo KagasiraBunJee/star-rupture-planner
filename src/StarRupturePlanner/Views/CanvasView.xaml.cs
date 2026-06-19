@@ -74,6 +74,8 @@ public partial class CanvasView : UserControl
     private RoutePointDrag? _routePointDrag;
     private CommentResizeDrag? _commentResizeDrag;
     private ConnectionDrag? _connectionDrag;
+    private PortOrderDrag? _portOrderDrag;
+    private Grid? _connectionHoverShell;
     private CancellationTokenSource? _suggestionCancellation;
     private Point _suggestionCanvasPoint;
     private readonly Dictionary<string, Point> _groupDragNodeStarts = [];
@@ -82,6 +84,8 @@ public partial class CanvasView : UserControl
     private readonly HashSet<string> _groupDragEdgeIds = [];
     private readonly HashSet<string> _pendingDragEdgeIds = [];
     private bool _dragEdgeRefreshScheduled;
+    private bool _isDragAutoScrollRunning;
+    private DateTime _lastDragAutoScrollTick;
     private Rectangle? _selectionRectangle;
     private bool _isSelecting;
     private bool _isCreatingComment;
@@ -93,6 +97,7 @@ public partial class CanvasView : UserControl
         InitializeComponent();
         Unloaded += (_, _) =>
         {
+            StopDragAutoScroll();
             _suggestionCancellation?.Cancel();
             _suggestionCancellation?.Dispose();
             _suggestionCancellation = null;
@@ -228,6 +233,10 @@ public partial class CanvasView : UserControl
     private sealed record RoutePointDrag(RoutePointReference Reference, Point StartMouse, Point StartPoint);
 
     private sealed record CommentResizeDrag(SchemeComment Comment, Point StartMouse, double StartWidth, double StartHeight);
+
+    private sealed record PortOrderReference(string NodeId, string Direction, string ItemId);
+
+    private sealed record PortOrderDrag(PortOrderReference Reference, IReadOnlyList<string> VisibleItemIds);
 
     private sealed class EdgeVisual
     {

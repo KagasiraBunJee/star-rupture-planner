@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import textwrap
@@ -16,6 +17,12 @@ from typing import Any
 MAX_COMMITS = 80
 MAX_PULL_REQUESTS = 30
 MAX_BODY_CHARS = 1800
+MAX_LINEAR_ISSUES = 40
+MAX_LINEAR_DESCRIPTION_CHARS = 2400
+LINEAR_ISSUE_PATTERN = re.compile(r"\b[A-Z][A-Z0-9]+-\d+\b")
+NON_APP_EXACT_PATHS = (
+    "agents.md",
+)
 NON_APP_PATH_PREFIXES = (
     ".github/",
     ".vscode/",
@@ -25,6 +32,8 @@ NON_APP_PATH_PARTS = (
     "/workflows/",
 )
 NON_APP_SUBJECT_KEYWORDS = (
+    "agent instructions",
+    "agents.md",
     "workflow",
     "github action",
     "ci",
@@ -97,7 +106,11 @@ def collect_commits(previous_tag: str | None) -> list[CommitInfo]:
 
 def is_non_app_path(path: str) -> bool:
     normalized = path.strip().replace("\\", "/").lower()
-    return normalized.startswith(NON_APP_PATH_PREFIXES) or any(part in normalized for part in NON_APP_PATH_PARTS)
+    return (
+        normalized in NON_APP_EXACT_PATHS
+        or normalized.startswith(NON_APP_PATH_PREFIXES)
+        or any(part in normalized for part in NON_APP_PATH_PARTS)
+    )
 
 
 def is_non_app_subject(subject: str) -> bool:
@@ -136,6 +149,21 @@ def github_json(path: str, token: str) -> Any:
         return json.loads(response.read().decode("utf-8"))
 
 
+def linear_graphql(query: str, variables: dict[str, Any], api_key: str) -> dict[str, Any]:
+    request = urllib.request.Request(
+        "https://api.linear.app/graphql",
+        data=json.dumps({"query": query, "variables": variables}).encode("utf-8"),
+        headers={
+            "Authorization": api_key,
+            "Content-Type": "application/json",
+            "User-Agent": "StarRupturePlannerReleaseNotes",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
 def truncate(value: str | None, max_chars: int) -> str:
     if not value:
         return ""
@@ -166,6 +194,7 @@ def collect_pull_requests(commits: list[CommitInfo], token: str) -> list[dict[st
                 "author": (pull_request.get("user") or {}).get("login", ""),
                 "merged_at": pull_request.get("merged_at", ""),
                 "body": truncate(pull_request.get("body"), MAX_BODY_CHARS),
+                "_head_ref": ((pull_request.get("head") or {}).get("ref") or ""),
             }
             if len(pull_requests) >= MAX_PULL_REQUESTS:
                 break
@@ -188,7 +217,98 @@ def filter_app_pull_requests(pull_requests: list[dict[str, Any]], token: str) ->
     return app_pull_requests
 
 
-def build_context(tag: str, previous_tag: str | None, commits: list[CommitInfo], pull_requests: list[dict[str, Any]]) -> dict[str, Any]:
+def extract_linear_issue_ids(commits: list[CommitInfo], pull_requests: list[dict[str, Any]]) -> list[str]:
+    issue_ids: set[str] = set()
+
+    for commit in commits:
+        for match in LINEAR_ISSUE_PATTERN.findall(commit.subject.upper()):
+            issue_ids.add(match)
+
+    for pull_request in pull_requests:
+        for field in ("title", "body", "_head_ref"):
+            value = str(pull_request.get(field) or "").upper()
+            for match in LINEAR_ISSUE_PATTERN.findall(value):
+                issue_ids.add(match)
+
+    return sorted(issue_ids)[:MAX_LINEAR_ISSUES]
+
+
+def is_non_app_linear_issue(issue: dict[str, Any]) -> bool:
+    searchable = f"{issue.get('title', '')}\n{issue.get('description', '')}"
+    return is_non_app_subject(searchable)
+
+
+def collect_linear_issues(issue_ids: list[str]) -> list[dict[str, Any]]:
+    api_key = os.environ.get("LINEAR_API_KEY", "").strip()
+    if not api_key or not issue_ids:
+        return []
+
+    query = """
+    query ReleaseIssue($id: String!) {
+      issue(id: $id) {
+        identifier
+        title
+        description
+        url
+        state {
+          name
+          type
+        }
+        labels {
+          nodes {
+            name
+          }
+        }
+        project {
+          name
+        }
+        projectMilestone {
+          name
+        }
+      }
+    }
+    """
+
+    issues: list[dict[str, Any]] = []
+    for issue_id in issue_ids:
+        try:
+            body = linear_graphql(query, {"id": issue_id}, api_key)
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+            print(f"warning: Linear lookup skipped for {issue_id}: {exc}", file=sys.stderr)
+            continue
+
+        if body.get("errors"):
+            print(f"warning: Linear lookup skipped for {issue_id}: {body['errors']}", file=sys.stderr)
+            continue
+
+        issue = (body.get("data") or {}).get("issue")
+        if not issue:
+            continue
+
+        normalized = {
+            "id": issue.get("identifier", issue_id),
+            "title": issue.get("title", ""),
+            "description": truncate(issue.get("description"), MAX_LINEAR_DESCRIPTION_CHARS),
+            "url": issue.get("url", ""),
+            "state": (issue.get("state") or {}).get("name", ""),
+            "labels": [node.get("name", "") for node in ((issue.get("labels") or {}).get("nodes") or []) if node.get("name")],
+            "project": (issue.get("project") or {}).get("name", ""),
+            "milestone": (issue.get("projectMilestone") or {}).get("name", ""),
+        }
+        if is_non_app_linear_issue(normalized):
+            continue
+        issues.append(normalized)
+
+    return issues
+
+
+def build_context(
+    tag: str,
+    previous_tag: str | None,
+    commits: list[CommitInfo],
+    pull_requests: list[dict[str, Any]],
+    linear_issues: list[dict[str, Any]],
+) -> dict[str, Any]:
     return {
         "project": "StarRupture Planner",
         "tag": tag,
@@ -207,7 +327,11 @@ def build_context(tag: str, previous_tag: str | None, commits: list[CommitInfo],
             }
             for commit in commits
         ],
-        "pull_requests": pull_requests,
+        "pull_requests": [
+            {key: value for key, value in pull_request.items() if not key.startswith("_")}
+            for pull_request in pull_requests
+        ],
+        "linear_issues": linear_issues,
     }
 
 
@@ -229,9 +353,11 @@ def call_ollama(context: dict[str, Any]) -> str:
 
         Requirements:
         - Write only about user-visible app, data, planner, local API, localization, installer, or packaging outcomes.
-        - Use only the provided app commits and pull request descriptions.
+        - Use only the provided app commits, pull request descriptions, and Linear issue descriptions.
+        - Prefer Linear issue descriptions for intent and acceptance details when they are available.
         - Do not invent features, fixes, dates, links, or contributors.
-        - Ignore CI, GitHub Actions, release automation, workflow, secret, script, and repository maintenance details.
+        - Ignore CI, GitHub Actions, release automation, workflow, agent instructions, secret, script, and repository maintenance details.
+        - Never mention changes that only affect AGENTS.md, automated workflows, Linear process rules, branch naming, or release-note generation.
         - Do not mention implementation details, source file names, class names, view names, resource dictionary names, JSON/XAML file names, refactors, splits, or internal architecture.
         - Convert internal wording into high-level user outcomes.
         - Bad: "CanvasView was refactored"; good: "Canvas navigation and selection feel smoother."
@@ -303,7 +429,9 @@ def main() -> int:
     app_commits = filter_app_commits(commits)
     pull_requests = collect_pull_requests(app_commits, token)
     app_pull_requests = filter_app_pull_requests(pull_requests, token)
-    context = build_context(args.tag, previous_tag, app_commits, app_pull_requests)
+    linear_issue_ids = extract_linear_issue_ids(app_commits, app_pull_requests)
+    linear_issues = collect_linear_issues(linear_issue_ids)
+    context = build_context(args.tag, previous_tag, app_commits, app_pull_requests, linear_issues)
     notes = call_ollama(context)
 
     output_path = Path(args.output)

@@ -4,6 +4,19 @@ All notable changes to StarRupture Production Planner are tracked here.
 
 The project is currently in alpha. Versions should keep the `-alpha` suffix until the project leaves alpha stage.
 
+## 0.5.0-alpha - 2026-06-19
+
+### Added
+
+- Added existing-machine connection suggestions with max and free production details.
+- Added persisted per-node input/output port ordering for cleaner graph routing.
+- Added canvas autoscroll while dragging nodes, comments, route points, and connections near viewport edges.
+
+### Changed
+
+- Connection suggestions are now grouped into existing machines and new machines.
+- Scheme JSON version advanced to support persisted port ordering.
+
 ## 0.4.3-alpha - 2026-06-18
 
 ### Documentation
