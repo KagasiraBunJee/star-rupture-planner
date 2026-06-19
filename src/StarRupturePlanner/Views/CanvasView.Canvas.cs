@@ -1908,6 +1908,96 @@ public partial class CanvasView
         _groupDragEdgeIds.Clear();
     }
 
+    private void StartDragAutoScroll()
+    {
+        if (_isDragAutoScrollRunning)
+        {
+            return;
+        }
+
+        _isDragAutoScrollRunning = true;
+        _lastDragAutoScrollTick = DateTime.UtcNow;
+        CompositionTarget.Rendering += DragAutoScroll_Rendering;
+    }
+
+    private void StopDragAutoScroll()
+    {
+        if (!_isDragAutoScrollRunning)
+        {
+            return;
+        }
+
+        CompositionTarget.Rendering -= DragAutoScroll_Rendering;
+        _isDragAutoScrollRunning = false;
+    }
+
+    private void DragAutoScroll_Rendering(object? sender, EventArgs e)
+    {
+        if (!IsDragAutoScrollActive())
+        {
+            StopDragAutoScroll();
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var elapsed = Math.Clamp((now - _lastDragAutoScrollTick).TotalSeconds, 0, 0.05);
+        _lastDragAutoScrollTick = now;
+
+        var delta = CanvasAutoScrollService.TranslateDelta(
+            Mouse.GetPosition(CanvasViewport),
+            new Size(CanvasViewport.ActualWidth, CanvasViewport.ActualHeight),
+            elapsed);
+        if (Math.Abs(delta.X) <= 0.001 && Math.Abs(delta.Y) <= 0.001)
+        {
+            return;
+        }
+
+        CanvasTranslate.X += delta.X;
+        CanvasTranslate.Y += delta.Y;
+        UpdateActiveDragAfterAutoScroll();
+    }
+
+    private bool IsDragAutoScrollActive()
+    {
+        return (_dragNode is not null && Mouse.LeftButton == MouseButtonState.Pressed)
+            || (_dragComment is not null && Mouse.LeftButton == MouseButtonState.Pressed)
+            || (_routePointDrag is not null && Mouse.LeftButton == MouseButtonState.Pressed)
+            || (_connectionDrag is not null && Mouse.LeftButton == MouseButtonState.Pressed);
+    }
+
+    private void UpdateActiveDragAfterAutoScroll()
+    {
+        var current = Mouse.GetPosition(PlannerCanvas);
+        if (_connectionDrag is not null)
+        {
+            _connectionDrag.Path.Data = CanvasGeometryService.CreateBezier(
+                _connectionDrag.StartPoint,
+                current,
+                _connectionDrag.Port.Direction);
+            return;
+        }
+
+        if (_dragNode is not null)
+        {
+            ApplyGroupDrag(current, _dragStartMouse);
+            RefreshDraggedEdges();
+            return;
+        }
+
+        if (_dragComment is not null)
+        {
+            ApplyGroupDrag(current, _dragStartMouse);
+            RefreshDraggedEdges();
+            return;
+        }
+
+        if (_routePointDrag is not null)
+        {
+            ApplyGroupDrag(current, _routePointDrag.StartMouse);
+            RefreshDraggedEdges();
+        }
+    }
+
     private void RefreshDraggedEdges(bool immediate = false)
     {
         if (_groupDragEdgeIds.Count == 0)
@@ -2123,6 +2213,7 @@ public partial class CanvasView
         _dragStartMouse = e.GetPosition(PlannerCanvas);
         BeginGroupDrag(_dragStartMouse);
         element.CaptureMouse();
+        StartDragAutoScroll();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -2154,6 +2245,7 @@ public partial class CanvasView
 
         _dragComment = null;
         ClearGroupDrag();
+        StopDragAutoScroll();
     }
 
     private void CommentTitle_TextChanged(object sender, TextChangedEventArgs e)
@@ -2252,6 +2344,7 @@ public partial class CanvasView
         _dragStartNode = new Point(node.X, node.Y);
         BeginGroupDrag(_dragStartMouse);
         element.CaptureMouse();
+        StartDragAutoScroll();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -2282,6 +2375,7 @@ public partial class CanvasView
         }
         _dragNode = null;
         ClearGroupDrag();
+        StopDragAutoScroll();
     }
 
     private void Edge_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2387,6 +2481,7 @@ public partial class CanvasView
         BeginGroupDrag(mouse);
         _routePointDrag = new RoutePointDrag(reference, mouse, new Point(edge.RoutePoints[reference.Index].X, edge.RoutePoints[reference.Index].Y));
         element.CaptureMouse();
+        StartDragAutoScroll();
         UpdateInspector();
         UpdateSelectionVisuals();
         e.Handled = true;
@@ -2419,6 +2514,7 @@ public partial class CanvasView
 
         _routePointDrag = null;
         ClearGroupDrag();
+        StopDragAutoScroll();
     }
 
     private void Port_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2448,6 +2544,7 @@ public partial class CanvasView
         PlannerCanvas.Children.Insert(0, path);
         _connectionDrag = new ConnectionDrag(port, path, start);
         Mouse.Capture(CanvasViewport);
+        StartDragAutoScroll();
         e.Handled = true;
     }
 
@@ -2558,6 +2655,7 @@ public partial class CanvasView
             var drag = _connectionDrag;
             _connectionDrag = null;
             Mouse.Capture(null);
+            StopDragAutoScroll();
             PlannerCanvas.Children.Remove(drag.Path);
 
             // Capture is on the input layer, so e.OriginalSource isn't the dropped port.
