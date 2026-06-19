@@ -252,5 +252,8 @@ public static class PlannerSuggestionService
             && string.Equals(edge.SourceItemId, itemId, StringComparison.Ordinal));
     }
 
+    public static string FormatInputRates(RecipeInfo recipe) =>
+        string.Join("  ", recipe.Inputs.Select(input => FormatItemRate(input.Name, input.QuantityPerMinute)));
+
     public static string FormatItemRate(string itemName, double ratePerMinute) => $"{itemName} - {ratePerMinute:g}/min";
 }

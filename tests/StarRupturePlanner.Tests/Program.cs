@@ -22,6 +22,7 @@ var tests = new (string Name, Action Body)[]
     ("Shortage marks edge and creates alert", ShortageMarksEdgeAndCreatesAlert),
     ("Existing producer suggestions use free connected capacity", ExistingProducerSuggestionsUseFreeConnectedCapacity),
     ("Existing consumer suggestions show consumed and produced rates", ExistingConsumerSuggestionsShowConsumedAndProducedRates),
+    ("Suggestion input rates format consumed resources", SuggestionInputRatesFormatConsumedResources),
     ("Existing suggestions skip duplicate and self candidates", ExistingSuggestionsSkipDuplicateAndSelfCandidates),
     ("Connection compatibility requires matching item", ConnectionCompatibilityRequiresMatchingItem),
     ("Transport tier recommendation chooses smallest sufficient tier", TransportTierRecommendation),
@@ -638,6 +639,13 @@ static void ExistingConsumerSuggestionsShowConsumedAndProducedRates()
     AssertEqual("Calcium powder - 200/min", suggestion.Detail);
     AssertEqual(40d, suggestion.ConsumptionPerMinute);
     AssertEqual(200d, suggestion.MaxProductionPerMinute);
+}
+
+static void SuggestionInputRatesFormatConsumedResources()
+{
+    var recipe = TitaniumRodRecipe();
+
+    AssertEqual("Titanium Bar - 30/min", PlannerSuggestionService.FormatInputRates(recipe));
 }
 
 static void ExistingSuggestionsSkipDuplicateAndSelfCandidates()

@@ -2661,7 +2661,7 @@ public partial class CanvasView
             Title = recipe.BuildingName,
             Subtitle = PlannerSuggestionService.FormatItemRate(matchedName, sourcePort.Direction == "input" ? production : consumption),
             Detail = sourcePort.Direction == "input"
-                ? $"{UiText.Format("Text.ProducesProduction", production)}  {UiText.Format("Text.ConsumesProduction", consumption)}"
+                ? PlannerSuggestionService.FormatInputRates(recipe)
                 : PlannerSuggestionService.FormatItemRate(recipe.Output.Name, production),
             MaxProductionPerMinute = production,
             ConsumptionPerMinute = consumption,
