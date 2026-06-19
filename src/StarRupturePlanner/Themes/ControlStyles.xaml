@@ -328,6 +328,7 @@
                        FontWeight="SemiBold"
                        Visibility="Collapsed"/>
             <Border x:Name="SuggestionCard"
+                    Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="1"
                     CornerRadius="6">
@@ -377,8 +378,7 @@
                 <Setter TargetName="SuggestionCard" Property="Visibility" Value="Collapsed"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding HasShortageRisk}" Value="True">
-                <Setter TargetName="SuggestionCard" Property="BorderBrush" Value="#FF6B6B"/>
-                <Setter TargetName="SuggestionCard" Property="BorderThickness" Value="2"/>
+                <Setter TargetName="SuggestionCard" Property="Background" Value="#24FF6B6B"/>
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
