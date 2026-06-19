@@ -110,6 +110,8 @@ public static class PlannerSuggestionService
             SuggestedMaterialName = output.Name,
             SuggestedMaterialRateText = FormatRateText(maxProduction),
             Detail = $"{UiText.Format("Text.FreeProduction", free)}  {UiText.Format("Text.ConsumesProduction", required)}",
+            FreeDetailText = UiText.Format("Text.FreeProduction", free),
+            DetailAfterFreeText = UiText.Format("Text.ConsumesProduction", required),
             MaxProductionPerMinute = maxProduction,
             FreePerMinute = free,
             RequiredPerMinute = required,

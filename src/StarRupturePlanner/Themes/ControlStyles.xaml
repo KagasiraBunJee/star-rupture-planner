@@ -364,10 +364,35 @@
                             <Run Text="{Binding SuggestedMaterialRateText}"
                                  Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
                         </TextBlock>
-                        <TextBlock Text="{Binding Detail}"
+                        <TextBlock x:Name="DetailText"
+                                   Text="{Binding Detail}"
                                    Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"
                                    FontSize="10.5"
                                    TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="FreeDetailSafeText"
+                                   FontSize="10.5"
+                                   TextTrimming="CharacterEllipsis"
+                                   Visibility="Collapsed">
+                            <Run Text="{Binding FreeDetailText}"
+                                 Foreground="{DynamicResource SignalGreenBrush}"
+                                 FontWeight="SemiBold"/>
+                            <Run Text="  "
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                            <Run Text="{Binding DetailAfterFreeText}"
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                        </TextBlock>
+                        <TextBlock x:Name="FreeDetailRiskText"
+                                   FontSize="10.5"
+                                   TextTrimming="CharacterEllipsis"
+                                   Visibility="Collapsed">
+                            <Run Text="{Binding FreeDetailText}"
+                                 Foreground="#FF6B6B"
+                                 FontWeight="SemiBold"/>
+                            <Run Text="  "
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                            <Run Text="{Binding DetailAfterFreeText}"
+                                 Foreground="{DynamicResource ThemeSecondaryForegroundBrush}"/>
+                        </TextBlock>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -377,6 +402,23 @@
                 <Setter TargetName="HeaderText" Property="Visibility" Value="Visible"/>
                 <Setter TargetName="SuggestionCard" Property="Visibility" Value="Collapsed"/>
             </DataTrigger>
+            <DataTrigger Binding="{Binding HasFreeDetail}" Value="True">
+                <Setter TargetName="DetailText" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding HasFreeDetail}" Value="True"/>
+                    <Condition Binding="{Binding HasShortageRisk}" Value="False"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="FreeDetailSafeText" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding HasFreeDetail}" Value="True"/>
+                    <Condition Binding="{Binding HasShortageRisk}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="FreeDetailRiskText" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
             <DataTrigger Binding="{Binding HasShortageRisk}" Value="True">
                 <Setter TargetName="SuggestionCard" Property="Background" Value="#24FF6B6B"/>
             </DataTrigger>

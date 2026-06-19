@@ -299,6 +299,10 @@ public sealed class PlannerSuggestionItem
 
     public string Detail { get; set; } = "";
 
+    public string FreeDetailText { get; set; } = "";
+
+    public string DetailAfterFreeText { get; set; } = "";
+
     public double MaxProductionPerMinute { get; set; }
 
     public double FreePerMinute { get; set; }
@@ -308,6 +312,8 @@ public sealed class PlannerSuggestionItem
     public double ConsumptionPerMinute { get; set; }
 
     public bool HasShortageRisk { get; set; }
+
+    public bool HasFreeDetail => !string.IsNullOrWhiteSpace(FreeDetailText);
 
     public bool IsHeader => Kind == PlannerSuggestionItemKind.Header;
 
